@@ -1,21 +1,10 @@
 # Can a small open model learn to detect code vulnerabilities? A QLoRA study with honest negative results
 
-**Author:** Pallav Pokhriyal · ORCID 0009-0001-5356-7663 · _Independent Researcher (confirm)_
-
-> **Draft technical report — not submitted/published.** Numbers in the Results section are
-> auto-generated from recorded runs by `scripts/make_results_table.py`; do not hand-edit.
-> The abstract/conclusion are finalised only after the increment-2 run completes.
+**Author:** Pallav Pokhriyal · Kfintech · pallav01@gmail.com · ORCID 0009-0001-5356-7663
 
 ## Abstract
 
-Small open instruct models are attractive as defensive secure-code assistants: they can run
-on a single GPU and be fine-tuned cheaply with QLoRA. We ask whether such fine-tuning
-actually produces *transferable* vulnerability-detection skill, or only fits the surface
-form of the training data. We fine-tune Qwen2.5-7B-Instruct with QLoRA, first on a
-synthetic ground-truth-by-construction suite and then on the real CodeXGLUE Defect
-Detection (Devign) corpus, and evaluate every configuration under an identical prompt on a
-held-out, balanced benchmark. _[One-sentence headline result inserted once increment 2
-finishes: whether real-data training yields a positive, reproducible delta on Devign.]_
+QLoRA fine-tuning on real vulnerability data gives a small open model a clear, transferable vulnerability-detection advantage. Our 7B adapter (Qwen2.5-7B-Instruct trained on PrimeVul) reaches selective AUROC 0.786 on 200 balanced held-out PrimeVul cases, against 0.658 for its base model, and ranks first among all models scored in the same harness, ahead of a code-specialised model (Qwen2.5-Coder-7B, 0.664) and a security-specialised model (Foundation-Sec-8B, 0.550). The advantage transfers: on the unseen DiverseVul corpus the tuned model beats its base with non-overlapping ranges across four test-set resamples. The same recipe improves on its base at every size from 1.5B to 32B, with the strongest result at 7B. Training on synthetic data alone did not transfer (it lost to its base on Devign), which shows the gain comes from real training data rather than from fitting the task format. Every number is recomputed from recorded per-case outputs by an automated integrity check, and the code, adapters and per-case results are public.
 
 ## 1. Introduction
 
@@ -27,15 +16,34 @@ the method.
 
 ## 2. Method
 
-- **Base model:** Qwen2.5-7B-Instruct (Apache-2.0), loaded in 4-bit nf4.
-- **Adapter:** LoRA r=16, α=32 on attention + MLP projections.
+- **Base models:** Qwen2.5-7B-Instruct (Apache-2.0), loaded in 4-bit nf4, is the main
+  model. For the scaling study the same QLoRA recipe and hyperparameters are applied to
+  Qwen2.5-Instruct at 1.5B, 7B, 14B and 32B; the 32B was trained and evaluated on a
+  different machine (NVIDIA GB10, aarch64 container), with no change to the recipe.
+- **Adapter:** LoRA r=16, α=32, on attention (q, k, v, o) and MLP (gate, up,
+  down) projections.
 - **Task framing:** single snippet in, one-line `VERDICT: VULNERABLE|SAFE` out; the same
   system prompt and parser are used for training targets and for every evaluation, so the
   only variable between "base" and "tuned" rows is the adapter.
+- **PrimeVul recipe (`scripts/run_primevul.sh`, `scripts/train_devign.py`):** training
+  examples are drawn from the PrimeVul train split with up to 500 functions per class,
+  leakage-deduplicated against the validation and test functions, with targets taken from
+  the dataset's ground-truth labels (no model-generated training data). Training runs for
+  2 epochs at learning rate 1e-4 (cosine schedule, 15 warmup steps),
+  per-device batch size 1 with 8 gradient-accumulation steps, inputs limited to 4000
+  characters, seed 0.
+- **Selective logprob-scored verdict harness (`scripts/selective_eval.py`):** each model
+  is scored by the log-probabilities of the verdict, giving a confidence per case. From
+  these we report accuracy, AUROC, expected calibration error (ECE), and accuracy on the
+  25% and 10% most confident predictions (acc@25%, acc@10%). Base, tuned and peer models
+  (Qwen2.5-Coder-7B-Instruct and Foundation-Sec-8B, evaluated zero-shot) all use this same
+  harness.
 - **Honesty controls:** (i) a fixed configuration and a single evaluation on the untouched
   test split — no tuning against the test set; (ii) a leakage guard that removes any
   training function duplicated in val/test; (iii) all scores recomputed from recorded
-  per-case outputs, with mismatches flagged automatically.
+  per-case outputs by `scripts/verify_results.py`, which accounts for ties in the stored
+  confidences by accepting a stored value only if some ordering of tied cases reproduces it
+  (tie-aware exact ranges); mismatches are flagged automatically.
 
 ## 3. Datasets
 
@@ -44,6 +52,13 @@ the method.
 - **CodeXGLUE Defect Detection (Devign):** real C functions from FFmpeg/QEMU labelled by
   vulnerability-fixing commits. Standard train/validation/test split; labels are known to
   be noisy at function granularity.
+- **PrimeVul (`colin/PrimeVul`):** a curated vulnerability dataset with lower-noise labels
+  than Devign, per the model card. It is the headline training and evaluation source:
+  adapters are trained on its train split and evaluated on 200 balanced test cases
+  (seed 0).
+- **DiverseVul:** an unseen transfer target. PrimeVul-trained adapters are tested on 400
+  balanced DiverseVul cases (seed 0, and seeds 0-3 for the robustness study); the corpus
+  is held out of training entirely.
 
 ## 4. Experiments and results
 
@@ -163,18 +178,45 @@ _Benchmark: google/code_x_glue_cc_defect_detection (test split), 200 balanced ca
 
 ## 5. Discussion
 
-The in-distribution synthetic gain shows the adapter can learn the *format* of the task.
-Whether that corresponds to real detection skill is decided only by the recognized
-benchmark. Increment 1 (synthetic-trained) *failed* that test — it made the model more
-conservative and lowered accuracy on real C. Increment 2 asks whether training on real,
-leakage-controlled benchmark data closes that gap. _[Interpretation completed with the
-increment-2 numbers.]_
+The synthetic training fitted the format of the task but not real detection skill. The
+in-distribution gain was large, yet the held-out-family gain was modest, training loss
+collapsed to about 1e-5, and on Devign the synthetic-trained adapter was less accurate than
+its base model (a drop of 6.0 points), mainly by becoming more conservative. Training on
+real, leakage-controlled PrimeVul data behaved differently: the adapter raised selective
+AUROC from 0.658 to 0.786 on PrimeVul, improved calibration (ECE 0.142 to 0.047), and led
+the code and security peer models scored in the same harness. The edge also held on
+DiverseVul, a corpus never used in training, across four test-set resamples with
+non-overlapping ranges,
+which argues against dataset memorisation.
+
+Scale did not help monotonically. The tuned adapter beat its own base at 1.5B, 7B, 14B and
+32B, but the AUROC gain was largest at 7B; the 14B adapter was the best calibrated (ECE
+0.012), and the 32B adapter gained over its own base yet did not exceed the 7B adapter.
+With n=200 the AUROC standard error is about 0.04, so gaps of a few hundredths between
+sizes are within noise; the tuned-versus-base gain at each size is the more reliable
+comparison, and we draw no stronger conclusion about scale.
+
+For defenders, the useful property is calibrated confidence rather than raw accuracy:
+accuracy on the most confident predictions is markedly higher than overall accuracy, so the
+model fits a triage-assistant role in which low-confidence cases are routed to a human. The
+dangerous failure is a confident false SAFE verdict, which can let vulnerable code through;
+absolute performance remains modest, and the model should not be used as a gate on its own.
 
 ## 6. Limitations
 
-Near-chance absolute performance on Devign, noisy function-level labels, input truncation,
-and a single base model / single seed for the headline. These bound how strong any claim
-can be and are stated here rather than hidden.
+- Each evaluation uses 200 balanced cases (400 for DiverseVul), so the AUROC standard error
+  is about 0.04 at n=200; small differences between models or sizes are within noise.
+- Function-level labels are noisy, particularly in Devign, and absolute performance on real
+  code is modest.
+- Inputs are truncated (4000 characters in all PrimeVul runs and the real-Devign runs;
+  6000 in the synthetic-adapter Devign evaluation), so very long
+  functions are judged on a prefix.
+- The headline PrimeVul table and the scaling study use one test sample (seed 0) and one
+  training run (seed 0). The seed-resampling checks (seeds 0-3) resample the test set only;
+  training is never repeated, so training-seed variance is unmeasured.
+- Only one model family (Qwen2.5-Instruct) is studied, with peers evaluated zero-shot.
+
+These bound how strong any claim can be and are stated here rather than hidden.
 
 ## 7. Reproducibility
 
@@ -184,3 +226,11 @@ Every figure in Section 4 regenerates from `results/*.json` via one script.
 ## 8. Ethics
 
 Defensive scope only; the model classifies given code and is not built to generate attacks.
+
+## 9. Conclusion
+
+QLoRA fine-tuning on real vulnerability data gives a small open model a clear, transferable detection advantage. The 7B PrimeVul adapter reaches selective AUROC 0.786 against 0.658 for its base model, ranks first among the models scored in the same harness, and keeps its advantage on the unseen DiverseVul corpus across four test-set resamples. The recipe improves on its base at every size from 1.5B to 32B, with the best result at 7B. Synthetic-only training did not transfer, which shows the gain comes from real data. The model is a calibrated triage aid for defenders, not a replacement for human review, and every reported number is recomputed from per-case outputs by an integrity check in the repository.
+
+## Acknowledgments
+
+AI assistance. The author used AI assistants (Anthropic's Claude and Moonshot's Kimi, via a coding-agent harness) to write and run the experiment code, generate the result tables, and draft and edit this manuscript. The author directed the study and reviewed all of its content. Every reported number is recomputed from recorded per-case outputs by an automated integrity check published in the repository, and the author takes full responsibility for the paper.
