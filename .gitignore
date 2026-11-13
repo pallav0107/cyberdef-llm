@@ -16,3 +16,13 @@ out/
 
 # Scratch / smoke outputs (keep the real results/*.json — they ARE the evidence)
 results/_smoke_*.json
+
+# operational logs / status / backups (not evidence)
+results/*.log
+results/*.status
+results/crontab.backup.*
+# 32B Spark-infra orchestration + smoke (internal hosts; not the published method)
+scripts/run32b*.sh
+scripts/train32b_spark.sh
+scripts/_spark_suite.sh
+scripts/smoke_*.sh
