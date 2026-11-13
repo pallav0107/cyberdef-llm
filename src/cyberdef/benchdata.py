@@ -176,3 +176,21 @@ def train_items(name, n_per_class, seed, max_chars, stream_cap=200000):
     random.Random(seed).shuffle(items)
     return items, dict(n_vuln=len(vuln), n_safe=len(safe), dropped=dropped,
                        scanned=scanned, forbid=len(forbid))
+
+
+def train_items_multi(names, seed, max_chars, stream_cap=200000):
+    """Multi-language training items (EXPERIMENT_PLAN_MULTILANG.md). For each dataset in `names`: run
+    train_items() with its own leakage guard (val/test of THAT dataset) taking every available
+    vulnerable function, then keep an equal number of safe ones (random, seeded). Concatenate and
+    shuffle with the seed. Single-dataset callers keep using train_items(); this is additive."""
+    items, per = [], {}
+    for name in names:
+        got, st = train_items(name, 10 ** 9, seed, max_chars, stream_cap)
+        vuln = [x for x in got if x["label"] == "VULNERABLE"]
+        safe = [x for x in got if x["label"] != "VULNERABLE"]
+        random.Random(f"{seed}:{name}").shuffle(safe)
+        safe = safe[:len(vuln)]
+        items += vuln + safe
+        per[name] = dict(st, n_vuln_used=len(vuln), n_safe_used=len(safe))
+    random.Random(seed).shuffle(items)
+    return items, dict(per_dataset=per, total=len(items))

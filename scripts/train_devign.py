@@ -32,8 +32,9 @@ def build_examples(tok, items):
     return Dataset.from_list(feats)
 
 
-def val_sanity(model, tok, dataset, n_per_class, seed, max_chars):
-    cases, _ = benchdata.balanced_sample(dataset, "validation", n_per_class, seed, max_chars)
+def val_sanity(model, tok, dataset, n_per_class, seed, max_chars, cap_to_pool=False):
+    cases, _ = benchdata.balanced_sample(dataset, "validation", n_per_class, seed, max_chars,
+                                         cap_to_pool=cap_to_pool)
     model.eval()
     correct = 0
     for c in cases:
@@ -46,7 +47,12 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--base", default="Qwen/Qwen2.5-7B-Instruct")
     ap.add_argument("--out", required=True)
-    ap.add_argument("--dataset", default="devign", choices=list(benchdata.BENCHES))
+    ap.add_argument("--dataset", default="devign",
+                    help="one of %s; or a comma-separated list (e.g. ml_java,ml_python,ml_js) to train one "
+                         "adapter on several datasets: each is leakage-guarded on its own, balanced "
+                         "per dataset using ALL its vulnerable functions + an equal number of safe "
+                         "(--n-per-class is ignored), then concatenated and shuffled with --seed"
+                    % ",".join(benchdata.BENCHES))
     ap.add_argument("--n-per-class", type=int, default=1000)
     ap.add_argument("--epochs", type=float, default=2.0)
     ap.add_argument("--lr", type=float, default=1e-4)
@@ -61,7 +67,13 @@ def main():
     tok = AutoTokenizer.from_pretrained(a.base)
     if tok.pad_token is None:
         tok.pad_token = tok.eos_token
-    items, stats = benchdata.train_items(a.dataset, a.n_per_class, a.seed, a.max_chars)
+    names = [d.strip() for d in a.dataset.split(",") if d.strip()]
+    for d in names:
+        benchdata.spec(d)
+    if len(names) == 1:
+        items, stats = benchdata.train_items(names[0], a.n_per_class, a.seed, a.max_chars)
+    else:
+        items, stats = benchdata.train_items_multi(names, a.seed, a.max_chars)
     print(f"[data] dataset={a.dataset} items={len(items)} {stats}", flush=True)
     ds = build_examples(tok, items)
 
@@ -87,7 +99,8 @@ def main():
     tok.save_pretrained(a.out)
     print(f"[train] saved adapter -> {a.out} (dataset={a.dataset}, mode={mode}, "
           f"n_train={len(items)}, epochs={a.epochs}, lr={a.lr})", flush=True)
-    val_sanity(model, tok, a.dataset, a.val_per_class, a.seed, a.max_chars)
+    for d in names:
+        val_sanity(model, tok, d, a.val_per_class, a.seed, a.max_chars, cap_to_pool=len(names) > 1)
 
 
 if __name__ == "__main__":
