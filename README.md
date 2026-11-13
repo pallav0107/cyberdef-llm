@@ -36,3 +36,6 @@ bash acceptance/check.sh
 Increment 1 = environment + eval harness + **measured baseline→tuned delta** on vuln_detect.
 Next: integrate CyberSecEval/CTIBench, and open-weight-teacher distillation for the richer
 capabilities.
+
+## Try it (free, no install)
+Run the 7B model on a free Colab GPU: [![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/pallav0107/cyberdef-llm/blob/main/notebooks/demo.ipynb)
