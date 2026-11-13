@@ -26,6 +26,17 @@ _D2A = f"{_HF_HUB}/datasets--claudios--D2A/snapshots/*/function"
 _CASTLE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "data", "castle",
                        "datasets", "CASTLE-C250.json")
 
+# Multi-language extension (EXPERIMENT_PLAN_MULTILANG.md): function-level Java / Python / JS+TS data
+# derived from CrossVul v2.0 and an OWASP Benchmark test set, built offline by scripts/build_multilang.py
+# into data/multilang/out/<name>/<split>.parquet. See data/MULTILANG_DATA.md.
+_ML = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "data", "multilang", "out")
+
+
+def _ml(name, splits):
+    return dict(hf=f"local:multilang/{name}", splits={s: s for s in splits}, func="code", label="label",
+                id="id", parquet={s: f"{_ML}/{name}/{s}.parquet" for s in splits})
+
+
 BENCHES = {
     "devign": dict(hf="google/code_x_glue_cc_defect_detection",
                    splits=dict(train="train", validation="validation", test="test"),
@@ -61,6 +72,10 @@ BENCHES = {
     "castle": dict(hf="CASTLE-Benchmark/CASTLE-Benchmark",
                    splits=dict(test="test"), func="code", label="vulnerable", id="name",
                    local_json=_CASTLE, json_key="tests"),
+    "ml_java": _ml("ml_java", ("train", "validation", "test")),
+    "ml_python": _ml("ml_python", ("train", "validation", "test")),
+    "ml_js": _ml("ml_js", ("train", "validation", "test")),      # JavaScript + TypeScript together
+    "owasp_java": _ml("owasp_java", ("test",)),                  # OWASP Benchmark v1.2, test only
 }
 
 
@@ -111,8 +126,10 @@ def _mk(r, sp, max_chars):
                 label="VULNERABLE" if _is_vuln(r[sp["label"]]) else "SAFE")
 
 
-def balanced_sample(name, split, n_per_class, seed, max_chars):
-    """Balanced n_per_class vulnerable + n_per_class safe from the named split."""
+def balanced_sample(name, split, n_per_class, seed, max_chars, cap_to_pool=False):
+    """Balanced n_per_class vulnerable + n_per_class safe from the named split. With cap_to_pool=True
+    (opt-in; default behaviour unchanged) n is reduced to the smaller class so the sample stays balanced
+    when a pool is short (e.g. held-out-project test of the multi-language sets)."""
     sp = spec(name)
     ds = _load_split(sp, split)
     vuln, safe = [], []
@@ -120,6 +137,8 @@ def balanced_sample(name, split, n_per_class, seed, max_chars):
         (vuln if _is_vuln(r[sp["label"]]) else safe).append(r)
     rng = random.Random(seed)
     rng.shuffle(vuln); rng.shuffle(safe)
+    if cap_to_pool:
+        n_per_class = min(n_per_class, len(vuln), len(safe))
     rows = vuln[:n_per_class] + safe[:n_per_class]
     rng.shuffle(rows)
     return [_mk(r, sp, max_chars) for r in rows], dict(n_vuln=len(vuln), n_safe=len(safe))

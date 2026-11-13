@@ -29,3 +29,4 @@ scripts/smoke_*.sh
 scripts/campaign_*.sh
 data/castle/
 scripts/dl72b.py
+data/multilang/
