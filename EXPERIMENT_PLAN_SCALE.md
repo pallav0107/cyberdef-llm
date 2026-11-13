@@ -49,3 +49,12 @@ by `scripts/verify_results.py`.
   once. All validation scores are reported, including the losers.
 - Outputs: `results/val1000_sel_7b_{base,d1,d2,d3,d4}.json`, adapters `out/qlora-7b-{d2,d3,d4}`,
   and (if the winner is not D1) `results/n1000_sel_7b_tuned_best.json`.
+
+## Amendment (14 Nov 2026, before any B/C/D transfer result): cross-dataset leakage
+- PrimeVul was assembled partly from earlier datasets, so about a third of the DiverseVul test
+  functions we sample also occur in PrimeVul TRAIN (audit: `scripts/xdataset_overlap.py`,
+  `results/xdataset_overlap.json`). For the existing 500-per-class adapter at most 3 of 400 test
+  cases per sample were actually trained on, and the edge survives removing every overlapping case.
+- Larger training sets (B: 2000/class, D2: up to 4800/class) raise that risk, so every transfer
+  result from here on is reported both on the full sample and on the subset with all
+  PrimeVul-TRAIN duplicates removed; claims are made on the de-duplicated subset.

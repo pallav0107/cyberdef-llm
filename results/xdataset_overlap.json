@@ -1,0 +1,90 @@
+{
+ "train_items_used": 1000,
+ "train_n_per_class": 500,
+ "seeds": [
+  {
+   "seed": 0,
+   "n": 400,
+   "overlap_trained_on": 0,
+   "overlap_any_primevul_train": 133,
+   "all": {
+    "n": 400,
+    "auroc_base": 0.5778625,
+    "auroc_tuned": 0.6870625
+   },
+   "clean_vs_trained_on": {
+    "n": 400,
+    "auroc_base": 0.5778625,
+    "auroc_tuned": 0.6870625
+   },
+   "clean_vs_all_primevul_train": {
+    "n": 267,
+    "auroc_base": 0.553300521134916,
+    "auroc_tuned": 0.6837000579038796
+   }
+  },
+  {
+   "seed": 1,
+   "n": 400,
+   "overlap_trained_on": 2,
+   "overlap_any_primevul_train": 124,
+   "all": {
+    "n": 400,
+    "auroc_base": 0.6183875,
+    "auroc_tuned": 0.7179625
+   },
+   "clean_vs_trained_on": {
+    "n": 398,
+    "auroc_base": 0.616729797979798,
+    "auroc_tuned": 0.7157954545454546
+   },
+   "clean_vs_all_primevul_train": {
+    "n": 276,
+    "auroc_base": 0.606748401416266,
+    "auroc_tuned": 0.7338159911219151
+   }
+  },
+  {
+   "seed": 2,
+   "n": 400,
+   "overlap_trained_on": 1,
+   "overlap_any_primevul_train": 124,
+   "all": {
+    "n": 400,
+    "auroc_base": 0.6019375,
+    "auroc_tuned": 0.7007125
+   },
+   "clean_vs_trained_on": {
+    "n": 399,
+    "auroc_base": 0.6034547738693468,
+    "auroc_tuned": 0.6992587939698492
+   },
+   "clean_vs_all_primevul_train": {
+    "n": 276,
+    "auroc_base": 0.6066023308548225,
+    "auroc_tuned": 0.6556452038179613
+   }
+  },
+  {
+   "seed": 3,
+   "n": 400,
+   "overlap_trained_on": 3,
+   "overlap_any_primevul_train": 113,
+   "all": {
+    "n": 400,
+    "auroc_base": 0.618275,
+    "auroc_tuned": 0.6875125
+   },
+   "clean_vs_trained_on": {
+    "n": 397,
+    "auroc_base": 0.6200126903553299,
+    "auroc_tuned": 0.6851142131979695
+   },
+   "clean_vs_all_primevul_train": {
+    "n": 287,
+    "auroc_base": 0.6295802469135803,
+    "auroc_tuned": 0.7145432098765432
+   }
+  }
+ ]
+}
