@@ -35,3 +35,17 @@ by `scripts/verify_results.py`.
 - Hardware differences are reported (1.5B/7B/14B on an RTX PRO 4000 Blackwell; 32B and 72B on an
   NVIDIA GB10 in an aarch64 container), as is any failed or skipped run.
 - The paper is updated with all of these numbers, whatever they show.
+
+## D. Recipe tuning on the VALIDATION split (added 14 Nov 2026, before any D run)
+- Goal: improve the recipe without touching the test set. Candidates for the 7B, each trained
+  once with seed 0 and scored on **1000 balanced PrimeVul validation cases** (500 per class;
+  the validation split has 593 vulnerable functions), never on test:
+  - D1: 2000 per class, 2 epochs, lr 1e-4 (the B adapter, reused)
+  - D2: all available training data (up to 4800 per class), 2 epochs, lr 1e-4
+  - D3: 2000 per class, 3 epochs, lr 1e-4
+  - D4: 2000 per class, 2 epochs, lr 2e-4
+- Selection rule: the candidate with the highest validation AUROC is chosen; ties within 0.005
+  go to the cheaper recipe. Only the chosen recipe is then scored on the 1000-case test sample,
+  once. All validation scores are reported, including the losers.
+- Outputs: `results/val1000_sel_7b_{base,d1,d2,d3,d4}.json`, adapters `out/qlora-7b-{d2,d3,d4}`,
+  and (if the winner is not D1) `results/n1000_sel_7b_tuned_best.json`.
