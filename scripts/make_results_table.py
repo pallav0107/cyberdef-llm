@@ -219,6 +219,13 @@ def leaderboard_block(dataset, title, note, ours_label):
     return f"### {title}\n\n{note}\n\n" + "\n".join(head + body) + foot + "\n"
 
 
+def _hm_se(auc, npos, nneg):
+    # Hanley-McNeil (1982) standard error of an AUROC estimate.
+    q1, q2 = auc / (2 - auc), 2 * auc * auc / (1 + auc)
+    v = (auc * (1 - auc) + (npos - 1) * (q1 - auc * auc) + (nneg - 1) * (q2 - auc * auc)) / (npos * nneg)
+    return max(v, 0.0) ** 0.5
+
+
 def suite_scaling_block():
     tags = set()
     for f in R.glob("suite_sel_*_tuned.json"):
@@ -226,7 +233,7 @@ def suite_scaling_block():
         if m:
             tags.add(m.group(1))
     PARAMS = {"1.5b": 1.5, "3b": 3, "7b": 7, "14b": 14, "32b": 32}
-    rows = []
+    rows, ses, ns = [], [], set()
     for tg in tags:
         sb = sel_load(f"suite_sel_{tg}_base.json")
         st = sel_load(f"suite_sel_{tg}_tuned.json")
@@ -235,6 +242,11 @@ def suite_scaling_block():
         a25 = st["risk_coverage"]["0.25"]["accuracy"]
         rows.append((PARAMS.get(tg, 99), tg, sb["auroc"], st["auroc"], a25, st["ece"],
                      _flag(sb) + _flag(st)))
+        for d in (sb, st):
+            pcs = d.get("per_case") or []
+            npos = sum(1 for c in pcs if c.get("label") == "VULNERABLE")
+            if npos and len(pcs) - npos:
+                ses.append(_hm_se(d["auroc"], npos, len(pcs) - npos)); ns.add(len(pcs))
     if not rows:
         return ""
     rows.sort()
@@ -251,6 +263,8 @@ def suite_scaling_block():
     _, peak_tag = max(deltas)
     best_tuned_tag = rows[max(range(len(tuneds)), key=lambda i: tuneds[i])][1]
     up = len(rows) > 1 and all(tuneds[i] < tuneds[i + 1] for i in range(len(tuneds) - 1))
+    bases = [r[2] for r in rows]
+    base_up = len(rows) > 1 and all(bases[i] < bases[i + 1] for i in range(len(bases) - 1))
     ece_down = len(rows) > 1 and all(eces[i] > eces[i + 1] for i in range(len(eces) - 1))
     note = "The same QLoRA recipe applied across model sizes, each judged by the selective harness. "
     if all_pos:
@@ -260,11 +274,17 @@ def suite_scaling_block():
             note += "Tuned AUROC rises monotonically with model size. "
         else:
             note += (f"The AUROC gain peaks at the {peak_tag.upper()} adapter rather than growing "
-                     f"monotonically with scale — a larger base starts stronger, with less headroom, "
-                     f"and the best absolute tuned AUROC here is the {best_tuned_tag.upper()} adapter. ")
+                     f"monotonically with scale"
+                     + (" — a larger base starts stronger, with less headroom," if base_up else ",")
+                     + f" and the best absolute tuned AUROC here is the {best_tuned_tag.upper()} adapter. ")
         if ece_down:
             note += ("Calibration does improve monotonically with scale (tuned ECE "
                      + " → ".join(f"{e:.3f}" for e in eces) + "). ")
+    if ses and len(ns) == 1:
+        note += (f"Each size is scored on the same n={ns.pop()} cases, where the AUROC standard error "
+                 f"is about {max(ses):.2f} (Hanley-McNeil), so differences of a few hundredths between "
+                 f"sizes, especially between base models, are within noise; the tuned-vs-base gain at "
+                 f"each size is the more robust comparison. ")
     note += "Every value is recomputed from per_case (integrity column)."
     return ("### Edge vs model scale (PrimeVul, selective)\n\n"
             + note + "\n\n"

@@ -27,8 +27,11 @@ in `results/*.json`.
   harness for the base model, two specialist peers, and ours.
 - The edge **transfers** to an unseen dataset (PrimeVul→DiverseVul) across 4 seeds, with
   non-overlapping base/tuned ranges — learned detection, not memorisation.
-- Large, monotonic **calibration** win with scale (tuned ECE 0.093 → 0.047 → 0.012 at
-  1.5B/7B/14B); 7B is the best absolute adapter.
+- The recipe helps at **every size tested** (1.5B / 7B / 14B / 32B: the tuned adapter beats its own
+  base on selective AUROC at each); **7B is the best absolute adapter**, 14B the best calibrated
+  (tuned ECE 0.012). Calibration does not improve monotonically once 32B is included
+  (tuned ECE 0.093 / 0.047 / 0.012 / 0.056), and at n=200 per size the AUROC standard error is
+  about 0.04, so small between-size differences are within noise.
 
 ## Reproduce / verify
 ```bash

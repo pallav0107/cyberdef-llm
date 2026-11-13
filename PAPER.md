@@ -104,7 +104,7 @@ _All models judged by the SAME logprob-scored verdict harness on google/code_x_g
 
 ### Edge vs model scale (PrimeVul, selective)
 
-The same QLoRA recipe applied across model sizes, each judged by the selective harness. The tuned adapter beats its own base on selective AUROC at every size tested. The AUROC gain peaks at the 7B adapter rather than growing monotonically with scale — a larger base starts stronger, with less headroom, and the best absolute tuned AUROC here is the 7B adapter. Every value is recomputed from per_case (integrity column).
+The same QLoRA recipe applied across model sizes, each judged by the selective harness. The tuned adapter beats its own base on selective AUROC at every size tested. The AUROC gain peaks at the 7B adapter rather than growing monotonically with scale, and the best absolute tuned AUROC here is the 7B adapter. Each size is scored on the same n=200 cases, where the AUROC standard error is about 0.04 (Hanley-McNeil), so differences of a few hundredths between sizes, especially between base models, are within noise; the tuned-vs-base gain at each size is the more robust comparison. Every value is recomputed from per_case (integrity column).
 
 | Model size | base AUROC | tuned AUROC | ΔAUROC | tuned acc@25% | tuned ECE | Integrity |
 |---|---|---|---|---|---|---|
