@@ -1,0 +1,1826 @@
+{
+  "benchmark": "google/code_x_glue_cc_defect_detection",
+  "split": "validation",
+  "note": "CodeXGLUE Defect Detection / Devign (real C, OOD vs our synthetic training). Function-level labels are known-noisy; the baseline-vs-tuned DELTA is the honest signal.",
+  "model": "Qwen/Qwen2.5-7B-Instruct",
+  "adapter": "out/qlora-devign",
+  "eval_split": "validation",
+  "seed": 0,
+  "n_per_class": 100,
+  "max_chars": 4000,
+  "n": 200,
+  "score": 0.58,
+  "confusion": {
+    "tp": 48,
+    "tn": 68,
+    "fp": 32,
+    "fn": 52,
+    "unknown": 0
+  },
+  "precision_vuln": 0.6,
+  "recall_vuln": 0.48,
+  "truncated_count": 24,
+  "timestamp": "2026-11-11T21:55:58Z",
+  "per_case": [
+    {
+      "id": 3530,
+      "label": "SAFE",
+      "pred": "SAFE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 344,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 11612,
+      "label": "SAFE",
+      "pred": "VULNERABLE",
+      "correct": false,
+      "truncated": false,
+      "code_chars": 371,
+      "raw": "VERDICT: VULNERABLE"
+    },
+    {
+      "id": 16168,
+      "label": "SAFE",
+      "pred": "SAFE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 185,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 143,
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 140,
+      "raw": "VERDICT: VULNERABLE"
+    },
+    {
+      "id": 2669,
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 475,
+      "raw": "VERDICT: VULNERABLE"
+    },
+    {
+      "id": 23286,
+      "label": "SAFE",
+      "pred": "VULNERABLE",
+      "correct": false,
+      "truncated": false,
+      "code_chars": 3964,
+      "raw": "VERDICT: VULNERABLE"
+    },
+    {
+      "id": 16698,
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 436,
+      "raw": "VERDICT: VULNERABLE"
+    },
+    {
+      "id": 24863,
+      "label": "SAFE",
+      "pred": "SAFE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 666,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 14570,
+      "label": "SAFE",
+      "pred": "SAFE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 2161,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 9586,
+      "label": "SAFE",
+      "pred": "SAFE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 601,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 10356,
+      "label": "SAFE",
+      "pred": "SAFE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 3102,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 14267,
+      "label": "SAFE",
+      "pred": "SAFE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 212,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 17358,
+      "label": "SAFE",
+      "pred": "SAFE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 207,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 23314,
+      "label": "VULNERABLE",
+      "pred": "SAFE",
+      "correct": false,
+      "truncated": false,
+      "code_chars": 2011,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 4949,
+      "label": "SAFE",
+      "pred": "SAFE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 220,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 4034,
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "truncated": true,
+      "code_chars": 6427,
+      "raw": "VERDICT: VULNERABLE"
+    },
+    {
+      "id": 5674,
+      "label": "SAFE",
+      "pred": "SAFE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 411,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 20987,
+      "label": "SAFE",
+      "pred": "SAFE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 608,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 26584,
+      "label": "VULNERABLE",
+      "pred": "SAFE",
+      "correct": false,
+      "truncated": false,
+      "code_chars": 497,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 5122,
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 313,
+      "raw": "VERDICT: VULNERABLE"
+    },
+    {
+      "id": 23017,
+      "label": "SAFE",
+      "pred": "SAFE",
+      "correct": true,
+      "truncated": true,
+      "code_chars": 7567,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 4575,
+      "label": "SAFE",
+      "pred": "VULNERABLE",
+      "correct": false,
+      "truncated": false,
+      "code_chars": 436,
+      "raw": "VERDICT: VULNERABLE"
+    },
+    {
+      "id": 16721,
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 408,
+      "raw": "VERDICT: VULNERABLE"
+    },
+    {
+      "id": 19845,
+      "label": "VULNERABLE",
+      "pred": "SAFE",
+      "correct": false,
+      "truncated": false,
+      "code_chars": 1588,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 17889,
+      "label": "VULNERABLE",
+      "pred": "SAFE",
+      "correct": false,
+      "truncated": false,
+      "code_chars": 402,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 25576,
+      "label": "SAFE",
+      "pred": "VULNERABLE",
+      "correct": false,
+      "truncated": false,
+      "code_chars": 581,
+      "raw": "VERDICT: VULNERABLE"
+    },
+    {
+      "id": 21587,
+      "label": "VULNERABLE",
+      "pred": "SAFE",
+      "correct": false,
+      "truncated": false,
+      "code_chars": 2017,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 18298,
+      "label": "VULNERABLE",
+      "pred": "SAFE",
+      "correct": false,
+      "truncated": false,
+      "code_chars": 1657,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 24320,
+      "label": "SAFE",
+      "pred": "SAFE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 1104,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 3039,
+      "label": "SAFE",
+      "pred": "SAFE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 1260,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 23440,
+      "label": "VULNERABLE",
+      "pred": "SAFE",
+      "correct": false,
+      "truncated": false,
+      "code_chars": 355,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 18356,
+      "label": "SAFE",
+      "pred": "SAFE",
+      "correct": true,
+      "truncated": true,
+      "code_chars": 20075,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 17663,
+      "label": "SAFE",
+      "pred": "SAFE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 333,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 2651,
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 764,
+      "raw": "VERDICT: VULNERABLE"
+    },
+    {
+      "id": 22494,
+      "label": "VULNERABLE",
+      "pred": "SAFE",
+      "correct": false,
+      "truncated": true,
+      "code_chars": 5048,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 18723,
+      "label": "SAFE",
+      "pred": "VULNERABLE",
+      "correct": false,
+      "truncated": true,
+      "code_chars": 7052,
+      "raw": "VERDICT: VULNERABLE"
+    },
+    {
+      "id": 18891,
+      "label": "SAFE",
+      "pred": "SAFE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 3183,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 9775,
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "truncated": true,
+      "code_chars": 6061,
+      "raw": "VERDICT: VULNERABLE"
+    },
+    {
+      "id": 20009,
+      "label": "VULNERABLE",
+      "pred": "SAFE",
+      "correct": false,
+      "truncated": false,
+      "code_chars": 747,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 6697,
+      "label": "VULNERABLE",
+      "pred": "SAFE",
+      "correct": false,
+      "truncated": false,
+      "code_chars": 345,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 16290,
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 549,
+      "raw": "VERDICT: VULNERABLE"
+    },
+    {
+      "id": 14427,
+      "label": "SAFE",
+      "pred": "SAFE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 1628,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 8073,
+      "label": "SAFE",
+      "pred": "SAFE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 425,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 23590,
+      "label": "SAFE",
+      "pred": "SAFE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 110,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 13753,
+      "label": "SAFE",
+      "pred": "SAFE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 257,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 21160,
+      "label": "VULNERABLE",
+      "pred": "SAFE",
+      "correct": false,
+      "truncated": false,
+      "code_chars": 412,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 12628,
+      "label": "SAFE",
+      "pred": "SAFE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 605,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 10222,
+      "label": "SAFE",
+      "pred": "SAFE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 2446,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 15264,
+      "label": "VULNERABLE",
+      "pred": "SAFE",
+      "correct": false,
+      "truncated": false,
+      "code_chars": 327,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 7837,
+      "label": "SAFE",
+      "pred": "SAFE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 980,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 5137,
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 1345,
+      "raw": "VERDICT: VULNERABLE"
+    },
+    {
+      "id": 2676,
+      "label": "VULNERABLE",
+      "pred": "SAFE",
+      "correct": false,
+      "truncated": false,
+      "code_chars": 801,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 24070,
+      "label": "SAFE",
+      "pred": "VULNERABLE",
+      "correct": false,
+      "truncated": true,
+      "code_chars": 7024,
+      "raw": "VERDICT: VULNERABLE"
+    },
+    {
+      "id": 21453,
+      "label": "SAFE",
+      "pred": "SAFE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 1169,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 13648,
+      "label": "SAFE",
+      "pred": "SAFE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 227,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 5967,
+      "label": "VULNERABLE",
+      "pred": "SAFE",
+      "correct": false,
+      "truncated": false,
+      "code_chars": 2191,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 12308,
+      "label": "SAFE",
+      "pred": "SAFE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 466,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 11313,
+      "label": "SAFE",
+      "pred": "SAFE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 587,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 24547,
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 604,
+      "raw": "VERDICT: VULNERABLE"
+    },
+    {
+      "id": 4580,
+      "label": "SAFE",
+      "pred": "SAFE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 175,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 25489,
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 1227,
+      "raw": "VERDICT: VULNERABLE"
+    },
+    {
+      "id": 23580,
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 1165,
+      "raw": "VERDICT: VULNERABLE"
+    },
+    {
+      "id": 19122,
+      "label": "SAFE",
+      "pred": "VULNERABLE",
+      "correct": false,
+      "truncated": true,
+      "code_chars": 4290,
+      "raw": "VERDICT: VULNERABLE"
+    },
+    {
+      "id": 8311,
+      "label": "SAFE",
+      "pred": "SAFE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 286,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 7484,
+      "label": "SAFE",
+      "pred": "SAFE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 88,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 5407,
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 3008,
+      "raw": "VERDICT: VULNERABLE"
+    },
+    {
+      "id": 18766,
+      "label": "SAFE",
+      "pred": "SAFE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 838,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 13302,
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 3409,
+      "raw": "VERDICT: VULNERABLE"
+    },
+    {
+      "id": 14410,
+      "label": "SAFE",
+      "pred": "VULNERABLE",
+      "correct": false,
+      "truncated": false,
+      "code_chars": 1334,
+      "raw": "VERDICT: VULNERABLE"
+    },
+    {
+      "id": 9661,
+      "label": "SAFE",
+      "pred": "VULNERABLE",
+      "correct": false,
+      "truncated": false,
+      "code_chars": 1286,
+      "raw": "VERDICT: VULNERABLE"
+    },
+    {
+      "id": 15966,
+      "label": "SAFE",
+      "pred": "SAFE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 2183,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 17989,
+      "label": "VULNERABLE",
+      "pred": "SAFE",
+      "correct": false,
+      "truncated": false,
+      "code_chars": 522,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 18756,
+      "label": "VULNERABLE",
+      "pred": "SAFE",
+      "correct": false,
+      "truncated": false,
+      "code_chars": 1365,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 18946,
+      "label": "VULNERABLE",
+      "pred": "SAFE",
+      "correct": false,
+      "truncated": false,
+      "code_chars": 202,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 7522,
+      "label": "VULNERABLE",
+      "pred": "SAFE",
+      "correct": false,
+      "truncated": false,
+      "code_chars": 1072,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 13743,
+      "label": "VULNERABLE",
+      "pred": "SAFE",
+      "correct": false,
+      "truncated": false,
+      "code_chars": 2343,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 14968,
+      "label": "SAFE",
+      "pred": "VULNERABLE",
+      "correct": false,
+      "truncated": false,
+      "code_chars": 112,
+      "raw": "VERDICT: VULNERABLE"
+    },
+    {
+      "id": 1872,
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 1229,
+      "raw": "VERDICT: VULNERABLE"
+    },
+    {
+      "id": 24226,
+      "label": "SAFE",
+      "pred": "SAFE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 1345,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 15421,
+      "label": "SAFE",
+      "pred": "SAFE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 2237,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 5713,
+      "label": "VULNERABLE",
+      "pred": "SAFE",
+      "correct": false,
+      "truncated": false,
+      "code_chars": 391,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 13324,
+      "label": "VULNERABLE",
+      "pred": "SAFE",
+      "correct": false,
+      "truncated": false,
+      "code_chars": 1498,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 14464,
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 2202,
+      "raw": "VERDICT: VULNERABLE"
+    },
+    {
+      "id": 20179,
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "truncated": true,
+      "code_chars": 21609,
+      "raw": "VERDICT: VULNERABLE"
+    },
+    {
+      "id": 18179,
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 1367,
+      "raw": "VERDICT: VULNERABLE"
+    },
+    {
+      "id": 10399,
+      "label": "SAFE",
+      "pred": "VULNERABLE",
+      "correct": false,
+      "truncated": false,
+      "code_chars": 3203,
+      "raw": "VERDICT: VULNERABLE"
+    },
+    {
+      "id": 26808,
+      "label": "SAFE",
+      "pred": "SAFE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 277,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 1750,
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 1158,
+      "raw": "VERDICT: VULNERABLE"
+    },
+    {
+      "id": 19371,
+      "label": "SAFE",
+      "pred": "VULNERABLE",
+      "correct": false,
+      "truncated": true,
+      "code_chars": 6009,
+      "raw": "VERDICT: VULNERABLE"
+    },
+    {
+      "id": 10412,
+      "label": "SAFE",
+      "pred": "SAFE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 1525,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 7905,
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 273,
+      "raw": "VERDICT: VULNERABLE"
+    },
+    {
+      "id": 13713,
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 601,
+      "raw": "VERDICT: VULNERABLE"
+    },
+    {
+      "id": 9130,
+      "label": "SAFE",
+      "pred": "SAFE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 957,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 16122,
+      "label": "VULNERABLE",
+      "pred": "SAFE",
+      "correct": false,
+      "truncated": false,
+      "code_chars": 1234,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 25528,
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 539,
+      "raw": "VERDICT: VULNERABLE"
+    },
+    {
+      "id": 14976,
+      "label": "SAFE",
+      "pred": "VULNERABLE",
+      "correct": false,
+      "truncated": false,
+      "code_chars": 1955,
+      "raw": "VERDICT: VULNERABLE"
+    },
+    {
+      "id": 3858,
+      "label": "SAFE",
+      "pred": "VULNERABLE",
+      "correct": false,
+      "truncated": false,
+      "code_chars": 357,
+      "raw": "VERDICT: VULNERABLE"
+    },
+    {
+      "id": 21883,
+      "label": "SAFE",
+      "pred": "SAFE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 815,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 4447,
+      "label": "SAFE",
+      "pred": "SAFE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 3959,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 17525,
+      "label": "VULNERABLE",
+      "pred": "SAFE",
+      "correct": false,
+      "truncated": false,
+      "code_chars": 2394,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 15835,
+      "label": "SAFE",
+      "pred": "SAFE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 412,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 14776,
+      "label": "VULNERABLE",
+      "pred": "SAFE",
+      "correct": false,
+      "truncated": false,
+      "code_chars": 863,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 20712,
+      "label": "VULNERABLE",
+      "pred": "SAFE",
+      "correct": false,
+      "truncated": false,
+      "code_chars": 1089,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 12664,
+      "label": "SAFE",
+      "pred": "VULNERABLE",
+      "correct": false,
+      "truncated": true,
+      "code_chars": 14024,
+      "raw": "VERDICT: VULNERABLE"
+    },
+    {
+      "id": 3968,
+      "label": "VULNERABLE",
+      "pred": "SAFE",
+      "correct": false,
+      "truncated": false,
+      "code_chars": 693,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 19423,
+      "label": "VULNERABLE",
+      "pred": "SAFE",
+      "correct": false,
+      "truncated": false,
+      "code_chars": 683,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 21726,
+      "label": "SAFE",
+      "pred": "SAFE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 2318,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 10462,
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 390,
+      "raw": "VERDICT: VULNERABLE"
+    },
+    {
+      "id": 4258,
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "truncated": true,
+      "code_chars": 9966,
+      "raw": "VERDICT: VULNERABLE"
+    },
+    {
+      "id": 6274,
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 3741,
+      "raw": "VERDICT: VULNERABLE"
+    },
+    {
+      "id": 23187,
+      "label": "VULNERABLE",
+      "pred": "SAFE",
+      "correct": false,
+      "truncated": false,
+      "code_chars": 3821,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 11023,
+      "label": "SAFE",
+      "pred": "SAFE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 409,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 12579,
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 2900,
+      "raw": "VERDICT: VULNERABLE"
+    },
+    {
+      "id": 24872,
+      "label": "SAFE",
+      "pred": "VULNERABLE",
+      "correct": false,
+      "truncated": false,
+      "code_chars": 254,
+      "raw": "VERDICT: VULNERABLE"
+    },
+    {
+      "id": 4144,
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 2294,
+      "raw": "VERDICT: VULNERABLE"
+    },
+    {
+      "id": 3471,
+      "label": "SAFE",
+      "pred": "VULNERABLE",
+      "correct": false,
+      "truncated": false,
+      "code_chars": 2326,
+      "raw": "VERDICT: VULNERABLE"
+    },
+    {
+      "id": 3383,
+      "label": "SAFE",
+      "pred": "VULNERABLE",
+      "correct": false,
+      "truncated": false,
+      "code_chars": 1925,
+      "raw": "VERDICT: VULNERABLE"
+    },
+    {
+      "id": 6495,
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 1823,
+      "raw": "VERDICT: VULNERABLE"
+    },
+    {
+      "id": 3774,
+      "label": "SAFE",
+      "pred": "SAFE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 496,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 18990,
+      "label": "SAFE",
+      "pred": "SAFE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 2062,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 25744,
+      "label": "VULNERABLE",
+      "pred": "SAFE",
+      "correct": false,
+      "truncated": true,
+      "code_chars": 4903,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 26296,
+      "label": "VULNERABLE",
+      "pred": "SAFE",
+      "correct": false,
+      "truncated": false,
+      "code_chars": 124,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 9523,
+      "label": "VULNERABLE",
+      "pred": "SAFE",
+      "correct": false,
+      "truncated": false,
+      "code_chars": 395,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 2548,
+      "label": "SAFE",
+      "pred": "SAFE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 978,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 22368,
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 331,
+      "raw": "VERDICT: VULNERABLE"
+    },
+    {
+      "id": 1409,
+      "label": "VULNERABLE",
+      "pred": "SAFE",
+      "correct": false,
+      "truncated": false,
+      "code_chars": 545,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 6361,
+      "label": "VULNERABLE",
+      "pred": "SAFE",
+      "correct": false,
+      "truncated": false,
+      "code_chars": 1856,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 17818,
+      "label": "VULNERABLE",
+      "pred": "SAFE",
+      "correct": false,
+      "truncated": false,
+      "code_chars": 487,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 27269,
+      "label": "SAFE",
+      "pred": "SAFE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 1873,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 15022,
+      "label": "SAFE",
+      "pred": "SAFE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 195,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 15628,
+      "label": "SAFE",
+      "pred": "SAFE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 646,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 13546,
+      "label": "VULNERABLE",
+      "pred": "SAFE",
+      "correct": false,
+      "truncated": false,
+      "code_chars": 70,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 10501,
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 1179,
+      "raw": "VERDICT: VULNERABLE"
+    },
+    {
+      "id": 15719,
+      "label": "SAFE",
+      "pred": "SAFE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 805,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 17245,
+      "label": "SAFE",
+      "pred": "SAFE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 1198,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 11570,
+      "label": "SAFE",
+      "pred": "VULNERABLE",
+      "correct": false,
+      "truncated": false,
+      "code_chars": 1469,
+      "raw": "VERDICT: VULNERABLE"
+    },
+    {
+      "id": 3526,
+      "label": "SAFE",
+      "pred": "SAFE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 3389,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 4112,
+      "label": "SAFE",
+      "pred": "VULNERABLE",
+      "correct": false,
+      "truncated": false,
+      "code_chars": 1415,
+      "raw": "VERDICT: VULNERABLE"
+    },
+    {
+      "id": 25717,
+      "label": "VULNERABLE",
+      "pred": "SAFE",
+      "correct": false,
+      "truncated": false,
+      "code_chars": 646,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 21627,
+      "label": "SAFE",
+      "pred": "SAFE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 226,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 1798,
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 978,
+      "raw": "VERDICT: VULNERABLE"
+    },
+    {
+      "id": 4665,
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "truncated": true,
+      "code_chars": 5183,
+      "raw": "VERDICT: VULNERABLE"
+    },
+    {
+      "id": 26664,
+      "label": "SAFE",
+      "pred": "SAFE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 3426,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 9900,
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "truncated": true,
+      "code_chars": 4778,
+      "raw": "VERDICT: VULNERABLE"
+    },
+    {
+      "id": 18883,
+      "label": "SAFE",
+      "pred": "SAFE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 1838,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 17654,
+      "label": "SAFE",
+      "pred": "SAFE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 1077,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 7791,
+      "label": "SAFE",
+      "pred": "SAFE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 417,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 17585,
+      "label": "SAFE",
+      "pred": "VULNERABLE",
+      "correct": false,
+      "truncated": false,
+      "code_chars": 442,
+      "raw": "VERDICT: VULNERABLE"
+    },
+    {
+      "id": 17386,
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 465,
+      "raw": "VERDICT: VULNERABLE"
+    },
+    {
+      "id": 19866,
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "truncated": true,
+      "code_chars": 4448,
+      "raw": "VERDICT: VULNERABLE"
+    },
+    {
+      "id": 26997,
+      "label": "VULNERABLE",
+      "pred": "SAFE",
+      "correct": false,
+      "truncated": false,
+      "code_chars": 451,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 25051,
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 2511,
+      "raw": "VERDICT: VULNERABLE"
+    },
+    {
+      "id": 346,
+      "label": "VULNERABLE",
+      "pred": "SAFE",
+      "correct": false,
+      "truncated": false,
+      "code_chars": 1230,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 12203,
+      "label": "VULNERABLE",
+      "pred": "SAFE",
+      "correct": false,
+      "truncated": false,
+      "code_chars": 488,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 9079,
+      "label": "VULNERABLE",
+      "pred": "SAFE",
+      "correct": false,
+      "truncated": false,
+      "code_chars": 470,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 23260,
+      "label": "SAFE",
+      "pred": "VULNERABLE",
+      "correct": false,
+      "truncated": true,
+      "code_chars": 30868,
+      "raw": "VERDICT: VULNERABLE"
+    },
+    {
+      "id": 11354,
+      "label": "SAFE",
+      "pred": "VULNERABLE",
+      "correct": false,
+      "truncated": true,
+      "code_chars": 12582,
+      "raw": "VERDICT: VULNERABLE"
+    },
+    {
+      "id": 21815,
+      "label": "VULNERABLE",
+      "pred": "SAFE",
+      "correct": false,
+      "truncated": false,
+      "code_chars": 917,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 22189,
+      "label": "SAFE",
+      "pred": "VULNERABLE",
+      "correct": false,
+      "truncated": false,
+      "code_chars": 1059,
+      "raw": "VERDICT: VULNERABLE"
+    },
+    {
+      "id": 21470,
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "truncated": true,
+      "code_chars": 4466,
+      "raw": "VERDICT: VULNERABLE"
+    },
+    {
+      "id": 2350,
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 581,
+      "raw": "VERDICT: VULNERABLE"
+    },
+    {
+      "id": 16511,
+      "label": "SAFE",
+      "pred": "SAFE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 180,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 11841,
+      "label": "SAFE",
+      "pred": "SAFE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 676,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 11863,
+      "label": "VULNERABLE",
+      "pred": "SAFE",
+      "correct": false,
+      "truncated": false,
+      "code_chars": 162,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 24651,
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 2307,
+      "raw": "VERDICT: VULNERABLE"
+    },
+    {
+      "id": 25724,
+      "label": "VULNERABLE",
+      "pred": "SAFE",
+      "correct": false,
+      "truncated": true,
+      "code_chars": 5705,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 6866,
+      "label": "SAFE",
+      "pred": "SAFE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 3093,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 8081,
+      "label": "SAFE",
+      "pred": "SAFE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 1089,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 23417,
+      "label": "SAFE",
+      "pred": "VULNERABLE",
+      "correct": false,
+      "truncated": false,
+      "code_chars": 2782,
+      "raw": "VERDICT: VULNERABLE"
+    },
+    {
+      "id": 17088,
+      "label": "SAFE",
+      "pred": "SAFE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 260,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 23112,
+      "label": "SAFE",
+      "pred": "VULNERABLE",
+      "correct": false,
+      "truncated": false,
+      "code_chars": 1579,
+      "raw": "VERDICT: VULNERABLE"
+    },
+    {
+      "id": 22724,
+      "label": "SAFE",
+      "pred": "SAFE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 169,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 6627,
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 530,
+      "raw": "VERDICT: VULNERABLE"
+    },
+    {
+      "id": 22097,
+      "label": "SAFE",
+      "pred": "SAFE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 986,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 14396,
+      "label": "SAFE",
+      "pred": "SAFE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 683,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 9227,
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 987,
+      "raw": "VERDICT: VULNERABLE"
+    },
+    {
+      "id": 14099,
+      "label": "VULNERABLE",
+      "pred": "SAFE",
+      "correct": false,
+      "truncated": false,
+      "code_chars": 448,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 9514,
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 227,
+      "raw": "VERDICT: VULNERABLE"
+    },
+    {
+      "id": 9229,
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "truncated": true,
+      "code_chars": 8321,
+      "raw": "VERDICT: VULNERABLE"
+    },
+    {
+      "id": 26754,
+      "label": "VULNERABLE",
+      "pred": "SAFE",
+      "correct": false,
+      "truncated": false,
+      "code_chars": 532,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 18528,
+      "label": "VULNERABLE",
+      "pred": "SAFE",
+      "correct": false,
+      "truncated": false,
+      "code_chars": 1263,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 9866,
+      "label": "SAFE",
+      "pred": "SAFE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 1850,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 4242,
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 537,
+      "raw": "VERDICT: VULNERABLE"
+    },
+    {
+      "id": 24160,
+      "label": "SAFE",
+      "pred": "SAFE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 711,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 9577,
+      "label": "SAFE",
+      "pred": "VULNERABLE",
+      "correct": false,
+      "truncated": true,
+      "code_chars": 4179,
+      "raw": "VERDICT: VULNERABLE"
+    },
+    {
+      "id": 17894,
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 1704,
+      "raw": "VERDICT: VULNERABLE"
+    },
+    {
+      "id": 26728,
+      "label": "VULNERABLE",
+      "pred": "SAFE",
+      "correct": false,
+      "truncated": false,
+      "code_chars": 2773,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 396,
+      "label": "VULNERABLE",
+      "pred": "SAFE",
+      "correct": false,
+      "truncated": false,
+      "code_chars": 1176,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 23509,
+      "label": "SAFE",
+      "pred": "VULNERABLE",
+      "correct": false,
+      "truncated": true,
+      "code_chars": 4595,
+      "raw": "VERDICT: VULNERABLE"
+    },
+    {
+      "id": 21124,
+      "label": "VULNERABLE",
+      "pred": "SAFE",
+      "correct": false,
+      "truncated": false,
+      "code_chars": 73,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 11469,
+      "label": "SAFE",
+      "pred": "VULNERABLE",
+      "correct": false,
+      "truncated": false,
+      "code_chars": 2511,
+      "raw": "VERDICT: VULNERABLE"
+    },
+    {
+      "id": 25011,
+      "label": "SAFE",
+      "pred": "VULNERABLE",
+      "correct": false,
+      "truncated": true,
+      "code_chars": 4925,
+      "raw": "VERDICT: VULNERABLE"
+    },
+    {
+      "id": 19435,
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 2197,
+      "raw": "VERDICT: VULNERABLE"
+    },
+    {
+      "id": 22313,
+      "label": "VULNERABLE",
+      "pred": "SAFE",
+      "correct": false,
+      "truncated": false,
+      "code_chars": 3820,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 11254,
+      "label": "VULNERABLE",
+      "pred": "SAFE",
+      "correct": false,
+      "truncated": false,
+      "code_chars": 433,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 7969,
+      "label": "SAFE",
+      "pred": "VULNERABLE",
+      "correct": false,
+      "truncated": false,
+      "code_chars": 413,
+      "raw": "VERDICT: VULNERABLE"
+    },
+    {
+      "id": 16408,
+      "label": "SAFE",
+      "pred": "SAFE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 364,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 8162,
+      "label": "SAFE",
+      "pred": "VULNERABLE",
+      "correct": false,
+      "truncated": false,
+      "code_chars": 379,
+      "raw": "VERDICT: VULNERABLE"
+    },
+    {
+      "id": 13605,
+      "label": "VULNERABLE",
+      "pred": "SAFE",
+      "correct": false,
+      "truncated": false,
+      "code_chars": 2420,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 19689,
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 731,
+      "raw": "VERDICT: VULNERABLE"
+    }
+  ]
+}

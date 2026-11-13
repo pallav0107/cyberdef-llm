@@ -1,0 +1,1831 @@
+{
+  "benchmark": "colin/PrimeVul",
+  "dataset": "primevul",
+  "split": "test",
+  "eval_split": "test",
+  "pool": {
+    "n_vuln": 549,
+    "n_safe": 24239
+  },
+  "note": "recognized benchmark; balanced sample; baseline-vs-tuned delta is the honest signal.",
+  "model": "Qwen/Qwen2.5-14B-Instruct",
+  "adapter": null,
+  "seed": 0,
+  "n_per_class": 100,
+  "max_chars": 4000,
+  "n": 200,
+  "score": 0.65,
+  "confusion": {
+    "tp": 91,
+    "tn": 39,
+    "fp": 61,
+    "fn": 9,
+    "unknown": 0
+  },
+  "precision_vuln": 0.5987,
+  "recall_vuln": 0.91,
+  "truncated_count": 40,
+  "timestamp": "2026-11-12T09:59:02Z",
+  "per_case": [
+    {
+      "id": "459525",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 118,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": "366328",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 416,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": "198117",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "truncated": true,
+      "code_chars": 6758,
+      "raw": "VERDICT: VULNERABLE\nCWE: Improper Neutralization of Special Elements used in an OS Command ('OS Command Injection')"
+    },
+    {
+      "id": "199836",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 308,
+      "raw": "VERDICT: VULNERABLE\nCWE: Improper Neutralization of Special Elements used in an SQL Command ('SQL Injection')"
+    },
+    {
+      "id": "195398",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 1512,
+      "raw": "VERDICT: VULNERABLE\nCWE: Improper Restriction of Size of sinks"
+    },
+    {
+      "id": "101701",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 100,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": "224863",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 544,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": "225850",
+      "label": "SAFE",
+      "pred": "VULNERABLE",
+      "correct": false,
+      "truncated": false,
+      "code_chars": 267,
+      "raw": "VERDICT: VULNERABLE\nCWE: Buffer Copy without Checking Size of Input ('Classic Buffer Overflow')"
+    },
+    {
+      "id": "202708",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 576,
+      "raw": "VERDICT: VULNERABLE\nCWE: Improper Neutralization of Special Elements used in an OS Command ('OS Command Injection')"
+    },
+    {
+      "id": "369231",
+      "label": "SAFE",
+      "pred": "VULNERABLE",
+      "correct": false,
+      "truncated": false,
+      "code_chars": 584,
+      "raw": "VERDICT: VULNERABLE\nCWE: Improper Check for Unusual or Exceptional Conditions"
+    },
+    {
+      "id": "207780",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "truncated": true,
+      "code_chars": 4121,
+      "raw": "VERDICT: VULNERABLE\nCWE: Improper Neutralization of Special Elements used in an OS Command ('OS Command Injection')"
+    },
+    {
+      "id": "309929",
+      "label": "SAFE",
+      "pred": "VULNERABLE",
+      "correct": false,
+      "truncated": false,
+      "code_chars": 2153,
+      "raw": "VERDICT: VULNERABLE\nCWE: Improper Neutralization of Special Elements used in an OS Command ('OS Command Injection')"
+    },
+    {
+      "id": "207150",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 600,
+      "raw": "VERDICT: VULNERABLE\nCWE: Improper Neutralization of Special Elements used in an OS Command ('OS Command Injection')"
+    },
+    {
+      "id": "210555",
+      "label": "VULNERABLE",
+      "pred": "SAFE",
+      "correct": false,
+      "truncated": false,
+      "code_chars": 501,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": "215262",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "truncated": true,
+      "code_chars": 6042,
+      "raw": "VERDICT: VULNERABLE\nCWE: Buffer Copy without Checking Size of Input ('Classic Buffer Overflow')"
+    },
+    {
+      "id": "263521",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 1424,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": "369221",
+      "label": "SAFE",
+      "pred": "VULNERABLE",
+      "correct": false,
+      "truncated": false,
+      "code_chars": 408,
+      "raw": "VERDICT: VULNERABLE\nCWE: Improper Restriction of Size Field ('length') in Memory Allocation"
+    },
+    {
+      "id": "195740",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "truncated": true,
+      "code_chars": 6317,
+      "raw": "VERDICT: VULNERABLE\nCWE: Improper Restriction of Excessive Entity Creation CWE-1300"
+    },
+    {
+      "id": "211181",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 2835,
+      "raw": "VERDICT: VULNERABLE\nCWE: Path Traversal"
+    },
+    {
+      "id": "225619",
+      "label": "SAFE",
+      "pred": "VULNERABLE",
+      "correct": false,
+      "truncated": false,
+      "code_chars": 231,
+      "raw": "VERDICT: VULNERABLE\nCWE: Improper Restriction of Size of sinks"
+    },
+    {
+      "id": "314776",
+      "label": "SAFE",
+      "pred": "VULNERABLE",
+      "correct": false,
+      "truncated": false,
+      "code_chars": 269,
+      "raw": "VERDICT: VULNERABLE\nCWE: Out-of-bounds Write"
+    },
+    {
+      "id": "279933",
+      "label": "SAFE",
+      "pred": "VULNERABLE",
+      "correct": false,
+      "truncated": false,
+      "code_chars": 310,
+      "raw": "VERDICT: VULNERABLE\nCWE: Improper Neutralization of Special Elements used in an OS Command ('OS Command Injection')"
+    },
+    {
+      "id": "206025",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 295,
+      "raw": "VERDICT: VULNERABLE\nCWE: Improper Neutralization of Special Elements used in an OS Command ('OS Command Injection')"
+    },
+    {
+      "id": "195289",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 3754,
+      "raw": "VERDICT: VULNERABLE\nCWE: Improper Neutralization of Special Elements used in an OS Command ('OS Command Injection')"
+    },
+    {
+      "id": "437383",
+      "label": "SAFE",
+      "pred": "VULNERABLE",
+      "correct": false,
+      "truncated": false,
+      "code_chars": 63,
+      "raw": "VERDICT: VULNERABLE\nCWE: Buffer Copy without Checking Size of Input ('Classic Buffer Overflow')"
+    },
+    {
+      "id": "328891",
+      "label": "SAFE",
+      "pred": "VULNERABLE",
+      "correct": false,
+      "truncated": false,
+      "code_chars": 804,
+      "raw": "VERDICT: VULNERABLE\nCWE: Improper Neutralization of Special Characters in Incoming Data ('Injection')"
+    },
+    {
+      "id": "198743",
+      "label": "VULNERABLE",
+      "pred": "SAFE",
+      "correct": false,
+      "truncated": false,
+      "code_chars": 1384,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": "231779",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 2469,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": "343226",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 259,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": "195908",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "truncated": true,
+      "code_chars": 4198,
+      "raw": "VERDICT: VULNERABLE\nCWE: Improper Cleanup on Resource Release"
+    },
+    {
+      "id": "195670",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 3296,
+      "raw": "VERDICT: VULNERABLE\nCWE: Improper Neutralization of Special Elements used in an XML Parser (CWE-705)"
+    },
+    {
+      "id": "386500",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 539,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": "200672",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "truncated": true,
+      "code_chars": 5415,
+      "raw": "VERDICT: VULNERABLE\nCWE: Improper Neutralization of Special Elements used in an OS Command ('OS Command Injection')"
+    },
+    {
+      "id": "204544",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "truncated": true,
+      "code_chars": 8029,
+      "raw": "VERDICT: VULNERABLE\nCWE: Improper Restriction of Excessive Entity Composition"
+    },
+    {
+      "id": "216938",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "truncated": true,
+      "code_chars": 15070,
+      "raw": "VERDICT: VULNERABLE\nCWE: Improper Restriction of Excessive Entity Creation Attempts"
+    },
+    {
+      "id": "329941",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 1903,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": "274650",
+      "label": "SAFE",
+      "pred": "VULNERABLE",
+      "correct": false,
+      "truncated": false,
+      "code_chars": 209,
+      "raw": "VERDICT: VULNERABLE\nCWE: Cross-Site Scripting (XSS)"
+    },
+    {
+      "id": "220845",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 384,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": "259085",
+      "label": "SAFE",
+      "pred": "VULNERABLE",
+      "correct": false,
+      "truncated": true,
+      "code_chars": 4321,
+      "raw": "VERDICT: VULNERABLE\nCWE: Improper Restriction of Excessive Entity Composition"
+    },
+    {
+      "id": "313565",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 308,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": "206736",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 2112,
+      "raw": "VERDICT: VULNERABLE\nCWE: Improper Neutralization of Special Elements used in a Command ('Command Injection')"
+    },
+    {
+      "id": "201451",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "truncated": true,
+      "code_chars": 15672,
+      "raw": "VERDICT: VULNERABLE\nCWE: Improper Neutralization of Special Elements used in a Command ('Command Injection')"
+    },
+    {
+      "id": "223384",
+      "label": "SAFE",
+      "pred": "VULNERABLE",
+      "correct": false,
+      "truncated": true,
+      "code_chars": 4646,
+      "raw": "VERDICT: VULNERABLE\nCWE: Improper Neutralization of Input During Web Page Generation ('Cross-site Scripting')"
+    },
+    {
+      "id": "195274",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "truncated": true,
+      "code_chars": 4637,
+      "raw": "VERDICT: VULNERABLE\nCWE: Improper Restriction of Excessive Authentication Attempts"
+    },
+    {
+      "id": "198662",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 1308,
+      "raw": "VERDICT: VULNERABLE\nCWE: Improper Neutralization of Special Elements used in an SQL Command ('SQL Injection')"
+    },
+    {
+      "id": "216861",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "truncated": true,
+      "code_chars": 10741,
+      "raw": "VERDICT: VULNERABLE\nCWE: Improper Neutralization of Special Elements used in an OS Command ('OS Command Injection')"
+    },
+    {
+      "id": "195056",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 2670,
+      "raw": "VERDICT: VULNERABLE\nCWE: Improper Neutralization of Special Elements used in an OS Command ('OS Command Injection')"
+    },
+    {
+      "id": "219016",
+      "label": "SAFE",
+      "pred": "VULNERABLE",
+      "correct": false,
+      "truncated": false,
+      "code_chars": 537,
+      "raw": "VERDICT: VULNERABLE\nCWE: Improper Neutralization of Special Elements used in an OS Command ('OS Command Injection')"
+    },
+    {
+      "id": "199778",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "truncated": true,
+      "code_chars": 19279,
+      "raw": "VERDICT: VULNERABLE\nCWE: Improper Neutralization of Special Elements used in an HTML Context (CWE-79)"
+    },
+    {
+      "id": "197621",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "truncated": true,
+      "code_chars": 6906,
+      "raw": "VERDICT: VULNERABLE\nCWE: Improper Restriction of Excessive Entity Creation Attempts"
+    },
+    {
+      "id": "348436",
+      "label": "SAFE",
+      "pred": "VULNERABLE",
+      "correct": false,
+      "truncated": false,
+      "code_chars": 195,
+      "raw": "VERDICT: VULNERABLE\nCWE: Buffer Copy without Checking Size of Input ('Classic Buffer Overflow')"
+    },
+    {
+      "id": "206555",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 400,
+      "raw": "VERDICT: VULNERABLE\nCWE: Buffer Copy without Checking Size of Input ('Classic Buffer Overflow')"
+    },
+    {
+      "id": "359401",
+      "label": "SAFE",
+      "pred": "VULNERABLE",
+      "correct": false,
+      "truncated": false,
+      "code_chars": 544,
+      "raw": "VERDICT: VULNERABLE\nCWE: Improper Neutralization of Special Elements used in an SQL Command ('SQL Injection')"
+    },
+    {
+      "id": "90801",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 368,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": "212433",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "truncated": true,
+      "code_chars": 16686,
+      "raw": "VERDICT: VULNERABLE\nCWE: Improper Neutralization of Special Elements used in an OS Command ('OS Command Injection')"
+    },
+    {
+      "id": "369148",
+      "label": "SAFE",
+      "pred": "VULNERABLE",
+      "correct": false,
+      "truncated": false,
+      "code_chars": 868,
+      "raw": "VERDICT: VULNERABLE\nCWE: Improper Neutralization of Special Elements used in an OS Command ('OS Command Injection')"
+    },
+    {
+      "id": "234741",
+      "label": "SAFE",
+      "pred": "VULNERABLE",
+      "correct": false,
+      "truncated": false,
+      "code_chars": 1035,
+      "raw": "VERDICT: VULNERABLE\nCWE: Improper Neutralization of Special Elements used in an OS Command ('OS Command Injection')"
+    },
+    {
+      "id": "281130",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 128,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": "196689",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 602,
+      "raw": "VERDICT: VULNERABLE\nCWE: Improper Restriction of Excessive Output Directive"
+    },
+    {
+      "id": "513287",
+      "label": "SAFE",
+      "pred": "VULNERABLE",
+      "correct": false,
+      "truncated": false,
+      "code_chars": 2042,
+      "raw": "VERDICT: VULNERABLE\nCWE: Uninitialized Memory Access"
+    },
+    {
+      "id": "199712",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 152,
+      "raw": "VERDICT: VULNERABLE\nCWE: Improper Release of Memory Resources"
+    },
+    {
+      "id": "329899",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 143,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": "197511",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 1103,
+      "raw": "VERDICT: VULNERABLE\nCWE: Improper Restriction of Size of sinks"
+    },
+    {
+      "id": "201925",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 1188,
+      "raw": "VERDICT: VULNERABLE\nCWE: Improper Neutralization of Special Elements used in an OS Command ('OS Command Injection')"
+    },
+    {
+      "id": "221470",
+      "label": "SAFE",
+      "pred": "VULNERABLE",
+      "correct": false,
+      "truncated": false,
+      "code_chars": 670,
+      "raw": "VERDICT: VULNERABLE\nCWE: Improper Neutralization of Special Elements used in an OS Command ('OS Command Injection')"
+    },
+    {
+      "id": "212339",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 1092,
+      "raw": "VERDICT: VULNERABLE\nCWE: Improper Neutralization of Special Elements used in an OS Command ('OS Command Injection')"
+    },
+    {
+      "id": "196860",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 1878,
+      "raw": "VERDICT: VULNERABLE\nCWE: Buffer Underwrite"
+    },
+    {
+      "id": "366171",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 73,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": "210453",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "truncated": true,
+      "code_chars": 4521,
+      "raw": "VERDICT: VULNERABLE\nCWE: Improper Restriction of Size of sinks"
+    },
+    {
+      "id": "229253",
+      "label": "SAFE",
+      "pred": "VULNERABLE",
+      "correct": false,
+      "truncated": false,
+      "code_chars": 1820,
+      "raw": "VERDICT: VULNERABLE\nCWE: Improper Neutralization of Special Elements used in an SQL Command ('SQL Injection')"
+    },
+    {
+      "id": "434102",
+      "label": "SAFE",
+      "pred": "VULNERABLE",
+      "correct": false,
+      "truncated": false,
+      "code_chars": 457,
+      "raw": "VERDICT: VULNERABLE\nCWE: Improper Neutralization of Special Elements used in an OS Command ('OS Command Injection')"
+    },
+    {
+      "id": "226423",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 115,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": "427172",
+      "label": "SAFE",
+      "pred": "VULNERABLE",
+      "correct": false,
+      "truncated": false,
+      "code_chars": 944,
+      "raw": "VERDICT: VULNERABLE\nCWE: Improper Restriction of Excessive Output Directive"
+    },
+    {
+      "id": "244295",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 848,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": "197135",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "truncated": true,
+      "code_chars": 6867,
+      "raw": "VERDICT: VULNERABLE\nCWE: Improper Neutralization of Special Elements used in a Command ('Command Injection')"
+    },
+    {
+      "id": "276956",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 2192,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": "272349",
+      "label": "SAFE",
+      "pred": "VULNERABLE",
+      "correct": false,
+      "truncated": false,
+      "code_chars": 162,
+      "raw": "VERDICT: VULNERABLE\nCWE: Improper Neutralization of Special Elements used in a Command ('Command Injection')"
+    },
+    {
+      "id": "196841",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "truncated": true,
+      "code_chars": 12844,
+      "raw": "VERDICT: VULNERABLE\nCWE: Improper Neutralization of Special Elements used in an OS Command ('OS Command Injection')"
+    },
+    {
+      "id": "400764",
+      "label": "SAFE",
+      "pred": "VULNERABLE",
+      "correct": false,
+      "truncated": false,
+      "code_chars": 305,
+      "raw": "VERDICT: VULNERABLE\nCWE: Improper Restriction of Excessive Entity Composition"
+    },
+    {
+      "id": "216949",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 1193,
+      "raw": "VERDICT: VULNERABLE\nCWE: Improper Neutralization of Special Elements used in an SQL Command ('SQL Injection')"
+    },
+    {
+      "id": "364240",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 594,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": "195341",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 899,
+      "raw": "VERDICT: VULNERABLE\nCWE: CWE-129 Buffer Overflow"
+    },
+    {
+      "id": "201006",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 1213,
+      "raw": "VERDICT: VULNERABLE\nCWE: Improper Restriction of Excessive Resource Consumption ('Resource Exhaustion')"
+    },
+    {
+      "id": "405374",
+      "label": "SAFE",
+      "pred": "VULNERABLE",
+      "correct": false,
+      "truncated": false,
+      "code_chars": 248,
+      "raw": "VERDICT: VULNERABLE\nCWE: Use of Potentially Dangerous Function"
+    },
+    {
+      "id": "359520",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 381,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": "211473",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 2983,
+      "raw": "VERDICT: VULNERABLE\nCWE: Improper Neutralization of Special Elements used in an OS Command ('OS Command Injection')"
+    },
+    {
+      "id": "427218",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 215,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": "210278",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 402,
+      "raw": "VERDICT: VULNERABLE\nCWE: Improper Neutralization of Special Elements used in an OS Command ('OS Command Injection')"
+    },
+    {
+      "id": "231655",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 415,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": "512494",
+      "label": "SAFE",
+      "pred": "VULNERABLE",
+      "correct": false,
+      "truncated": false,
+      "code_chars": 241,
+      "raw": "VERDICT: VULNERABLE\nCWE: Improper Restriction of Excessive Entity Creation Attempts"
+    },
+    {
+      "id": "458916",
+      "label": "SAFE",
+      "pred": "VULNERABLE",
+      "correct": false,
+      "truncated": false,
+      "code_chars": 862,
+      "raw": "VERDICT: VULNERABLE\nCWE: Buffer Overflow Vulnerability"
+    },
+    {
+      "id": "512798",
+      "label": "SAFE",
+      "pred": "VULNERABLE",
+      "correct": false,
+      "truncated": false,
+      "code_chars": 263,
+      "raw": "VERDICT: VULNERABLE\nCWE: Improper Neutralization of Special Elements used in an SQL Command ('SQL Injection')"
+    },
+    {
+      "id": "204017",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 3363,
+      "raw": "VERDICT: VULNERABLE\nCWE: Improper Neutralization of Special Elements used in a Path Traversal"
+    },
+    {
+      "id": "90767",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 143,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": "316941",
+      "label": "SAFE",
+      "pred": "VULNERABLE",
+      "correct": false,
+      "truncated": false,
+      "code_chars": 1283,
+      "raw": "VERDICT: VULNERABLE\nCWE: Improper Neutralization of Special Elements used in an OS Command ('OS Command Injection')"
+    },
+    {
+      "id": "512650",
+      "label": "SAFE",
+      "pred": "VULNERABLE",
+      "correct": false,
+      "truncated": false,
+      "code_chars": 339,
+      "raw": "VERDICT: VULNERABLE\nCWE: Improper Restriction of Size of sinks"
+    },
+    {
+      "id": "314472",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 208,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": "273063",
+      "label": "SAFE",
+      "pred": "VULNERABLE",
+      "correct": false,
+      "truncated": false,
+      "code_chars": 663,
+      "raw": "VERDICT: VULNERABLE\nCWE: Improper Constrain Enforcement"
+    },
+    {
+      "id": "448561",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 242,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": "195085",
+      "label": "VULNERABLE",
+      "pred": "SAFE",
+      "correct": false,
+      "truncated": true,
+      "code_chars": 9340,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": "261383",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 303,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": "216965",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "truncated": true,
+      "code_chars": 5013,
+      "raw": "VERDICT: VULNERABLE\nCWE: Improper Restriction of Excessive Entity Creation Attempts"
+    },
+    {
+      "id": "204101",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 495,
+      "raw": "VERDICT: VULNERABLE\nCWE: Out-of-bounds Read"
+    },
+    {
+      "id": "204073",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 737,
+      "raw": "VERDICT: VULNERABLE\nCWE: Buffer Copy without Checking Size of Input ('Classic Buffer Overflow')"
+    },
+    {
+      "id": "329933",
+      "label": "SAFE",
+      "pred": "VULNERABLE",
+      "correct": false,
+      "truncated": false,
+      "code_chars": 322,
+      "raw": "VERDICT: VULNERABLE\nCWE: Improper Restriction of Excessive Resource Consumption"
+    },
+    {
+      "id": "356709",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 146,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": "312433",
+      "label": "SAFE",
+      "pred": "VULNERABLE",
+      "correct": false,
+      "truncated": false,
+      "code_chars": 1204,
+      "raw": "VERDICT: VULNERABLE\nCWE: Improper Neutralization of Special Elements used in an OS Command ('OS Command Injection')"
+    },
+    {
+      "id": "247536",
+      "label": "SAFE",
+      "pred": "VULNERABLE",
+      "correct": false,
+      "truncated": false,
+      "code_chars": 1154,
+      "raw": "VERDICT: VULNERABLE\nCWE: Improper Verification of Certificate Validity for Client Authentication"
+    },
+    {
+      "id": "436161",
+      "label": "SAFE",
+      "pred": "VULNERABLE",
+      "correct": false,
+      "truncated": false,
+      "code_chars": 2042,
+      "raw": "VERDICT: VULNERABLE\nCWE: Improper Neutralization of Special Elements used in an OS Command ('OS Command Injection')"
+    },
+    {
+      "id": "294386",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 80,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": "208430",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 1613,
+      "raw": "VERDICT: VULNERABLE\nCWE: Buffer Copy without Checking Size of Input ('Classic Buffer Overflow')"
+    },
+    {
+      "id": "196705",
+      "label": "VULNERABLE",
+      "pred": "SAFE",
+      "correct": false,
+      "truncated": false,
+      "code_chars": 1242,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": "488335",
+      "label": "SAFE",
+      "pred": "VULNERABLE",
+      "correct": false,
+      "truncated": false,
+      "code_chars": 448,
+      "raw": "VERDICT: VULNERABLE\nCWE: Improper Restriction of Excessive Output Directive"
+    },
+    {
+      "id": "208680",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "truncated": true,
+      "code_chars": 13139,
+      "raw": "VERDICT: VULNERABLE\nCWE: Improper Neutralization of Special Elements used in an OS Command ('OSCMD')"
+    },
+    {
+      "id": "210204",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 1036,
+      "raw": "VERDICT: VULNERABLE\nCWE: Out-of-bounds Write"
+    },
+    {
+      "id": "210271",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 2143,
+      "raw": "VERDICT: VULNERABLE\nCWE: Buffer Copy without Checking Size of Input ('Classic Buffer Overflow')"
+    },
+    {
+      "id": "208421",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "truncated": true,
+      "code_chars": 8259,
+      "raw": "VERDICT: VULNERABLE\nCWE: Improper Neutralization of Special Elements used in an OS Command ('OS Command Injection')"
+    },
+    {
+      "id": "204425",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 2808,
+      "raw": "VERDICT: VULNERABLE\nCWE: Improper Neutralization of Special Elements used in an SQL Command ('SQL Injection')"
+    },
+    {
+      "id": "198004",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 3119,
+      "raw": "VERDICT: VULNERABLE\nCWE: Improper Restriction of Size / Length"
+    },
+    {
+      "id": "210570",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 2594,
+      "raw": "VERDICT: VULNERABLE\nCWE: Buffer Copy without Checking Size of Input ('Classic Buffer Overflow')"
+    },
+    {
+      "id": "314523",
+      "label": "SAFE",
+      "pred": "VULNERABLE",
+      "correct": false,
+      "truncated": false,
+      "code_chars": 922,
+      "raw": "VERDICT: VULNERABLE\nCWE: Improper Neutralization of Special Elements used in a Command ('Command Injection')"
+    },
+    {
+      "id": "200320",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "truncated": true,
+      "code_chars": 8888,
+      "raw": "VERDICT: VULNERABLE\nCWE: Improper Neutralization of Special Elements used in an OS Command ('OS Command Injection')"
+    },
+    {
+      "id": "421382",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 57,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": "207520",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 1456,
+      "raw": "VERDICT: VULNERABLE\nCWE: Out-of-bounds Write"
+    },
+    {
+      "id": "212414",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "truncated": true,
+      "code_chars": 5619,
+      "raw": "VERDICT: VULNERABLE\nCWE: Improper Restriction of Excessive Entity Creation Attempts"
+    },
+    {
+      "id": "208654",
+      "label": "VULNERABLE",
+      "pred": "SAFE",
+      "correct": false,
+      "truncated": true,
+      "code_chars": 4635,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": "201384",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 762,
+      "raw": "VERDICT: VULNERABLE\nCWE: Improper Neutralization of Special Elements used in an OS Command ('OS Command Injection')"
+    },
+    {
+      "id": "197615",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 1549,
+      "raw": "VERDICT: VULNERABLE\nCWE: Improper Restriction of Excessive Authentication Attempts"
+    },
+    {
+      "id": "216973",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 1309,
+      "raw": "VERDICT: VULNERABLE\nCWE: Improper Cleanup on Threading Error (CWE-778)"
+    },
+    {
+      "id": "197239",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "truncated": true,
+      "code_chars": 5096,
+      "raw": "VERDICT: VULNERABLE\nCWE: Improper Restriction of Excessive Output Range"
+    },
+    {
+      "id": "261940",
+      "label": "SAFE",
+      "pred": "VULNERABLE",
+      "correct": false,
+      "truncated": false,
+      "code_chars": 1880,
+      "raw": "VERDICT: VULNERABLE\nCWE: Improper Neutralization of Special Elements used in an HTML Context ('Cross-site Scripting')"
+    },
+    {
+      "id": "401532",
+      "label": "SAFE",
+      "pred": "VULNERABLE",
+      "correct": false,
+      "truncated": false,
+      "code_chars": 372,
+      "raw": "VERDICT: VULNERABLE\nCWE: Insecure Randomness Generation"
+    },
+    {
+      "id": "462247",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 349,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": "446063",
+      "label": "SAFE",
+      "pred": "VULNERABLE",
+      "correct": false,
+      "truncated": false,
+      "code_chars": 1327,
+      "raw": "VERDICT: VULNERABLE\nCWE: Improper Neutralization of Special Elements used in a Command ('Command Injection')"
+    },
+    {
+      "id": "206043",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "truncated": true,
+      "code_chars": 7841,
+      "raw": "VERDICT: VULNERABLE\nCWE: Improper Restriction of Size of sinks"
+    },
+    {
+      "id": "197024",
+      "label": "VULNERABLE",
+      "pred": "SAFE",
+      "correct": false,
+      "truncated": false,
+      "code_chars": 740,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": "453042",
+      "label": "SAFE",
+      "pred": "VULNERABLE",
+      "correct": false,
+      "truncated": false,
+      "code_chars": 1270,
+      "raw": "VERDICT: VULNERABLE\nCWE: Improper Neutralization of Special Elements used in an OS Command ('OSCMDI')"
+    },
+    {
+      "id": "197748",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 2247,
+      "raw": "VERDICT: VULNERABLE\nCWE: Improper Neutralization of Special Elements used in an OS Command ('OS Command Injection')"
+    },
+    {
+      "id": "208987",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 240,
+      "raw": "VERDICT: VULNERABLE\nCWE: Uninitialized Memory Access"
+    },
+    {
+      "id": "247084",
+      "label": "SAFE",
+      "pred": "VULNERABLE",
+      "correct": false,
+      "truncated": true,
+      "code_chars": 6142,
+      "raw": "VERDICT: VULNERABLE\nCWE: Improper Restriction of Excessive Authentication Attempts"
+    },
+    {
+      "id": "206510",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 2102,
+      "raw": "VERDICT: VULNERABLE\nCWE: Improper Restriction of Excessive Entity Composition"
+    },
+    {
+      "id": "216767",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 1865,
+      "raw": "VERDICT: VULNERABLE\nCWE: Improper Restriction of Excessive Entity Length"
+    },
+    {
+      "id": "198198",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 3396,
+      "raw": "VERDICT: VULNERABLE\nCWE: Improper Restriction of Excessive Entity Creation CWE-1300"
+    },
+    {
+      "id": "199834",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 3380,
+      "raw": "VERDICT: VULNERABLE\nCWE: Buffer Copy without Checking Size of Input ('Classic Buffer Overflow')"
+    },
+    {
+      "id": "427788",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 331,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": "336623",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 151,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": "214997",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "truncated": true,
+      "code_chars": 49196,
+      "raw": "VERDICT: VULNERABLE\nCWE: Improper Restriction of Excessive Authentication Attempts"
+    },
+    {
+      "id": "195296",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 2354,
+      "raw": "VERDICT: VULNERABLE\nCWE: Improper Restriction of Excessive Recursive Execution Depth"
+    },
+    {
+      "id": "197760",
+      "label": "VULNERABLE",
+      "pred": "SAFE",
+      "correct": false,
+      "truncated": false,
+      "code_chars": 1030,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": "359341",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 904,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": "508326",
+      "label": "SAFE",
+      "pred": "VULNERABLE",
+      "correct": false,
+      "truncated": false,
+      "code_chars": 555,
+      "raw": "VERDICT: VULNERABLE\nCWE: Improper Restriction of Excessive Entity Creation Attempts"
+    },
+    {
+      "id": "281069",
+      "label": "SAFE",
+      "pred": "VULNERABLE",
+      "correct": false,
+      "truncated": false,
+      "code_chars": 1321,
+      "raw": "VERDICT: VULNERABLE\nCWE: Use of Potentially Dangerous Function"
+    },
+    {
+      "id": "210283",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 3022,
+      "raw": "VERDICT: VULNERABLE\nCWE: Improper Neutralization of Special Elements used in an OS Command ('OS Command Injection')"
+    },
+    {
+      "id": "198588",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 3800,
+      "raw": "VERDICT: VULNERABLE\nCWE: Improper Neutralization of Special Elements used in a Command ('Command Injection')"
+    },
+    {
+      "id": "432196",
+      "label": "SAFE",
+      "pred": "VULNERABLE",
+      "correct": false,
+      "truncated": false,
+      "code_chars": 615,
+      "raw": "VERDICT: VULNERABLE\nCWE: Improper Restriction of Excessive Resource Consumption ('Resource Exhaustion')"
+    },
+    {
+      "id": "336605",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 151,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": "204137",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "truncated": true,
+      "code_chars": 6800,
+      "raw": "VERDICT: VULNERABLE\nCWE: Improper Neutralization of Special Elements used in an OS Command ('OS Command Injection')"
+    },
+    {
+      "id": "205747",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 791,
+      "raw": "VERDICT: VULNERABLE\nCWE: Improper Access Control (CWE-285)"
+    },
+    {
+      "id": "204814",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 827,
+      "raw": "VERDICT: VULNERABLE\nCWE: Improper Access Control (CWE-285)"
+    },
+    {
+      "id": "198499",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 2725,
+      "raw": "VERDICT: VULNERABLE\nCWE: CWE-327"
+    },
+    {
+      "id": "387723",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 453,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": "197242",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "truncated": true,
+      "code_chars": 9667,
+      "raw": "VERDICT: VULNERABLE\nCWE: Improper Restriction of Excessive Resource Consumption['s'](CWE-400)"
+    },
+    {
+      "id": "333058",
+      "label": "SAFE",
+      "pred": "VULNERABLE",
+      "correct": false,
+      "truncated": false,
+      "code_chars": 288,
+      "raw": "VERDICT: VULNERABLE\nCWE: Out-of-bounds Write"
+    },
+    {
+      "id": "231627",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 313,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": "216027",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 3123,
+      "raw": "VERDICT: VULNERABLE\nCWE: Buffer Copy without Checking Size of Input ('Classic Buffer Overflow')"
+    },
+    {
+      "id": "195404",
+      "label": "VULNERABLE",
+      "pred": "SAFE",
+      "correct": false,
+      "truncated": true,
+      "code_chars": 4646,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": "204036",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 1016,
+      "raw": "VERDICT: VULNERABLE\nCWE: Buffer Copy without Checking Size of Input ('Classic Buffer Overflow')"
+    },
+    {
+      "id": "283749",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 198,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": "206665",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 1439,
+      "raw": "VERDICT: VULNERABLE\nCWE: Improper Restriction of Size Field ('Array Index')"
+    },
+    {
+      "id": "513279",
+      "label": "SAFE",
+      "pred": "VULNERABLE",
+      "correct": false,
+      "truncated": false,
+      "code_chars": 754,
+      "raw": "VERDICT: VULNERABLE\nCWE: Improper Neutralization of Special Elements used in an SQL Command ('SQL Injection')"
+    },
+    {
+      "id": "217547",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "truncated": true,
+      "code_chars": 6479,
+      "raw": "VERDICT: VULNERABLE\nCWE: Improper Neutralization of Input During Web Page Generation ('Cross-site Scripting')"
+    },
+    {
+      "id": "445992",
+      "label": "SAFE",
+      "pred": "VULNERABLE",
+      "correct": false,
+      "truncated": false,
+      "code_chars": 2525,
+      "raw": "VERDICT: VULNERABLE\nCWE: Improper Neutralization of Special Elements used in an OS Command ('OS Command Injection')"
+    },
+    {
+      "id": "255784",
+      "label": "SAFE",
+      "pred": "VULNERABLE",
+      "correct": false,
+      "truncated": true,
+      "code_chars": 4314,
+      "raw": "VERDICT: VULNERABLE\nCWE: Improper Neutralization of Special Elements used in an OS Command ('OS Command Injection')"
+    },
+    {
+      "id": "512805",
+      "label": "SAFE",
+      "pred": "VULNERABLE",
+      "correct": false,
+      "truncated": false,
+      "code_chars": 244,
+      "raw": "VERDICT: VULNERABLE\nCWE: Improper Neutralization of Special Elements used in an OS Command ('OS Command Injection')"
+    },
+    {
+      "id": "390601",
+      "label": "SAFE",
+      "pred": "VULNERABLE",
+      "correct": false,
+      "truncated": false,
+      "code_chars": 930,
+      "raw": "VERDICT: VULNERABLE\nCWE: Improper Restriction of Excessive Authentication Attempts"
+    },
+    {
+      "id": "208411",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "truncated": true,
+      "code_chars": 16023,
+      "raw": "VERDICT: VULNERABLE\nCWE: Improper Neutralization of Special Elements used in a Command ('Command Injection')"
+    },
+    {
+      "id": "236198",
+      "label": "SAFE",
+      "pred": "VULNERABLE",
+      "correct": false,
+      "truncated": false,
+      "code_chars": 45,
+      "raw": "VERDICT: VULNERABLE\nCWE: Buffer Copy without Checking Size of Input ('Classic Buffer Overflow')"
+    },
+    {
+      "id": "317230",
+      "label": "SAFE",
+      "pred": "VULNERABLE",
+      "correct": false,
+      "truncated": false,
+      "code_chars": 335,
+      "raw": "VERDICT: VULNERABLE\nCWE: Improper Restriction of Excessive Output Directive"
+    },
+    {
+      "id": "227022",
+      "label": "SAFE",
+      "pred": "VULNERABLE",
+      "correct": false,
+      "truncated": false,
+      "code_chars": 3216,
+      "raw": "VERDICT: VULNERABLE\nCWE: Improper Neutralization of Special Elements used in an OS Command ('OS Command Injection')"
+    },
+    {
+      "id": "207762",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "truncated": true,
+      "code_chars": 18815,
+      "raw": "VERDICT: VULNERABLE\nCWE: Improper Restriction of Size of sinks"
+    },
+    {
+      "id": "215921",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 2320,
+      "raw": "VERDICT: VULNERABLE\nCWE: Improper Neutralization of Special Elements used in an OS Command ('OS Command Injection')"
+    },
+    {
+      "id": "212144",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 1932,
+      "raw": "VERDICT: VULNERABLE\nCWE: Out-of-bounds Write"
+    },
+    {
+      "id": "247589",
+      "label": "SAFE",
+      "pred": "VULNERABLE",
+      "correct": false,
+      "truncated": false,
+      "code_chars": 2883,
+      "raw": "VERDICT: VULNERABLE\nCWE: Improper Restriction of Excessive Authentication Attempts"
+    },
+    {
+      "id": "205870",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 1016,
+      "raw": "VERDICT: VULNERABLE\nCWE: Buffer Copy without Checking Size of Input ('Classic Buffer Overflow')"
+    },
+    {
+      "id": "204195",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 558,
+      "raw": "VERDICT: VULNERABLE\nCWE: Improper Neutralization of Special Characters in String-Based Filename"
+    },
+    {
+      "id": "197305",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 839,
+      "raw": "VERDICT: VULNERABLE\nCWE: Improper Neutralization of Special Elements used in an OS Command ('OS Command Injection')"
+    },
+    {
+      "id": "390575",
+      "label": "SAFE",
+      "pred": "VULNERABLE",
+      "correct": false,
+      "truncated": false,
+      "code_chars": 1870,
+      "raw": "VERDICT: VULNERABLE\nCWE: Improper Neutralization of Special Elements used in an OS Command ('OS Command Injection')"
+    },
+    {
+      "id": "210619",
+      "label": "VULNERABLE",
+      "pred": "SAFE",
+      "correct": false,
+      "truncated": false,
+      "code_chars": 1683,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": "195549",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "truncated": true,
+      "code_chars": 15174,
+      "raw": "VERDICT: VULNERABLE\nCWE: Improper Neutralization of Control Characters"
+    },
+    {
+      "id": "312491",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 501,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": "328812",
+      "label": "SAFE",
+      "pred": "VULNERABLE",
+      "correct": false,
+      "truncated": false,
+      "code_chars": 527,
+      "raw": "VERDICT: VULNERABLE\nCWE: Improper Neutralization of Special Elements used in an OS Command ('OS Command Injection')"
+    },
+    {
+      "id": "359343",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 306,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": "197128",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 3787,
+      "raw": "VERDICT: VULNERABLE\nCWE: Improper Restriction of Excessive Authentication Attempts"
+    },
+    {
+      "id": "383950",
+      "label": "SAFE",
+      "pred": "VULNERABLE",
+      "correct": false,
+      "truncated": false,
+      "code_chars": 1363,
+      "raw": "VERDICT: VULNERABLE\nCWE: Cross-Site Scripting (XSS)"
+    },
+    {
+      "id": "197111",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "truncated": true,
+      "code_chars": 10037,
+      "raw": "VERDICT: VULNERABLE\nCWE: Improper Restriction of Size of sinks"
+    },
+    {
+      "id": "201353",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "truncated": false,
+      "code_chars": 1417,
+      "raw": "VERDICT: VULNERABLE\nCWE: Improper Cleanup on Resource Release"
+    },
+    {
+      "id": "332384",
+      "label": "SAFE",
+      "pred": "VULNERABLE",
+      "correct": false,
+      "truncated": false,
+      "code_chars": 1312,
+      "raw": "VERDICT: VULNERABLE\nCWE: Improper Neutralization of Special Elements used in an OS Command ('OS Command Injection')"
+    },
+    {
+      "id": "215976",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "truncated": true,
+      "code_chars": 4520,
+      "raw": "VERDICT: VULNERABLE\nCWE: Improper Neutralization of Special Elements used in an OS Command ('OS Command Injection')"
+    },
+    {
+      "id": "386564",
+      "label": "SAFE",
+      "pred": "VULNERABLE",
+      "correct": false,
+      "truncated": false,
+      "code_chars": 1590,
+      "raw": "VERDICT: VULNERABLE\nCWE: Improper Neutralization of Special Elements used in an SQL Command ('SQL Injection')"
+    },
+    {
+      "id": "459173",
+      "label": "SAFE",
+      "pred": "VULNERABLE",
+      "correct": false,
+      "truncated": false,
+      "code_chars": 360,
+      "raw": "VERDICT: VULNERABLE\nCWE: Improper Restriction of Excessive Entity Composition"
+    }
+  ]
+}

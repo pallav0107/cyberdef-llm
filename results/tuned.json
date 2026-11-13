@@ -1,0 +1,1465 @@
+{
+  "model": "Qwen/Qwen2.5-7B-Instruct",
+  "adapter": "out/qlora-vuln",
+  "suite": "vuln_detect",
+  "backend": "hf",
+  "n": 160,
+  "score": 0.875,
+  "heldout_n": 48,
+  "heldout_score": 0.5833,
+  "by_family": {
+    "token": 0.5,
+    "cmd": 1.0,
+    "ssrf": 0.6667,
+    "deser": 1.0,
+    "xss": 1.0,
+    "secret": 1.0,
+    "sql": 1.0,
+    "hash": 1.0,
+    "path": 1.0,
+    "eval": 1.0
+  },
+  "timestamp": "2026-11-11T17:34:21Z",
+  "per_case": [
+    {
+      "id": 408,
+      "family": "token",
+      "label": "VULNERABLE",
+      "pred": "SAFE",
+      "correct": false,
+      "heldout": true,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 92,
+      "family": "cmd",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "heldout": false,
+      "raw": "VERDICT: VULNERABLE\nCWE: CWE-78 OS Command Injection"
+    },
+    {
+      "id": 407,
+      "family": "ssrf",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "correct": true,
+      "heldout": true,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 279,
+      "family": "deser",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "correct": true,
+      "heldout": false,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 371,
+      "family": "xss",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "correct": true,
+      "heldout": false,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 401,
+      "family": "ssrf",
+      "label": "SAFE",
+      "pred": "VULNERABLE",
+      "correct": false,
+      "heldout": true,
+      "raw": "VERDICT: VULNERABLE\nCWE: CWE-79 Cross-Site Scripting"
+    },
+    {
+      "id": 415,
+      "family": "token",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "correct": true,
+      "heldout": true,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 397,
+      "family": "ssrf",
+      "label": "SAFE",
+      "pred": "VULNERABLE",
+      "correct": false,
+      "heldout": true,
+      "raw": "VERDICT: VULNERABLE\nCWE: CWE-79 Cross-Site Scripting"
+    },
+    {
+      "id": 277,
+      "family": "deser",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "correct": true,
+      "heldout": false,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 392,
+      "family": "ssrf",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "heldout": true,
+      "raw": "VERDICT: VULNERABLE\nCWE: CWE-79 Cross-Site Scripting"
+    },
+    {
+      "id": 428,
+      "family": "token",
+      "label": "VULNERABLE",
+      "pred": "SAFE",
+      "correct": false,
+      "heldout": true,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 237,
+      "family": "secret",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "correct": true,
+      "heldout": false,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 274,
+      "family": "deser",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "heldout": false,
+      "raw": "VERDICT: VULNERABLE\nCWE: CWE-502 Insecure Deserialization"
+    },
+    {
+      "id": 235,
+      "family": "secret",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "correct": true,
+      "heldout": false,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 398,
+      "family": "ssrf",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "heldout": true,
+      "raw": "VERDICT: VULNERABLE\nCWE: CWE-79 Cross-Site Scripting"
+    },
+    {
+      "id": 42,
+      "family": "sql",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "heldout": false,
+      "raw": "VERDICT: VULNERABLE\nCWE: CWE-89 SQL Injection"
+    },
+    {
+      "id": 180,
+      "family": "hash",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "heldout": false,
+      "raw": "VERDICT: VULNERABLE\nCWE: CWE-327 Weak Hash"
+    },
+    {
+      "id": 185,
+      "family": "hash",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "correct": true,
+      "heldout": false,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 132,
+      "family": "path",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "heldout": false,
+      "raw": "VERDICT: VULNERABLE\nCWE: CWE-22 Path Traversal"
+    },
+    {
+      "id": 37,
+      "family": "sql",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "correct": true,
+      "heldout": false,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 424,
+      "family": "token",
+      "label": "VULNERABLE",
+      "pred": "SAFE",
+      "correct": false,
+      "heldout": true,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 186,
+      "family": "hash",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "heldout": false,
+      "raw": "VERDICT: VULNERABLE\nCWE: CWE-327 Weak Hash"
+    },
+    {
+      "id": 88,
+      "family": "cmd",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "heldout": false,
+      "raw": "VERDICT: VULNERABLE\nCWE: CWE-78 OS Command Injection"
+    },
+    {
+      "id": 322,
+      "family": "eval",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "heldout": false,
+      "raw": "VERDICT: VULNERABLE\nCWE: CWE-95 Code Injection via eval"
+    },
+    {
+      "id": 182,
+      "family": "hash",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "heldout": false,
+      "raw": "VERDICT: VULNERABLE\nCWE: CWE-327 Weak Hash"
+    },
+    {
+      "id": 420,
+      "family": "token",
+      "label": "VULNERABLE",
+      "pred": "SAFE",
+      "correct": false,
+      "heldout": true,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 141,
+      "family": "path",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "correct": true,
+      "heldout": false,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 330,
+      "family": "eval",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "heldout": false,
+      "raw": "VERDICT: VULNERABLE\nCWE: CWE-95 Code Injection via eval"
+    },
+    {
+      "id": 43,
+      "family": "sql",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "correct": true,
+      "heldout": false,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 411,
+      "family": "token",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "correct": true,
+      "heldout": true,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 383,
+      "family": "xss",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "correct": true,
+      "heldout": false,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 431,
+      "family": "token",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "correct": true,
+      "heldout": true,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 44,
+      "family": "sql",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "heldout": false,
+      "raw": "VERDICT: VULNERABLE\nCWE: CWE-89 SQL Injection"
+    },
+    {
+      "id": 238,
+      "family": "secret",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "heldout": false,
+      "raw": "VERDICT: VULNERABLE\nCWE: CWE-798 Hardcoded Credentials"
+    },
+    {
+      "id": 335,
+      "family": "eval",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "correct": true,
+      "heldout": false,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 41,
+      "family": "sql",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "correct": true,
+      "heldout": false,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 404,
+      "family": "ssrf",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "heldout": true,
+      "raw": "VERDICT: VULNERABLE\nCWE: CWE-79 Cross-Site Scripting"
+    },
+    {
+      "id": 136,
+      "family": "path",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "heldout": false,
+      "raw": "VERDICT: VULNERABLE\nCWE: CWE-22 Path Traversal"
+    },
+    {
+      "id": 276,
+      "family": "deser",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "heldout": false,
+      "raw": "VERDICT: VULNERABLE\nCWE: CWE-502 Insecure Deserialization"
+    },
+    {
+      "id": 184,
+      "family": "hash",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "heldout": false,
+      "raw": "VERDICT: VULNERABLE\nCWE: CWE-327 Weak Hash"
+    },
+    {
+      "id": 38,
+      "family": "sql",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "heldout": false,
+      "raw": "VERDICT: VULNERABLE\nCWE: CWE-89 SQL Injection"
+    },
+    {
+      "id": 409,
+      "family": "token",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "correct": true,
+      "heldout": true,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 416,
+      "family": "token",
+      "label": "VULNERABLE",
+      "pred": "SAFE",
+      "correct": false,
+      "heldout": true,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 421,
+      "family": "token",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "correct": true,
+      "heldout": true,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 46,
+      "family": "sql",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "heldout": false,
+      "raw": "VERDICT: VULNERABLE\nCWE: CWE-89 SQL Injection"
+    },
+    {
+      "id": 394,
+      "family": "ssrf",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "heldout": true,
+      "raw": "VERDICT: VULNERABLE\nCWE: CWE-79 Cross-Site Scripting"
+    },
+    {
+      "id": 329,
+      "family": "eval",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "correct": true,
+      "heldout": false,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 399,
+      "family": "ssrf",
+      "label": "SAFE",
+      "pred": "VULNERABLE",
+      "correct": false,
+      "heldout": true,
+      "raw": "VERDICT: VULNERABLE\nCWE: CWE-79 Cross-Site Scripting"
+    },
+    {
+      "id": 325,
+      "family": "eval",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "correct": true,
+      "heldout": false,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 389,
+      "family": "ssrf",
+      "label": "SAFE",
+      "pred": "VULNERABLE",
+      "correct": false,
+      "heldout": true,
+      "raw": "VERDICT: VULNERABLE\nCWE: CWE-79 Cross-Site Scripting"
+    },
+    {
+      "id": 40,
+      "family": "sql",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "heldout": false,
+      "raw": "VERDICT: VULNERABLE\nCWE: CWE-89 SQL Injection"
+    },
+    {
+      "id": 130,
+      "family": "path",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "heldout": false,
+      "raw": "VERDICT: VULNERABLE\nCWE: CWE-22 Path Traversal"
+    },
+    {
+      "id": 323,
+      "family": "eval",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "correct": true,
+      "heldout": false,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 405,
+      "family": "ssrf",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "correct": true,
+      "heldout": true,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 287,
+      "family": "deser",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "correct": true,
+      "heldout": false,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 412,
+      "family": "token",
+      "label": "VULNERABLE",
+      "pred": "SAFE",
+      "correct": false,
+      "heldout": true,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 93,
+      "family": "cmd",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "correct": true,
+      "heldout": false,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 84,
+      "family": "cmd",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "heldout": false,
+      "raw": "VERDICT: VULNERABLE\nCWE: CWE-78 OS Command Injection"
+    },
+    {
+      "id": 282,
+      "family": "deser",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "heldout": false,
+      "raw": "VERDICT: VULNERABLE\nCWE: CWE-502 Insecure Deserialization"
+    },
+    {
+      "id": 234,
+      "family": "secret",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "heldout": false,
+      "raw": "VERDICT: VULNERABLE\nCWE: CWE-798 Hardcoded Credentials"
+    },
+    {
+      "id": 178,
+      "family": "hash",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "heldout": false,
+      "raw": "VERDICT: VULNERABLE\nCWE: CWE-327 Weak Hash"
+    },
+    {
+      "id": 391,
+      "family": "ssrf",
+      "label": "SAFE",
+      "pred": "VULNERABLE",
+      "correct": false,
+      "heldout": true,
+      "raw": "VERDICT: VULNERABLE\nCWE: CWE-827 Insecure Deserialization"
+    },
+    {
+      "id": 85,
+      "family": "cmd",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "correct": true,
+      "heldout": false,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 83,
+      "family": "cmd",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "correct": true,
+      "heldout": false,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 36,
+      "family": "sql",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "heldout": false,
+      "raw": "VERDICT: VULNERABLE\nCWE: CWE-89 SQL Injection"
+    },
+    {
+      "id": 382,
+      "family": "xss",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "heldout": false,
+      "raw": "VERDICT: VULNERABLE\nCWE: CWE-79 Cross-Site Scripting"
+    },
+    {
+      "id": 376,
+      "family": "xss",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "heldout": false,
+      "raw": "VERDICT: VULNERABLE\nCWE: CWE-79 Cross-Site Scripting"
+    },
+    {
+      "id": 131,
+      "family": "path",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "correct": true,
+      "heldout": false,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 403,
+      "family": "ssrf",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "correct": true,
+      "heldout": true,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 324,
+      "family": "eval",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "heldout": false,
+      "raw": "VERDICT: VULNERABLE\nCWE: CWE-95 Code Injection via eval"
+    },
+    {
+      "id": 393,
+      "family": "ssrf",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "correct": true,
+      "heldout": true,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 190,
+      "family": "hash",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "heldout": false,
+      "raw": "VERDICT: VULNERABLE\nCWE: CWE-327 Weak Hash"
+    },
+    {
+      "id": 377,
+      "family": "xss",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "correct": true,
+      "heldout": false,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 239,
+      "family": "secret",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "correct": true,
+      "heldout": false,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 406,
+      "family": "ssrf",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "heldout": true,
+      "raw": "VERDICT: VULNERABLE\nCWE: CWE-79 Cross-Site Scripting"
+    },
+    {
+      "id": 381,
+      "family": "xss",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "correct": true,
+      "heldout": false,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 140,
+      "family": "path",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "heldout": false,
+      "raw": "VERDICT: VULNERABLE\nCWE: CWE-22 Path Traversal"
+    },
+    {
+      "id": 95,
+      "family": "cmd",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "correct": true,
+      "heldout": false,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 286,
+      "family": "deser",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "heldout": false,
+      "raw": "VERDICT: VULNERABLE\nCWE: CWE-502 Insecure Deserialization"
+    },
+    {
+      "id": 375,
+      "family": "xss",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "correct": true,
+      "heldout": false,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 283,
+      "family": "deser",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "correct": true,
+      "heldout": false,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 374,
+      "family": "xss",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "heldout": false,
+      "raw": "VERDICT: VULNERABLE\nCWE: CWE-79 Cross-Site Scripting"
+    },
+    {
+      "id": 34,
+      "family": "sql",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "heldout": false,
+      "raw": "VERDICT: VULNERABLE\nCWE: CWE-89 SQL Injection"
+    },
+    {
+      "id": 388,
+      "family": "ssrf",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "heldout": true,
+      "raw": "VERDICT: VULNERABLE\nCWE: CWE-79 Cross-Site Scripting"
+    },
+    {
+      "id": 390,
+      "family": "ssrf",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "heldout": true,
+      "raw": "VERDICT: VULNERABLE\nCWE: CWE-80 Cross-Site Scripting"
+    },
+    {
+      "id": 231,
+      "family": "secret",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "correct": true,
+      "heldout": false,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 386,
+      "family": "ssrf",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "heldout": true,
+      "raw": "VERDICT: VULNERABLE\nCWE: CWE-79 Cross-Site Scripting"
+    },
+    {
+      "id": 285,
+      "family": "deser",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "correct": true,
+      "heldout": false,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 426,
+      "family": "token",
+      "label": "VULNERABLE",
+      "pred": "SAFE",
+      "correct": false,
+      "heldout": true,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 229,
+      "family": "secret",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "correct": true,
+      "heldout": false,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 181,
+      "family": "hash",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "correct": true,
+      "heldout": false,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 413,
+      "family": "token",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "correct": true,
+      "heldout": true,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 236,
+      "family": "secret",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "heldout": false,
+      "raw": "VERDICT: VULNERABLE\nCWE: CWE-798 Hardcoded Credentials"
+    },
+    {
+      "id": 179,
+      "family": "hash",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "correct": true,
+      "heldout": false,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 228,
+      "family": "secret",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "heldout": false,
+      "raw": "VERDICT: VULNERABLE\nCWE: CWE-798 Hardcoded Credentials"
+    },
+    {
+      "id": 133,
+      "family": "path",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "correct": true,
+      "heldout": false,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 90,
+      "family": "cmd",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "heldout": false,
+      "raw": "VERDICT: VULNERABLE\nCWE: CWE-78 OS Command Injection"
+    },
+    {
+      "id": 191,
+      "family": "hash",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "correct": true,
+      "heldout": false,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 396,
+      "family": "ssrf",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "heldout": true,
+      "raw": "VERDICT: VULNERABLE\nCWE: CWE-79 Cross-Site Scripting"
+    },
+    {
+      "id": 370,
+      "family": "xss",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "heldout": false,
+      "raw": "VERDICT: VULNERABLE\nCWE: CWE-79 Cross-Site Scripting"
+    },
+    {
+      "id": 425,
+      "family": "token",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "correct": true,
+      "heldout": true,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 187,
+      "family": "hash",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "correct": true,
+      "heldout": false,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 427,
+      "family": "token",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "correct": true,
+      "heldout": true,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 327,
+      "family": "eval",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "correct": true,
+      "heldout": false,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 384,
+      "family": "ssrf",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "heldout": true,
+      "raw": "VERDICT: VULNERABLE\nCWE: CWE-79 Cross-Site Scripting"
+    },
+    {
+      "id": 414,
+      "family": "token",
+      "label": "VULNERABLE",
+      "pred": "SAFE",
+      "correct": false,
+      "heldout": true,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 326,
+      "family": "eval",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "heldout": false,
+      "raw": "VERDICT: VULNERABLE\nCWE: CWE-95 Code Injection via eval"
+    },
+    {
+      "id": 281,
+      "family": "deser",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "correct": true,
+      "heldout": false,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 275,
+      "family": "deser",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "correct": true,
+      "heldout": false,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 400,
+      "family": "ssrf",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "heldout": true,
+      "raw": "VERDICT: VULNERABLE\nCWE: CWE-79 Cross-Site Scripting"
+    },
+    {
+      "id": 137,
+      "family": "path",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "correct": true,
+      "heldout": false,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 47,
+      "family": "sql",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "correct": true,
+      "heldout": false,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 373,
+      "family": "xss",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "correct": true,
+      "heldout": false,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 91,
+      "family": "cmd",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "correct": true,
+      "heldout": false,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 418,
+      "family": "token",
+      "label": "VULNERABLE",
+      "pred": "SAFE",
+      "correct": false,
+      "heldout": true,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 423,
+      "family": "token",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "correct": true,
+      "heldout": true,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 429,
+      "family": "token",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "correct": true,
+      "heldout": true,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 422,
+      "family": "token",
+      "label": "VULNERABLE",
+      "pred": "SAFE",
+      "correct": false,
+      "heldout": true,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 94,
+      "family": "cmd",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "heldout": false,
+      "raw": "VERDICT: VULNERABLE\nCWE: CWE-78 OS Command Injection"
+    },
+    {
+      "id": 226,
+      "family": "secret",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "heldout": false,
+      "raw": "VERDICT: VULNERABLE\nCWE: CWE-798 Hardcoded Credentials"
+    },
+    {
+      "id": 143,
+      "family": "path",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "correct": true,
+      "heldout": false,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 387,
+      "family": "ssrf",
+      "label": "SAFE",
+      "pred": "VULNERABLE",
+      "correct": false,
+      "heldout": true,
+      "raw": "VERDICT: VULNERABLE\nCWE: CWE-79 Cross-Site Scripting"
+    },
+    {
+      "id": 331,
+      "family": "eval",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "correct": true,
+      "heldout": false,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 395,
+      "family": "ssrf",
+      "label": "SAFE",
+      "pred": "VULNERABLE",
+      "correct": false,
+      "heldout": true,
+      "raw": "VERDICT: VULNERABLE\nCWE: CWE-79 Cross-Site Scripting"
+    },
+    {
+      "id": 189,
+      "family": "hash",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "correct": true,
+      "heldout": false,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 35,
+      "family": "sql",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "correct": true,
+      "heldout": false,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 188,
+      "family": "hash",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "heldout": false,
+      "raw": "VERDICT: VULNERABLE\nCWE: CWE-327 Weak Hash"
+    },
+    {
+      "id": 430,
+      "family": "token",
+      "label": "VULNERABLE",
+      "pred": "SAFE",
+      "correct": false,
+      "heldout": true,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 82,
+      "family": "cmd",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "heldout": false,
+      "raw": "VERDICT: VULNERABLE\nCWE: CWE-78 OS Command Injection"
+    },
+    {
+      "id": 332,
+      "family": "eval",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "heldout": false,
+      "raw": "VERDICT: VULNERABLE\nCWE: CWE-95 Code Injection via eval"
+    },
+    {
+      "id": 385,
+      "family": "ssrf",
+      "label": "SAFE",
+      "pred": "VULNERABLE",
+      "correct": false,
+      "heldout": true,
+      "raw": "VERDICT: VULNERABLE\nCWE: CWE-79 Cross-Site Scripting"
+    },
+    {
+      "id": 233,
+      "family": "secret",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "correct": true,
+      "heldout": false,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 89,
+      "family": "cmd",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "correct": true,
+      "heldout": false,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 328,
+      "family": "eval",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "heldout": false,
+      "raw": "VERDICT: VULNERABLE\nCWE: CWE-95 Code Injection via eval"
+    },
+    {
+      "id": 410,
+      "family": "token",
+      "label": "VULNERABLE",
+      "pred": "SAFE",
+      "correct": false,
+      "heldout": true,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 380,
+      "family": "xss",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "heldout": false,
+      "raw": "VERDICT: VULNERABLE\nCWE: CWE-79 Cross-Site Scripting"
+    },
+    {
+      "id": 138,
+      "family": "path",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "heldout": false,
+      "raw": "VERDICT: VULNERABLE\nCWE: CWE-22 Path Traversal"
+    },
+    {
+      "id": 378,
+      "family": "xss",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "heldout": false,
+      "raw": "VERDICT: VULNERABLE\nCWE: CWE-79 Cross-Site Scripting"
+    },
+    {
+      "id": 280,
+      "family": "deser",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "heldout": false,
+      "raw": "VERDICT: VULNERABLE\nCWE: CWE-502 Insecure Deserialization"
+    },
+    {
+      "id": 419,
+      "family": "token",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "correct": true,
+      "heldout": true,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 417,
+      "family": "token",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "correct": true,
+      "heldout": true,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 86,
+      "family": "cmd",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "heldout": false,
+      "raw": "VERDICT: VULNERABLE\nCWE: CWE-78 OS Command Injection"
+    },
+    {
+      "id": 87,
+      "family": "cmd",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "correct": true,
+      "heldout": false,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 372,
+      "family": "xss",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "heldout": false,
+      "raw": "VERDICT: VULNERABLE\nCWE: CWE-79 Cross-Site Scripting"
+    },
+    {
+      "id": 39,
+      "family": "sql",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "correct": true,
+      "heldout": false,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 135,
+      "family": "path",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "correct": true,
+      "heldout": false,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 45,
+      "family": "sql",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "correct": true,
+      "heldout": false,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 379,
+      "family": "xss",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "correct": true,
+      "heldout": false,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 333,
+      "family": "eval",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "correct": true,
+      "heldout": false,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 278,
+      "family": "deser",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "heldout": false,
+      "raw": "VERDICT: VULNERABLE\nCWE: CWE-502 Insecure Deserialization"
+    },
+    {
+      "id": 183,
+      "family": "hash",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "correct": true,
+      "heldout": false,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 230,
+      "family": "secret",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "heldout": false,
+      "raw": "VERDICT: VULNERABLE\nCWE: CWE-798 Hardcoded Credentials"
+    },
+    {
+      "id": 232,
+      "family": "secret",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "heldout": false,
+      "raw": "VERDICT: VULNERABLE\nCWE: CWE-798 Hardcoded Credentials"
+    },
+    {
+      "id": 402,
+      "family": "ssrf",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "heldout": true,
+      "raw": "VERDICT: VULNERABLE\nCWE: CWE-79 Cross-Site Scripting"
+    },
+    {
+      "id": 284,
+      "family": "deser",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "heldout": false,
+      "raw": "VERDICT: VULNERABLE\nCWE: CWE-502 Insecure Deserialization"
+    },
+    {
+      "id": 227,
+      "family": "secret",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "correct": true,
+      "heldout": false,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 134,
+      "family": "path",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "heldout": false,
+      "raw": "VERDICT: VULNERABLE\nCWE: CWE-22 Path Traversal"
+    },
+    {
+      "id": 139,
+      "family": "path",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "correct": true,
+      "heldout": false,
+      "raw": "VERDICT: SAFE"
+    },
+    {
+      "id": 334,
+      "family": "eval",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "heldout": false,
+      "raw": "VERDICT: VULNERABLE\nCWE: CWE-95 Code Injection via eval"
+    },
+    {
+      "id": 142,
+      "family": "path",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "correct": true,
+      "heldout": false,
+      "raw": "VERDICT: VULNERABLE\nCWE: CWE-22 Path Traversal"
+    }
+  ]
+}

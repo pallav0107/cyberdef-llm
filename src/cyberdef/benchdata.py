@@ -1,0 +1,124 @@
+"""Benchmark dataset registry. One place that knows each recognized dataset's HF id, split
+names, and which fields hold the code and the vulnerable/safe label. Lets the same training
+and eval code target Devign (CodeXGLUE) or PrimeVul without per-dataset forks.
+
+All sampling is balanced + seeded so accuracy has a 50% chance floor, and the training-item
+builder drops any train function whose whitespace-normalised text also appears in val/test
+(leakage guard) -- essential for PrimeVul, which has near-duplicate functions across splits.
+"""
+from __future__ import annotations
+import glob
+import os
+import random
+from datasets import load_dataset
+
+# DiverseVul ships as plain parquet splits in its HF snapshot, so it loads from the local cache
+# directly (load_dataset by repo id needs a Hub round-trip and fails under HF_HUB_OFFLINE=1).
+# The glob matches whatever snapshot revision is cached; if nothing matches we fall back to the
+# Hub id. This is the ONLY dataset wired for offline parquet because it is used purely as an
+# unseen cross-dataset TEST set (train on PrimeVul -> test on DiverseVul) to measure transfer.
+_HF_HUB = os.path.expanduser("~/.cache/huggingface/hub")
+_DV = f"{_HF_HUB}/datasets--bstee615--diversevul/snapshots/*/data"
+
+BENCHES = {
+    "devign": dict(hf="google/code_x_glue_cc_defect_detection",
+                   splits=dict(train="train", validation="validation", test="test"),
+                   func="func", label="target"),
+    "primevul": dict(hf="colin/PrimeVul",
+                     splits=dict(train="train", validation="validation", test="test"),
+                     func="func", label="target"),
+    "diversevul": dict(hf="bstee615/diversevul",
+                       splits=dict(train="train", validation="validation", test="test"),
+                       func="func", label="target",
+                       parquet=dict(train=f"{_DV}/train-*.parquet",
+                                    validation=f"{_DV}/validation-*.parquet",
+                                    test=f"{_DV}/test-*.parquet")),
+}
+
+
+def spec(name):
+    if name not in BENCHES:
+        raise SystemExit(f"unknown dataset '{name}'; choices: {list(BENCHES)}")
+    return BENCHES[name]
+
+
+def _load_split(sp, split, streaming=False):
+    """Load one split, preferring cached local parquet (offline-safe) when the registry entry
+    declares a parquet glob and files exist; otherwise load from the Hub id as before."""
+    pq = sp.get("parquet")
+    if pq and split in pq:
+        files = sorted(glob.glob(pq[split]))
+        if files:
+            # data_files as a list is always exposed under the "train" split name by datasets.
+            return load_dataset("parquet", data_files=files, split="train", streaming=streaming)
+    return load_dataset(sp["hf"], split=sp["splits"][split], streaming=streaming)
+
+
+def _is_vuln(v) -> bool:
+    if isinstance(v, str):
+        return v.strip().lower() in ("1", "true", "vulnerable", "yes")
+    return bool(v)
+
+
+def norm(code: str) -> str:
+    return "".join((code or "").split())
+
+
+def _row_code(r, sp):
+    return r[sp["func"]] or ""
+
+
+def _mk(r, sp, max_chars):
+    code = _row_code(r, sp)
+    return dict(id=str(r.get("idx", r.get("id", ""))),
+                code=code[:max_chars], code_chars=len(code),
+                truncated=len(code) > max_chars,
+                label="VULNERABLE" if _is_vuln(r[sp["label"]]) else "SAFE")
+
+
+def balanced_sample(name, split, n_per_class, seed, max_chars):
+    """Balanced n_per_class vulnerable + n_per_class safe from the named split."""
+    sp = spec(name)
+    ds = _load_split(sp, split)
+    vuln, safe = [], []
+    for r in ds:
+        (vuln if _is_vuln(r[sp["label"]]) else safe).append(r)
+    rng = random.Random(seed)
+    rng.shuffle(vuln); rng.shuffle(safe)
+    rows = vuln[:n_per_class] + safe[:n_per_class]
+    rng.shuffle(rows)
+    return [_mk(r, sp, max_chars) for r in rows], dict(n_vuln=len(vuln), n_safe=len(safe))
+
+
+def train_items(name, n_per_class, seed, max_chars, stream_cap=200000):
+    """Balanced training items from the TRAIN split, with any function duplicated in val/test
+    removed (leakage guard) plus intra-train dedup. The train split is STREAMED (not fully
+    downloaded): on a flaky link we only need the prefix that yields the balanced sample, so we
+    stop as soon as both buckets are full. Selection is therefore stream-order (not globally
+    shuffled) -- an acceptable training-data bias; the TEST metric uses a balanced random
+    sample and is unaffected. val/test are loaded normally (smaller) for the forbid set."""
+    sp = spec(name)
+    forbid = set()
+    for s in ("validation", "test"):
+        for r in _load_split(sp, s):
+            forbid.add(norm(_row_code(r, sp)))
+    ds = _load_split(sp, "train", streaming=True)
+    vuln, safe, seen, dropped, scanned = [], [], set(), 0, 0
+    for r in ds:
+        scanned += 1
+        if scanned > stream_cap:
+            break
+        h = norm(_row_code(r, sp))
+        if h in forbid or h in seen:
+            dropped += 1
+            continue
+        seen.add(h)
+        bucket = vuln if _is_vuln(r[sp["label"]]) else safe
+        if len(bucket) < n_per_class:
+            bucket.append(_mk(r, sp, max_chars))
+        if len(vuln) >= n_per_class and len(safe) >= n_per_class:
+            break
+    items = vuln + safe
+    random.Random(seed).shuffle(items)
+    return items, dict(n_vuln=len(vuln), n_safe=len(safe), dropped=dropped,
+                       scanned=scanned, forbid=len(forbid))

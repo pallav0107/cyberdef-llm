@@ -1,0 +1,1656 @@
+{
+  "benchmark": "colin/PrimeVul",
+  "dataset": "primevul",
+  "eval_split": "test",
+  "method": "logprob-scored verdict",
+  "pool": {
+    "n_vuln": 549,
+    "n_safe": 24239
+  },
+  "model": "Qwen/Qwen2.5-7B-Instruct",
+  "adapter": "out/qlora-primevul",
+  "seed": 0,
+  "n": 200,
+  "n_per_class": 100,
+  "max_chars": 4000,
+  "accuracy": 0.68,
+  "auroc": 0.7859,
+  "ece": 0.0469,
+  "risk_coverage": {
+    "0.10": {
+      "coverage_n": 20,
+      "accuracy": 0.8
+    },
+    "0.20": {
+      "coverage_n": 40,
+      "accuracy": 0.825
+    },
+    "0.25": {
+      "coverage_n": 50,
+      "accuracy": 0.84
+    },
+    "0.30": {
+      "coverage_n": 60,
+      "accuracy": 0.8
+    },
+    "0.40": {
+      "coverage_n": 80,
+      "accuracy": 0.7875
+    },
+    "0.50": {
+      "coverage_n": 100,
+      "accuracy": 0.8
+    },
+    "0.75": {
+      "coverage_n": 150,
+      "accuracy": 0.7133
+    },
+    "1.00": {
+      "coverage_n": 200,
+      "accuracy": 0.68
+    }
+  },
+  "timestamp": "2026-11-11T23:48:24Z",
+  "per_case": [
+    {
+      "id": "459525",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "p_vuln": 0.2878,
+      "conf": 0.7122,
+      "correct": 1
+    },
+    {
+      "id": "366328",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "p_vuln": 0.4792,
+      "conf": 0.5208,
+      "correct": 1
+    },
+    {
+      "id": "198117",
+      "label": "VULNERABLE",
+      "pred": "SAFE",
+      "p_vuln": 0.428,
+      "conf": 0.572,
+      "correct": 0
+    },
+    {
+      "id": "199836",
+      "label": "VULNERABLE",
+      "pred": "SAFE",
+      "p_vuln": 0.3705,
+      "conf": 0.6295,
+      "correct": 0
+    },
+    {
+      "id": "195398",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "p_vuln": 0.6409,
+      "conf": 0.6409,
+      "correct": 1
+    },
+    {
+      "id": "101701",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "p_vuln": 0.187,
+      "conf": 0.813,
+      "correct": 1
+    },
+    {
+      "id": "224863",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "p_vuln": 0.2568,
+      "conf": 0.7432,
+      "correct": 1
+    },
+    {
+      "id": "225850",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "p_vuln": 0.2975,
+      "conf": 0.7025,
+      "correct": 1
+    },
+    {
+      "id": "202708",
+      "label": "VULNERABLE",
+      "pred": "SAFE",
+      "p_vuln": 0.3705,
+      "conf": 0.6295,
+      "correct": 0
+    },
+    {
+      "id": "369231",
+      "label": "SAFE",
+      "pred": "VULNERABLE",
+      "p_vuln": 0.7008,
+      "conf": 0.7008,
+      "correct": 0
+    },
+    {
+      "id": "207780",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "p_vuln": 0.5447,
+      "conf": 0.5447,
+      "correct": 1
+    },
+    {
+      "id": "309929",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "p_vuln": 0.4402,
+      "conf": 0.5598,
+      "correct": 1
+    },
+    {
+      "id": "207150",
+      "label": "VULNERABLE",
+      "pred": "SAFE",
+      "p_vuln": 0.3853,
+      "conf": 0.6147,
+      "correct": 0
+    },
+    {
+      "id": "210555",
+      "label": "VULNERABLE",
+      "pred": "SAFE",
+      "p_vuln": 0.2628,
+      "conf": 0.7372,
+      "correct": 0
+    },
+    {
+      "id": "215262",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "p_vuln": 0.6849,
+      "conf": 0.6849,
+      "correct": 1
+    },
+    {
+      "id": "263521",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "p_vuln": 0.4161,
+      "conf": 0.5839,
+      "correct": 1
+    },
+    {
+      "id": "369221",
+      "label": "SAFE",
+      "pred": "VULNERABLE",
+      "p_vuln": 0.7456,
+      "conf": 0.7456,
+      "correct": 0
+    },
+    {
+      "id": "195740",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "p_vuln": 0.6632,
+      "conf": 0.6632,
+      "correct": 1
+    },
+    {
+      "id": "211181",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "p_vuln": 0.7262,
+      "conf": 0.7262,
+      "correct": 1
+    },
+    {
+      "id": "225619",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "p_vuln": 0.272,
+      "conf": 0.728,
+      "correct": 1
+    },
+    {
+      "id": "314776",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "p_vuln": 0.3074,
+      "conf": 0.6926,
+      "correct": 1
+    },
+    {
+      "id": "279933",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "p_vuln": 0.2539,
+      "conf": 0.7461,
+      "correct": 1
+    },
+    {
+      "id": "206025",
+      "label": "VULNERABLE",
+      "pred": "SAFE",
+      "p_vuln": 0.2282,
+      "conf": 0.7718,
+      "correct": 0
+    },
+    {
+      "id": "195289",
+      "label": "VULNERABLE",
+      "pred": "SAFE",
+      "p_vuln": 0.4443,
+      "conf": 0.5557,
+      "correct": 0
+    },
+    {
+      "id": "437383",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "p_vuln": 0.2018,
+      "conf": 0.7982,
+      "correct": 1
+    },
+    {
+      "id": "328891",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "p_vuln": 0.3742,
+      "conf": 0.6258,
+      "correct": 1
+    },
+    {
+      "id": "198743",
+      "label": "VULNERABLE",
+      "pred": "SAFE",
+      "p_vuln": 0.3929,
+      "conf": 0.6071,
+      "correct": 0
+    },
+    {
+      "id": "231779",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "p_vuln": 0.3452,
+      "conf": 0.6548,
+      "correct": 1
+    },
+    {
+      "id": "343226",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "p_vuln": 0.1919,
+      "conf": 0.8081,
+      "correct": 1
+    },
+    {
+      "id": "195908",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "p_vuln": 0.6849,
+      "conf": 0.6849,
+      "correct": 1
+    },
+    {
+      "id": "195670",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "p_vuln": 0.6296,
+      "conf": 0.6296,
+      "correct": 1
+    },
+    {
+      "id": "386500",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "p_vuln": 0.2309,
+      "conf": 0.7691,
+      "correct": 1
+    },
+    {
+      "id": "200672",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "p_vuln": 0.773,
+      "conf": 0.773,
+      "correct": 1
+    },
+    {
+      "id": "204544",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "p_vuln": 0.6182,
+      "conf": 0.6182,
+      "correct": 1
+    },
+    {
+      "id": "216938",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "p_vuln": 0.6125,
+      "conf": 0.6125,
+      "correct": 1
+    },
+    {
+      "id": "329941",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "p_vuln": 0.2539,
+      "conf": 0.7461,
+      "correct": 1
+    },
+    {
+      "id": "274650",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "p_vuln": 0.1895,
+      "conf": 0.8105,
+      "correct": 1
+    },
+    {
+      "id": "220845",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "p_vuln": 0.291,
+      "conf": 0.709,
+      "correct": 1
+    },
+    {
+      "id": "259085",
+      "label": "SAFE",
+      "pred": "VULNERABLE",
+      "p_vuln": 0.5286,
+      "conf": 0.5286,
+      "correct": 0
+    },
+    {
+      "id": "313565",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "p_vuln": 0.3488,
+      "conf": 0.6512,
+      "correct": 1
+    },
+    {
+      "id": "206736",
+      "label": "VULNERABLE",
+      "pred": "SAFE",
+      "p_vuln": 0.4702,
+      "conf": 0.5298,
+      "correct": 0
+    },
+    {
+      "id": "201451",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "p_vuln": 0.5953,
+      "conf": 0.5953,
+      "correct": 1
+    },
+    {
+      "id": "223384",
+      "label": "SAFE",
+      "pred": "VULNERABLE",
+      "p_vuln": 0.6296,
+      "conf": 0.6296,
+      "correct": 0
+    },
+    {
+      "id": "195274",
+      "label": "VULNERABLE",
+      "pred": "SAFE",
+      "p_vuln": 0.4402,
+      "conf": 0.5598,
+      "correct": 0
+    },
+    {
+      "id": "198662",
+      "label": "VULNERABLE",
+      "pred": "SAFE",
+      "p_vuln": 0.4886,
+      "conf": 0.5114,
+      "correct": 0
+    },
+    {
+      "id": "216861",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "p_vuln": 0.5339,
+      "conf": 0.5339,
+      "correct": 1
+    },
+    {
+      "id": "195056",
+      "label": "VULNERABLE",
+      "pred": "SAFE",
+      "p_vuln": 0.3742,
+      "conf": 0.6258,
+      "correct": 0
+    },
+    {
+      "id": "219016",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "p_vuln": 0.2942,
+      "conf": 0.7058,
+      "correct": 1
+    },
+    {
+      "id": "199778",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "p_vuln": 0.685,
+      "conf": 0.685,
+      "correct": 1
+    },
+    {
+      "id": "197621",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "p_vuln": 0.508,
+      "conf": 0.508,
+      "correct": 1
+    },
+    {
+      "id": "348436",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "p_vuln": 0.2689,
+      "conf": 0.7311,
+      "correct": 1
+    },
+    {
+      "id": "206555",
+      "label": "VULNERABLE",
+      "pred": "SAFE",
+      "p_vuln": 0.2628,
+      "conf": 0.7372,
+      "correct": 0
+    },
+    {
+      "id": "359401",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "p_vuln": 0.424,
+      "conf": 0.576,
+      "correct": 1
+    },
+    {
+      "id": "90801",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "p_vuln": 0.2254,
+      "conf": 0.7746,
+      "correct": 1
+    },
+    {
+      "id": "212433",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "p_vuln": 0.601,
+      "conf": 0.601,
+      "correct": 1
+    },
+    {
+      "id": "369148",
+      "label": "SAFE",
+      "pred": "VULNERABLE",
+      "p_vuln": 0.7773,
+      "conf": 0.7773,
+      "correct": 0
+    },
+    {
+      "id": "234741",
+      "label": "SAFE",
+      "pred": "VULNERABLE",
+      "p_vuln": 0.685,
+      "conf": 0.685,
+      "correct": 0
+    },
+    {
+      "id": "281130",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "p_vuln": 0.2598,
+      "conf": 0.7402,
+      "correct": 1
+    },
+    {
+      "id": "196689",
+      "label": "VULNERABLE",
+      "pred": "SAFE",
+      "p_vuln": 0.3667,
+      "conf": 0.6333,
+      "correct": 0
+    },
+    {
+      "id": "513287",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "p_vuln": 0.3107,
+      "conf": 0.6893,
+      "correct": 1
+    },
+    {
+      "id": "199712",
+      "label": "VULNERABLE",
+      "pred": "SAFE",
+      "p_vuln": 0.2393,
+      "conf": 0.7607,
+      "correct": 0
+    },
+    {
+      "id": "329899",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "p_vuln": 0.2628,
+      "conf": 0.7372,
+      "correct": 1
+    },
+    {
+      "id": "197511",
+      "label": "VULNERABLE",
+      "pred": "SAFE",
+      "p_vuln": 0.2814,
+      "conf": 0.7186,
+      "correct": 0
+    },
+    {
+      "id": "201925",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "p_vuln": 0.5502,
+      "conf": 0.5502,
+      "correct": 1
+    },
+    {
+      "id": "221470",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "p_vuln": 0.2598,
+      "conf": 0.7402,
+      "correct": 1
+    },
+    {
+      "id": "212339",
+      "label": "VULNERABLE",
+      "pred": "SAFE",
+      "p_vuln": 0.4121,
+      "conf": 0.5879,
+      "correct": 0
+    },
+    {
+      "id": "196860",
+      "label": "VULNERABLE",
+      "pred": "SAFE",
+      "p_vuln": 0.4161,
+      "conf": 0.5839,
+      "correct": 0
+    },
+    {
+      "id": "366171",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "p_vuln": 0.2846,
+      "conf": 0.7154,
+      "correct": 1
+    },
+    {
+      "id": "210453",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "p_vuln": 0.5725,
+      "conf": 0.5725,
+      "correct": 1
+    },
+    {
+      "id": "229253",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "p_vuln": 0.3209,
+      "conf": 0.6791,
+      "correct": 1
+    },
+    {
+      "id": "434102",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "p_vuln": 0.3595,
+      "conf": 0.6405,
+      "correct": 1
+    },
+    {
+      "id": "226423",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "p_vuln": 0.2393,
+      "conf": 0.7607,
+      "correct": 1
+    },
+    {
+      "id": "427172",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "p_vuln": 0.3632,
+      "conf": 0.6368,
+      "correct": 1
+    },
+    {
+      "id": "244295",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "p_vuln": 0.3488,
+      "conf": 0.6512,
+      "correct": 1
+    },
+    {
+      "id": "197135",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "p_vuln": 0.6956,
+      "conf": 0.6956,
+      "correct": 1
+    },
+    {
+      "id": "276956",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "p_vuln": 0.3488,
+      "conf": 0.6512,
+      "correct": 1
+    },
+    {
+      "id": "272349",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "p_vuln": 0.2309,
+      "conf": 0.7691,
+      "correct": 1
+    },
+    {
+      "id": "196841",
+      "label": "VULNERABLE",
+      "pred": "SAFE",
+      "p_vuln": 0.4792,
+      "conf": 0.5208,
+      "correct": 0
+    },
+    {
+      "id": "400764",
+      "label": "SAFE",
+      "pred": "VULNERABLE",
+      "p_vuln": 0.7162,
+      "conf": 0.7162,
+      "correct": 0
+    },
+    {
+      "id": "216949",
+      "label": "VULNERABLE",
+      "pred": "SAFE",
+      "p_vuln": 0.2814,
+      "conf": 0.7186,
+      "correct": 0
+    },
+    {
+      "id": "364240",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "p_vuln": 0.3632,
+      "conf": 0.6368,
+      "correct": 1
+    },
+    {
+      "id": "195341",
+      "label": "VULNERABLE",
+      "pred": "SAFE",
+      "p_vuln": 0.2878,
+      "conf": 0.7122,
+      "correct": 0
+    },
+    {
+      "id": "201006",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "p_vuln": 0.6903,
+      "conf": 0.6903,
+      "correct": 1
+    },
+    {
+      "id": "405374",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "p_vuln": 0.3742,
+      "conf": 0.6258,
+      "correct": 1
+    },
+    {
+      "id": "359520",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "p_vuln": 0.3008,
+      "conf": 0.6992,
+      "correct": 1
+    },
+    {
+      "id": "211473",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "p_vuln": 0.6353,
+      "conf": 0.6353,
+      "correct": 1
+    },
+    {
+      "id": "427218",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "p_vuln": 0.272,
+      "conf": 0.728,
+      "correct": 1
+    },
+    {
+      "id": "210278",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "p_vuln": 0.5502,
+      "conf": 0.5502,
+      "correct": 1
+    },
+    {
+      "id": "231655",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "p_vuln": 0.272,
+      "conf": 0.728,
+      "correct": 1
+    },
+    {
+      "id": "512494",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "p_vuln": 0.2539,
+      "conf": 0.7461,
+      "correct": 1
+    },
+    {
+      "id": "458916",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "p_vuln": 0.3853,
+      "conf": 0.6147,
+      "correct": 1
+    },
+    {
+      "id": "512798",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "p_vuln": 0.3008,
+      "conf": 0.6992,
+      "correct": 1
+    },
+    {
+      "id": "204017",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "p_vuln": 0.6903,
+      "conf": 0.6903,
+      "correct": 1
+    },
+    {
+      "id": "90767",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "p_vuln": 0.212,
+      "conf": 0.788,
+      "correct": 1
+    },
+    {
+      "id": "316941",
+      "label": "SAFE",
+      "pred": "VULNERABLE",
+      "p_vuln": 0.6124,
+      "conf": 0.6124,
+      "correct": 0
+    },
+    {
+      "id": "512650",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "p_vuln": 0.2689,
+      "conf": 0.7311,
+      "correct": 1
+    },
+    {
+      "id": "314472",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "p_vuln": 0.432,
+      "conf": 0.568,
+      "correct": 1
+    },
+    {
+      "id": "273063",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "p_vuln": 0.3523,
+      "conf": 0.6477,
+      "correct": 1
+    },
+    {
+      "id": "448561",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "p_vuln": 0.2509,
+      "conf": 0.7491,
+      "correct": 1
+    },
+    {
+      "id": "195085",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "p_vuln": 0.5557,
+      "conf": 0.5557,
+      "correct": 1
+    },
+    {
+      "id": "261383",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "p_vuln": 0.291,
+      "conf": 0.709,
+      "correct": 1
+    },
+    {
+      "id": "216965",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "p_vuln": 0.7503,
+      "conf": 0.7503,
+      "correct": 1
+    },
+    {
+      "id": "204101",
+      "label": "VULNERABLE",
+      "pred": "SAFE",
+      "p_vuln": 0.3967,
+      "conf": 0.6033,
+      "correct": 0
+    },
+    {
+      "id": "204073",
+      "label": "VULNERABLE",
+      "pred": "SAFE",
+      "p_vuln": 0.3595,
+      "conf": 0.6405,
+      "correct": 0
+    },
+    {
+      "id": "329933",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "p_vuln": 0.2254,
+      "conf": 0.7746,
+      "correct": 1
+    },
+    {
+      "id": "356709",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "p_vuln": 0.2598,
+      "conf": 0.7402,
+      "correct": 1
+    },
+    {
+      "id": "312433",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "p_vuln": 0.3891,
+      "conf": 0.6109,
+      "correct": 1
+    },
+    {
+      "id": "247536",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "p_vuln": 0.2783,
+      "conf": 0.7217,
+      "correct": 1
+    },
+    {
+      "id": "436161",
+      "label": "SAFE",
+      "pred": "VULNERABLE",
+      "p_vuln": 0.7816,
+      "conf": 0.7816,
+      "correct": 0
+    },
+    {
+      "id": "294386",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "p_vuln": 0.2365,
+      "conf": 0.7635,
+      "correct": 1
+    },
+    {
+      "id": "208430",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "p_vuln": 0.7641,
+      "conf": 0.7641,
+      "correct": 1
+    },
+    {
+      "id": "196705",
+      "label": "VULNERABLE",
+      "pred": "SAFE",
+      "p_vuln": 0.2975,
+      "conf": 0.7025,
+      "correct": 0
+    },
+    {
+      "id": "488335",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "p_vuln": 0.3595,
+      "conf": 0.6405,
+      "correct": 1
+    },
+    {
+      "id": "208680",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "p_vuln": 0.5669,
+      "conf": 0.5669,
+      "correct": 1
+    },
+    {
+      "id": "210204",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "p_vuln": 0.5669,
+      "conf": 0.5669,
+      "correct": 1
+    },
+    {
+      "id": "210271",
+      "label": "VULNERABLE",
+      "pred": "SAFE",
+      "p_vuln": 0.432,
+      "conf": 0.568,
+      "correct": 0
+    },
+    {
+      "id": "208421",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "p_vuln": 0.5393,
+      "conf": 0.5393,
+      "correct": 1
+    },
+    {
+      "id": "204425",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "p_vuln": 0.6409,
+      "conf": 0.6409,
+      "correct": 1
+    },
+    {
+      "id": "198004",
+      "label": "VULNERABLE",
+      "pred": "SAFE",
+      "p_vuln": 0.4528,
+      "conf": 0.5472,
+      "correct": 0
+    },
+    {
+      "id": "210570",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "p_vuln": 0.601,
+      "conf": 0.601,
+      "correct": 1
+    },
+    {
+      "id": "314523",
+      "label": "SAFE",
+      "pred": "VULNERABLE",
+      "p_vuln": 0.5233,
+      "conf": 0.5233,
+      "correct": 0
+    },
+    {
+      "id": "200320",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "p_vuln": 0.685,
+      "conf": 0.685,
+      "correct": 1
+    },
+    {
+      "id": "421382",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "p_vuln": 0.1968,
+      "conf": 0.8032,
+      "correct": 1
+    },
+    {
+      "id": "207520",
+      "label": "VULNERABLE",
+      "pred": "SAFE",
+      "p_vuln": 0.3929,
+      "conf": 0.6071,
+      "correct": 0
+    },
+    {
+      "id": "212414",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "p_vuln": 0.7262,
+      "conf": 0.7262,
+      "correct": 1
+    },
+    {
+      "id": "208654",
+      "label": "VULNERABLE",
+      "pred": "SAFE",
+      "p_vuln": 0.4747,
+      "conf": 0.5253,
+      "correct": 0
+    },
+    {
+      "id": "201384",
+      "label": "VULNERABLE",
+      "pred": "SAFE",
+      "p_vuln": 0.3705,
+      "conf": 0.6295,
+      "correct": 0
+    },
+    {
+      "id": "197615",
+      "label": "VULNERABLE",
+      "pred": "SAFE",
+      "p_vuln": 0.3041,
+      "conf": 0.6959,
+      "correct": 0
+    },
+    {
+      "id": "216973",
+      "label": "VULNERABLE",
+      "pred": "SAFE",
+      "p_vuln": 0.3929,
+      "conf": 0.6071,
+      "correct": 0
+    },
+    {
+      "id": "197239",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "p_vuln": 0.5447,
+      "conf": 0.5447,
+      "correct": 1
+    },
+    {
+      "id": "261940",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "p_vuln": 0.4528,
+      "conf": 0.5472,
+      "correct": 1
+    },
+    {
+      "id": "401532",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "p_vuln": 0.2975,
+      "conf": 0.7025,
+      "correct": 1
+    },
+    {
+      "id": "462247",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "p_vuln": 0.2942,
+      "conf": 0.7058,
+      "correct": 1
+    },
+    {
+      "id": "446063",
+      "label": "SAFE",
+      "pred": "VULNERABLE",
+      "p_vuln": 0.7008,
+      "conf": 0.7008,
+      "correct": 0
+    },
+    {
+      "id": "206043",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "p_vuln": 0.6353,
+      "conf": 0.6353,
+      "correct": 1
+    },
+    {
+      "id": "197024",
+      "label": "VULNERABLE",
+      "pred": "SAFE",
+      "p_vuln": 0.3929,
+      "conf": 0.6071,
+      "correct": 0
+    },
+    {
+      "id": "453042",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "p_vuln": 0.4812,
+      "conf": 0.5188,
+      "correct": 1
+    },
+    {
+      "id": "197748",
+      "label": "VULNERABLE",
+      "pred": "SAFE",
+      "p_vuln": 0.416,
+      "conf": 0.584,
+      "correct": 0
+    },
+    {
+      "id": "208987",
+      "label": "VULNERABLE",
+      "pred": "SAFE",
+      "p_vuln": 0.2095,
+      "conf": 0.7905,
+      "correct": 0
+    },
+    {
+      "id": "247084",
+      "label": "SAFE",
+      "pred": "VULNERABLE",
+      "p_vuln": 0.508,
+      "conf": 0.508,
+      "correct": 0
+    },
+    {
+      "id": "206510",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "p_vuln": 0.6523,
+      "conf": 0.6523,
+      "correct": 1
+    },
+    {
+      "id": "216767",
+      "label": "VULNERABLE",
+      "pred": "SAFE",
+      "p_vuln": 0.416,
+      "conf": 0.584,
+      "correct": 0
+    },
+    {
+      "id": "198198",
+      "label": "VULNERABLE",
+      "pred": "SAFE",
+      "p_vuln": 0.4485,
+      "conf": 0.5515,
+      "correct": 0
+    },
+    {
+      "id": "199834",
+      "label": "VULNERABLE",
+      "pred": "SAFE",
+      "p_vuln": 0.4044,
+      "conf": 0.5956,
+      "correct": 0
+    },
+    {
+      "id": "427788",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "p_vuln": 0.2628,
+      "conf": 0.7372,
+      "correct": 1
+    },
+    {
+      "id": "336623",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "p_vuln": 0.2018,
+      "conf": 0.7982,
+      "correct": 1
+    },
+    {
+      "id": "214997",
+      "label": "VULNERABLE",
+      "pred": "SAFE",
+      "p_vuln": 0.4933,
+      "conf": 0.5067,
+      "correct": 0
+    },
+    {
+      "id": "195296",
+      "label": "VULNERABLE",
+      "pred": "SAFE",
+      "p_vuln": 0.4792,
+      "conf": 0.5208,
+      "correct": 0
+    },
+    {
+      "id": "197760",
+      "label": "VULNERABLE",
+      "pred": "SAFE",
+      "p_vuln": 0.3175,
+      "conf": 0.6825,
+      "correct": 0
+    },
+    {
+      "id": "359341",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "p_vuln": 0.3452,
+      "conf": 0.6548,
+      "correct": 1
+    },
+    {
+      "id": "508326",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "p_vuln": 0.3312,
+      "conf": 0.6688,
+      "correct": 1
+    },
+    {
+      "id": "281069",
+      "label": "SAFE",
+      "pred": "VULNERABLE",
+      "p_vuln": 0.5725,
+      "conf": 0.5725,
+      "correct": 0
+    },
+    {
+      "id": "210283",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "p_vuln": 0.6903,
+      "conf": 0.6903,
+      "correct": 1
+    },
+    {
+      "id": "198588",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "p_vuln": 0.5502,
+      "conf": 0.5502,
+      "correct": 1
+    },
+    {
+      "id": "432196",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "p_vuln": 0.2942,
+      "conf": 0.7058,
+      "correct": 1
+    },
+    {
+      "id": "336605",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "p_vuln": 0.2069,
+      "conf": 0.7931,
+      "correct": 1
+    },
+    {
+      "id": "204137",
+      "label": "VULNERABLE",
+      "pred": "SAFE",
+      "p_vuln": 0.42,
+      "conf": 0.58,
+      "correct": 0
+    },
+    {
+      "id": "205747",
+      "label": "VULNERABLE",
+      "pred": "SAFE",
+      "p_vuln": 0.4044,
+      "conf": 0.5956,
+      "correct": 0
+    },
+    {
+      "id": "204814",
+      "label": "VULNERABLE",
+      "pred": "SAFE",
+      "p_vuln": 0.4082,
+      "conf": 0.5918,
+      "correct": 0
+    },
+    {
+      "id": "198499",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "p_vuln": 0.5953,
+      "conf": 0.5953,
+      "correct": 1
+    },
+    {
+      "id": "387723",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "p_vuln": 0.2337,
+      "conf": 0.7663,
+      "correct": 1
+    },
+    {
+      "id": "197242",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "p_vuln": 0.5393,
+      "conf": 0.5393,
+      "correct": 1
+    },
+    {
+      "id": "333058",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "p_vuln": 0.2628,
+      "conf": 0.7372,
+      "correct": 1
+    },
+    {
+      "id": "231627",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "p_vuln": 0.2337,
+      "conf": 0.7663,
+      "correct": 1
+    },
+    {
+      "id": "216027",
+      "label": "VULNERABLE",
+      "pred": "SAFE",
+      "p_vuln": 0.416,
+      "conf": 0.584,
+      "correct": 0
+    },
+    {
+      "id": "195404",
+      "label": "VULNERABLE",
+      "pred": "SAFE",
+      "p_vuln": 0.4886,
+      "conf": 0.5114,
+      "correct": 0
+    },
+    {
+      "id": "204036",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "p_vuln": 0.6577,
+      "conf": 0.6577,
+      "correct": 1
+    },
+    {
+      "id": "283749",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "p_vuln": 0.2393,
+      "conf": 0.7607,
+      "correct": 1
+    },
+    {
+      "id": "206665",
+      "label": "VULNERABLE",
+      "pred": "SAFE",
+      "p_vuln": 0.416,
+      "conf": 0.584,
+      "correct": 0
+    },
+    {
+      "id": "513279",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "p_vuln": 0.3523,
+      "conf": 0.6477,
+      "correct": 1
+    },
+    {
+      "id": "217547",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "p_vuln": 0.6956,
+      "conf": 0.6956,
+      "correct": 1
+    },
+    {
+      "id": "445992",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "p_vuln": 0.4044,
+      "conf": 0.5956,
+      "correct": 1
+    },
+    {
+      "id": "255784",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "p_vuln": 0.4747,
+      "conf": 0.5253,
+      "correct": 1
+    },
+    {
+      "id": "512805",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "p_vuln": 0.2783,
+      "conf": 0.7217,
+      "correct": 1
+    },
+    {
+      "id": "390601",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "p_vuln": 0.4485,
+      "conf": 0.5515,
+      "correct": 1
+    },
+    {
+      "id": "208411",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "p_vuln": 0.6849,
+      "conf": 0.6849,
+      "correct": 1
+    },
+    {
+      "id": "236198",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "p_vuln": 0.1919,
+      "conf": 0.8081,
+      "correct": 1
+    },
+    {
+      "id": "317230",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "p_vuln": 0.3929,
+      "conf": 0.6071,
+      "correct": 1
+    },
+    {
+      "id": "227022",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "p_vuln": 0.4528,
+      "conf": 0.5472,
+      "correct": 1
+    },
+    {
+      "id": "207762",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "p_vuln": 0.5557,
+      "conf": 0.5557,
+      "correct": 1
+    },
+    {
+      "id": "215921",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "p_vuln": 0.5393,
+      "conf": 0.5393,
+      "correct": 1
+    },
+    {
+      "id": "212144",
+      "label": "VULNERABLE",
+      "pred": "SAFE",
+      "p_vuln": 0.4702,
+      "conf": 0.5298,
+      "correct": 0
+    },
+    {
+      "id": "247589",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "p_vuln": 0.3141,
+      "conf": 0.6859,
+      "correct": 1
+    },
+    {
+      "id": "205870",
+      "label": "VULNERABLE",
+      "pred": "SAFE",
+      "p_vuln": 0.3488,
+      "conf": 0.6512,
+      "correct": 0
+    },
+    {
+      "id": "204195",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "p_vuln": 0.5839,
+      "conf": 0.5839,
+      "correct": 1
+    },
+    {
+      "id": "197305",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "p_vuln": 0.6296,
+      "conf": 0.6296,
+      "correct": 1
+    },
+    {
+      "id": "390575",
+      "label": "SAFE",
+      "pred": "VULNERABLE",
+      "p_vuln": 0.6687,
+      "conf": 0.6687,
+      "correct": 0
+    },
+    {
+      "id": "210619",
+      "label": "VULNERABLE",
+      "pred": "SAFE",
+      "p_vuln": 0.424,
+      "conf": 0.576,
+      "correct": 0
+    },
+    {
+      "id": "195549",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "p_vuln": 0.6296,
+      "conf": 0.6296,
+      "correct": 1
+    },
+    {
+      "id": "312491",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "p_vuln": 0.2539,
+      "conf": 0.7461,
+      "correct": 1
+    },
+    {
+      "id": "328812",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "p_vuln": 0.2539,
+      "conf": 0.7461,
+      "correct": 1
+    },
+    {
+      "id": "359343",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "p_vuln": 0.2878,
+      "conf": 0.7122,
+      "correct": 1
+    },
+    {
+      "id": "197128",
+      "label": "VULNERABLE",
+      "pred": "SAFE",
+      "p_vuln": 0.4957,
+      "conf": 0.5043,
+      "correct": 0
+    },
+    {
+      "id": "383950",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "p_vuln": 0.3853,
+      "conf": 0.6147,
+      "correct": 1
+    },
+    {
+      "id": "197111",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "p_vuln": 0.5502,
+      "conf": 0.5502,
+      "correct": 1
+    },
+    {
+      "id": "201353",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "p_vuln": 0.6796,
+      "conf": 0.6796,
+      "correct": 1
+    },
+    {
+      "id": "332384",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "p_vuln": 0.457,
+      "conf": 0.543,
+      "correct": 1
+    },
+    {
+      "id": "215976",
+      "label": "VULNERABLE",
+      "pred": "VULNERABLE",
+      "p_vuln": 0.6523,
+      "conf": 0.6523,
+      "correct": 1
+    },
+    {
+      "id": "386564",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "p_vuln": 0.4402,
+      "conf": 0.5598,
+      "correct": 1
+    },
+    {
+      "id": "459173",
+      "label": "SAFE",
+      "pred": "SAFE",
+      "p_vuln": 0.4443,
+      "conf": 0.5557,
+      "correct": 1
+    }
+  ]
+}

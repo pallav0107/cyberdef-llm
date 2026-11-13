@@ -1,0 +1,23 @@
+cff-version: 1.2.0
+title: "cyberdef-vuln: a QLoRA study of defensive vulnerability detection with small open models"
+message: "If you use this work, please cite it."
+type: software
+authors:
+  - given-names: Pallav
+    family-names: Pokhriyal
+    orcid: "https://orcid.org/0009-0001-5356-7663"
+    email: pallav01@gmail.com
+license: MIT
+repository-code: "https://github.com/pallav0107/cyberdef-llm"
+keywords:
+  - vulnerability detection
+  - secure code review
+  - large language models
+  - QLoRA
+  - defensive security
+abstract: >
+  A reproducible study of whether QLoRA fine-tuning of a small open instruct model
+  (Qwen2.5-7B-Instruct) yields transferable code-vulnerability-detection skill, evaluated
+  under an identical prompt on the recognized CodeXGLUE Defect Detection (Devign)
+  benchmark, with explicit leakage controls and automatic recomputation of all reported
+  scores. Includes honest negative results.
