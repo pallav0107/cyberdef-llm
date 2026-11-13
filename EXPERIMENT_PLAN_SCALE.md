@@ -58,3 +58,18 @@ by `scripts/verify_results.py`.
 - Larger training sets (B: 2000/class, D2: up to 4800/class) raise that risk, so every transfer
   result from here on is reported both on the full sample and on the subset with all
   PrimeVul-TRAIN duplicates removed; claims are made on the de-duplicated subset.
+
+## E. Independent transfer datasets from other groups (added 14 Nov 2026, before any E run)
+- PrimeVul merged BigVul, CrossVul, CVEfixes and DiverseVul (PrimeVul paper, Sec. III-A), so new
+  transfer tests use datasets outside that lineage:
+  - **ReVeal** (Chromium + Debian; Columbia / UVA / IBM; `claudios/ReVeal`) — DiverseVul absorbed
+    ReVeal, so overlap with PrimeVul is possible and is removed (below).
+  - **CASTLE** (250 hand-labelled C programs, 25 CWEs; CASTLE-Benchmark, MIT licence).
+  - **D2A** (IBM; static-analyser labels, expected to be noisy; `claudios/D2A`, labelled held-out slice).
+  - plus a leakage audit of the existing **Devign** comparison against PrimeVul TRAIN.
+- Every test sample is built with all PrimeVul-TRAIN duplicates removed (normalised exact match)
+  before scoring; the number removed is reported. Balanced classes, sample seed 0, up to 200 per
+  class (fewer where the clean pool is smaller, reported).
+- Models: base vs the existing 7B adapter, and the D winner when available. No tuning on these
+  sets; each is scored once. All results are reported, including any where the adapter does not
+  beat its base.
