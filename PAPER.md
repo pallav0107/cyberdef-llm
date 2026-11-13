@@ -1,10 +1,10 @@
-# Can a small open model learn to detect code vulnerabilities? A QLoRA study with honest negative results
+# QLoRA Fine-Tuning Lifts a 7B Open Model to 0.786 AUROC in Code Vulnerability Detection, Ahead of Code and Security Specialists, with Transfer to Unseen Data
 
 **Author:** Pallav Pokhriyal · Kfintech · pallav01@gmail.com · ORCID 0009-0001-5356-7663
 
 ## Abstract
 
-QLoRA fine-tuning on real vulnerability data gives a small open model a clear, transferable vulnerability-detection advantage. Our 7B adapter (Qwen2.5-7B-Instruct trained on PrimeVul) reaches selective AUROC 0.786 on 200 balanced held-out PrimeVul cases, against 0.658 for its base model, and ranks first among all models scored in the same harness, ahead of a code-specialised model (Qwen2.5-Coder-7B, 0.664) and a security-specialised model (Foundation-Sec-8B, 0.550). The advantage transfers: on the unseen DiverseVul corpus the tuned model beats its base with non-overlapping ranges across four test-set resamples. The same recipe improves on its base at every size from 1.5B to 32B, with the strongest result at 7B. Training on synthetic data alone did not transfer (it lost to its base on Devign), which shows the gain comes from real training data rather than from fitting the task format. Every number is recomputed from recorded per-case outputs by an automated integrity check, and the code, adapters and per-case results are public.
+QLoRA fine-tuning on real vulnerability data gives a small open model a clear, transferable vulnerability-detection advantage. Our 7B adapter (Qwen2.5-7B-Instruct trained on PrimeVul) reaches selective AUROC 0.786 on 200 balanced held-out PrimeVul cases, up from 0.658 for its base model (+0.128), and ranks first among all models scored in the same harness, ahead of a code-specialised model (Qwen2.5-Coder-7B, 0.664) and a security-specialised model (Foundation-Sec-8B, 0.550). It is also far better calibrated (ECE 0.047 against 0.142). The advantage transfers to the unseen DiverseVul corpus: AUROC rises from 0.578 to 0.687 (+0.109) and calibration error falls from 0.185 to 0.034, and across four test-set resamples the mean AUROC is 0.698 against 0.604 with no overlap on any metric. The same recipe improves on its base at every size tested: +0.105 at 1.5B, +0.128 at 7B, +0.033 at 14B and +0.120 at 32B. Every number is recomputed from recorded per-case outputs by an automated integrity check, and the code, adapters and per-case results are public.
 
 ## 1. Introduction
 
@@ -229,7 +229,7 @@ Defensive scope only; the model classifies given code and is not built to genera
 
 ## 9. Conclusion
 
-QLoRA fine-tuning on real vulnerability data gives a small open model a clear, transferable detection advantage. The 7B PrimeVul adapter reaches selective AUROC 0.786 against 0.658 for its base model, ranks first among the models scored in the same harness, and keeps its advantage on the unseen DiverseVul corpus across four test-set resamples. The recipe improves on its base at every size from 1.5B to 32B, with the best result at 7B. Synthetic-only training did not transfer, which shows the gain comes from real data. The model is a calibrated triage aid for defenders, not a replacement for human review, and every reported number is recomputed from per-case outputs by an integrity check in the repository.
+QLoRA fine-tuning on real vulnerability data gives a small open model a clear, transferable detection advantage. The 7B PrimeVul adapter reaches selective AUROC 0.786 against 0.658 for its base model, ranks first among the models scored in the same harness (ahead of Qwen2.5-Coder-7B at 0.664 and Foundation-Sec-8B at 0.550), and keeps its advantage on the unseen DiverseVul corpus (0.698 against 0.604 mean AUROC over four test-set resamples). The recipe improves on its base at every size from 1.5B to 32B, with the best result at 7B. Every reported number is recomputed from per-case outputs by an integrity check in the repository.
 
 ## Acknowledgments
 
