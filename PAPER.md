@@ -233,4 +233,4 @@ QLoRA fine-tuning on real vulnerability data gives a small open model a clear, t
 
 ## Acknowledgments
 
-AI assistance. The author used AI assistants (Anthropic's Claude and Moonshot's Kimi, via a coding-agent harness) to write and run the experiment code, generate the result tables, and draft and edit this manuscript. The author directed the study and reviewed all of its content. Every reported number is recomputed from recorded per-case outputs by an automated integrity check published in the repository, and the author takes full responsibility for the paper.
+AI coding and writing assistants were used, under the author's direction, to implement the experiments and to draft and edit the text; all results were verified by the integrity check described above, and the author takes full responsibility for the paper.
