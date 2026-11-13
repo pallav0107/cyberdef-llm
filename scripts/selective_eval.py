@@ -89,9 +89,19 @@ def main():
     ap.add_argument("--max-chars", type=int, default=4000)
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--out", required=True)
+    ap.add_argument("--cases-file", default=None,
+                    help="JSON with a 'cases' list (see scripts/xdata_clean_sample.py); score exactly "
+                         "those cases instead of drawing a sample")
     a = ap.parse_args()
 
-    cases, pool = benchdata.balanced_sample(a.dataset, a.split, a.n_per_class, a.seed, a.max_chars)
+    if a.cases_file:
+        cf = json.loads(Path(a.cases_file).read_text())
+        cases, pool = cf["cases"], cf.get("pool", {})
+        a.split = cf.get("split", a.split)
+        a.n_per_class = len(cases) // 2
+        a.seed = cf.get("seed", a.seed)
+    else:
+        cases, pool = benchdata.balanced_sample(a.dataset, a.split, a.n_per_class, a.seed, a.max_chars)
     model, tok = model_io.load_hf(a.model, adapter=a.adapter)
     model.eval()
 
@@ -122,6 +132,8 @@ def main():
         "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
         "per_case": per,
     }
+    if a.cases_file:
+        res["cases_file"] = a.cases_file
     Path(a.out).parent.mkdir(parents=True, exist_ok=True)
     Path(a.out).write_text(json.dumps(res, indent=2))
     rc = res["risk_coverage"]

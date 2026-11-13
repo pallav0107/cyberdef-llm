@@ -20,6 +20,12 @@ from datasets import load_dataset
 _HF_HUB = os.path.expanduser("~/.cache/huggingface/hub")
 _DV = f"{_HF_HUB}/datasets--bstee615--diversevul/snapshots/*/data"
 
+# Independent transfer sets (plan step E), all loaded from local files so they work offline.
+_RV = f"{_HF_HUB}/datasets--claudios--ReVeal/snapshots/*/data"
+_D2A = f"{_HF_HUB}/datasets--claudios--D2A/snapshots/*/function"
+_CASTLE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "data", "castle",
+                       "datasets", "CASTLE-C250.json")
+
 BENCHES = {
     "devign": dict(hf="google/code_x_glue_cc_defect_detection",
                    splits=dict(train="train", validation="validation", test="test"),
@@ -33,6 +39,28 @@ BENCHES = {
                        parquet=dict(train=f"{_DV}/train-*.parquet",
                                     validation=f"{_DV}/validation-*.parquet",
                                     test=f"{_DV}/test-*.parquet")),
+    # ReVeal (Chromium + Debian, patch-diff labels). Columns: hash, project, size, label,
+    # functionSource.
+    "reveal": dict(hf="claudios/ReVeal",
+                   splits=dict(train="train", validation="validation", test="test"),
+                   func="functionSource", label="label", id="hash",
+                   parquet=dict(train=f"{_RV}/train-*.parquet",
+                                validation=f"{_RV}/validation-*.parquet",
+                                test=f"{_RV}/test-*.parquet")),
+    # D2A `function` subset (Infer differential labels). Columns: id, label, code. Its official
+    # test split is UNLABELLED (all -1), so the labelled evaluation split is "validation" = the
+    # official `dev` file (596 rows); "train" is labelled too but is not used for evaluation.
+    "d2a": dict(hf="claudios/D2A",
+                splits=dict(train="train", validation="dev", test="test"),
+                func="code", label="label", id="id",
+                parquet=dict(train=f"{_D2A}/train-*.parquet",
+                             validation=f"{_D2A}/dev-*.parquet",
+                             test=f"{_D2A}/test-*.parquet")),
+    # CASTLE C250: 250 hand-written C programs, per-program boolean `vulnerable` (150 vulnerable /
+    # 100 non-vulnerable). Local JSON (git clone of CASTLE-Benchmark into data/castle/).
+    "castle": dict(hf="CASTLE-Benchmark/CASTLE-Benchmark",
+                   splits=dict(test="test"), func="code", label="vulnerable", id="name",
+                   local_json=_CASTLE, json_key="tests"),
 }
 
 
@@ -45,6 +73,12 @@ def spec(name):
 def _load_split(sp, split, streaming=False):
     """Load one split, preferring cached local parquet (offline-safe) when the registry entry
     declares a parquet glob and files exist; otherwise load from the Hub id as before."""
+    if sp.get("local_json"):
+        import json
+        path = os.path.normpath(sp["local_json"])
+        if not os.path.exists(path):
+            raise SystemExit(f"local dataset file missing: {path}")
+        return json.load(open(path))[sp["json_key"]]
     pq = sp.get("parquet")
     if pq and split in pq:
         files = sorted(glob.glob(pq[split]))
@@ -70,7 +104,8 @@ def _row_code(r, sp):
 
 def _mk(r, sp, max_chars):
     code = _row_code(r, sp)
-    return dict(id=str(r.get("idx", r.get("id", ""))),
+    rid = r.get(sp["id"]) if sp.get("id") else r.get("idx", r.get("id", ""))
+    return dict(id=str(rid),
                 code=code[:max_chars], code_chars=len(code),
                 truncated=len(code) > max_chars,
                 label="VULNERABLE" if _is_vuln(r[sp["label"]]) else "SAFE")

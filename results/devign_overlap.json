@@ -1,0 +1,27 @@
+{
+ "source": "results/cls_devign_base.json vs results/cls_devign_ours.json (compare_class.sh devign)",
+ "sample": "balanced_sample(devign, test, n_per_class=100, seed=0, max_chars=4000)",
+ "adapter_ours": "out/qlora-devign",
+ "n": 200,
+ "pool": {
+  "n_vuln": 1255,
+  "n_safe": 1477
+ },
+ "overlap_any_primevul_train": 3,
+ "overlap_by_label": {
+  "VULNERABLE": 3,
+  "SAFE": 0
+ },
+ "all": {
+  "n": 200,
+  "n_vulnerable": 100,
+  "auroc_base": 0.5897,
+  "auroc_ours": 0.6252
+ },
+ "clean_vs_all_primevul_train": {
+  "n": 197,
+  "n_vulnerable": 97,
+  "auroc_base": 0.5931,
+  "auroc_ours": 0.6318
+ }
+}
