@@ -26,3 +26,4 @@ scripts/run32b*.sh
 scripts/train32b_spark.sh
 scripts/_spark_suite.sh
 scripts/smoke_*.sh
+scripts/campaign_*.sh
