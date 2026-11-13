@@ -73,3 +73,15 @@ by `scripts/verify_results.py`.
 - Models: base vs the existing 7B adapter, and the D winner when available. No tuning on these
   sets; each is scored once. All results are reported, including any where the adapter does not
   beat its base.
+
+## F. Further recipe levers (added 14 Nov 2026, before any F run; runs after D and E)
+Each candidate changes ONE thing relative to the D winner (7B, seed 0) and is scored on the same
+1000-case VALIDATION sample:
+- F1 longer inputs: 8000 characters instead of 4000 (training and scoring).
+- F2 larger adapter: LoRA r=32, alpha=64 instead of r=16, alpha=32.
+- F3 ensemble: mean p_vuln of the top-3 single adapters by validation AUROC (from D1-D4, F1, F2).
+Selection: the highest validation AUROC among {D winner, F1, F2, F3}; ties within 0.005 go to the
+simpler option (single < ensemble; 4000 < 8000 chars; r16 < r32). Only that final choice is scored
+once on the 1000-case PrimeVul test sample (the components of an ensemble are scored on test only
+to form the ensemble score) and once on each step-E independent dataset. All validation results
+are reported, including those that do not help.
