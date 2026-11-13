@@ -52,6 +52,8 @@ def main():
     ap.add_argument("--lr", type=float, default=1e-4)
     ap.add_argument("--max-chars", type=int, default=4000)
     ap.add_argument("--seed", type=int, default=0)
+    ap.add_argument("--lora-r", type=int, default=16)
+    ap.add_argument("--lora-alpha", type=int, default=32)
     ap.add_argument("--val-per-class", type=int, default=100)
     a = ap.parse_args()
     torch.manual_seed(a.seed)
@@ -65,7 +67,7 @@ def main():
 
     model, mode = load_model(a.base)
     from peft import LoraConfig, get_peft_model
-    lc = LoraConfig(r=16, lora_alpha=32, lora_dropout=0.05, bias="none", task_type="CAUSAL_LM",
+    lc = LoraConfig(r=a.lora_r, lora_alpha=a.lora_alpha, lora_dropout=0.05, bias="none", task_type="CAUSAL_LM",
                     target_modules=["q_proj", "k_proj", "v_proj", "o_proj",
                                     "gate_proj", "up_proj", "down_proj"])
     model = get_peft_model(model, lc)
