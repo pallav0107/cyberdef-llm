@@ -85,3 +85,10 @@ simpler option (single < ensemble; 4000 < 8000 chars; r16 < r32). Only that fina
 once on the 1000-case PrimeVul test sample (the components of an ensemble are scored on test only
 to form the ensemble score) and once on each step-E independent dataset. All validation results
 are reported, including those that do not help.
+
+## Amendment (14 Nov 2026, before any E score): parallel placement
+To run E alongside B, the step-E base and existing-adapter (out/qlora-primevul) scores are
+computed on the NVIDIA GB10 (Spark, aarch64 container) instead of the box; the D-winner and
+final-model scores on the E sets are computed on the box. Evaluation only (no training) moves;
+the case files, prompt and scoring code are identical. All D and F training stays on one machine
+(the box) so recipe comparisons are not confounded by hardware.
