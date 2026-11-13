@@ -1,6 +1,6 @@
 # Model Card — cyberdef-vuln (QLoRA adapter for defensive vulnerability detection)
 
-> **Status: READY TO PUBLISH — pending author action (not yet published).** The gate
+> **Status: PUBLISHED — published 2026-11-13 at github.com/pallav0107/cyberdef-llm and huggingface.co/pallav0101/cyberdef-vuln-qwen2.5-7b-primevul.** The gate
 > this card set — a positive, reproducible delta on recognized public benchmarks — is now
 > **met and verified**: the PrimeVul-trained 7B adapter leads an in-class leaderboard
 > (AUROC 0.786 vs base 0.658) and its edge transfers to an unseen dataset (DiverseVul) across

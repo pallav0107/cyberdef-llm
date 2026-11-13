@@ -1,6 +1,6 @@
 # cyberdef-vuln — Release manifest
 
-**Status: ready to publish, pending author action. Not yet published.** See `MODEL_CARD.md`
+**Status: PUBLISHED (2026-11-13).** Code: https://github.com/pallav0107/cyberdef-llm and Model: https://huggingface.co/pallav0101/cyberdef-vuln-qwen2.5-7b-primevul. See `MODEL_CARD.md`
 for the full card and `RESULTS.md` for every verified number; this file is the at-a-glance
 manifest of what the release contains and how to reproduce it.
 
