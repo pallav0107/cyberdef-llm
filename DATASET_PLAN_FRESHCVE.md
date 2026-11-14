@@ -36,3 +36,31 @@ PrimeVul-style precise rules. A pre-fix function is labelled VULNERABLE only if
 Functions changed by the fix that meet neither rule go to a separate "uncertain" split (reported,
 never mixed into the main test set). Safe examples are unchanged functions from the same files.
 The 100-function human review samples the main (precise) set. Counts for both splits are reported.
+
+## Amendment 2 (14 Nov 2026, before function extraction or any labels): tightening
+1. Coverage: no time budget — every eligible CVE in the window is processed; the final size and
+   per-language counts are reported with confidence intervals; no size claim is made.
+2. Labels: the precise rules of Amendment 1 apply (one-function commits or functions named in the
+   CVE/advisory); everything else goes to the separate "uncertain" split.
+3. Label validation: the author reviews 200 MAIN-set vulnerable functions, stratified by language
+   (fixed seed 0). Two independent open-weight models from different families (excluding the
+   models under evaluation and their base, Qwen2.5-7B) judge the same 200 functions as a clearly
+   labelled SECONDARY signal; agreement between the author and each model, and between the
+   models, is reported. The headline label-precision estimate comes from the human review only,
+   with a Wilson 95% confidence interval.
+4. Sampling bias is measured: the dataset's distribution by CWE, language and ecosystem is compared
+   with ALL CVEs published in the same window (including excluded ones), and the comparison is
+   reported.
+5. Contamination: the claim is that every CVE was DISCLOSED after 2024-10-01. In addition, a
+   "code-unseen" subset is identified — vulnerable functions whose file did not exist, or whose
+   function first appeared, after 2024-10-01 according to repository history — and reported
+   separately. No claim is made that the remaining code was unseen.
+6. Reproducibility: a content hash is published for every function (metadata and code-free rows
+   alike) so a rebuilt copy can be verified identical; results are reported on the full evaluated
+   set and on the publicly redistributable subset.
+7. Splits: project and month metadata are released with recommended project-based and time-based
+   splits for users who want them; this study uses the set for testing only.
+8. Deduplication is extended to BigVul, CrossVul, MegaVul, ReposVul, CleanVul and SVEN where they
+   can be obtained within the download limit (CVEfixes, 12.7 GB, is excluded and stated), and
+   near-duplicates are removed with MinHash (threshold fixed before running) using the leakcheck
+   tool, in addition to exact matching. Removed counts are reported per source.
