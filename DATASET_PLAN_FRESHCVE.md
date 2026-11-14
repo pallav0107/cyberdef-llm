@@ -26,3 +26,13 @@ base model's release (Qwen2.5, September 2024), so no model in this study could 
   licensed code may be included with its licence notice.
 - Used only as a test set in this study (never for training or tuning). Results are reported for every
   model scored, whatever they show.
+
+## Amendment (14 Nov 2026, before function extraction or any labels): precise labels
+Published audits (summarised in the PrimeVul paper) found that labelling EVERY function changed by a
+fixing commit as vulnerable is only about 25-60% accurate. The main test set therefore uses
+PrimeVul-style precise rules. A pre-fix function is labelled VULNERABLE only if
+(a) the fixing commit changes exactly one function in source files, OR
+(b) the function's name appears in the CVE description or the GitHub advisory text.
+Functions changed by the fix that meet neither rule go to a separate "uncertain" split (reported,
+never mixed into the main test set). Safe examples are unchanged functions from the same files.
+The 100-function human review samples the main (precise) set. Counts for both splits are reported.
