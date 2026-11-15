@@ -28,7 +28,7 @@ QUICK_BANK_AMENDMENT = "QUICK_BANK_AMENDMENT_2_2026-11-15"   # batch 2: quick + 
 SET_FILES = {
     "pv": "results/lenmatched_eval_cases.json", "pv300": "results/lenmatched_eval_cases_300.json",
     "vh": "results/vs_holdout_matched_cases.json", "vn": "results/vs_nolinux_matched_cases.json",
-    "castle": "results/xdata_castle_cases.json", "j3m": "results/j3_heldout_matched_cases.json", "qh": "results/q_heldout_cases.json", "j4m": "results/j4_heldout_matched_cases.json", "j3h": "results/j3_heldout_cases.json", "loc": "results/imp_loc_cases.json", "pairs": "results/imp_vs_pairs_eval_cases.json",
+    "castle": "results/xdata_castle_cases.json", "j3m": "results/j3_heldout_matched_cases.json", "qh": "results/q_heldout_cases.json", "j4m": "results/j4_heldout_matched_cases.json", "j3h": "results/j3_heldout_cases.json", "j3s": "results/j3s_heldout_matched_cases.json", "j4s": "results/j4s_heldout_matched_cases.json", "loc": "results/imp_loc_cases.json", "pairs": "results/imp_vs_pairs_eval_cases.json",
 }
 PREREG = "pre-registered sets (PrimeVul, VulSpot x2, CASTLE, J3 held-out matched + all; CoT arms add localisation)"
 TEST_SETS = {   # choice -> set keys. PREREG is completed per arm in plan() (the queue jobs P60/P61/P86 evaluate exactly these)
@@ -39,7 +39,8 @@ TEST_SETS = {   # choice -> set keys. PREREG is completed per arm in plan() (the
     "VulSpot no-linux, length-matched": ["vn"],
     "CASTLE (198 runnable programs)": ["castle"],
     "amendment 3 round sets (J3 matched, SQLi held-out, J4 matched, CASTLE, PrimeVul 300)": ["j3m", "qh", "j4m", "castle", "pv300"],   # addendum 3a
-    "amendment 3 category round, J3 (J3 matched, CASTLE, PrimeVul 300)": ["j3m", "castle", "pv300"],   # addendum 3a minimum for command injection, path traversal, format string adapters
+    "amendment 3 category round, J3 (J3 matched, CASTLE, PrimeVul 300)": ["j3m", "castle", "pv300"],
+    "amendment 3i round sets (J4s, J3s, CASTLE, PrimeVul 300)": ["j4s", "j3s", "castle", "pv300"],   # addendum 3i: structure-matched primary tests (memory/integer/leak; format string)   # addendum 3a minimum for command injection, path traversal, format string adapters
 }
 # Training data. CoT arms use the pre-registered recipes of the queue jobs P60 (arm 2) and P61 (arm 6), on the items built
 # from the QUICK v2.3 trace bank (imp_cotq_*). Each arm has a verdict-only twin on identical rows: the arm-vs-twin

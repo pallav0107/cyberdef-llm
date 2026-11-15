@@ -50,6 +50,7 @@ on:
           - "CASTLE (198 runnable programs)"
           - "amendment 3 round sets (J3 matched, SQLi held-out, J4 matched, CASTLE, PrimeVul 300)"
           - "amendment 3 category round, J3 (J3 matched, CASTLE, PrimeVul 300)"
+          - "amendment 3i round sets (J4s, J3s, CASTLE, PrimeVul 300)"
         default: "pre-registered sets (PrimeVul, VulSpot x2, CASTLE, J3 held-out matched + all; CoT arms add localisation)"
       scorer:
         description: "Selective = verdict probability for HF models and adapters (CoT arms switch to SC-CoT generation automatically)"

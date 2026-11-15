@@ -51,6 +51,25 @@ def overlap(tests, pool_rows):
     return [c.get("id") for c in tests if h(text(c)) in ph or key(str(c.get("id", ""))) in pk]
 
 
+DESCRIPTIVE = {"j3m", "j3h", "j4m"}   # addendum 3i: known structural shortcut; reported, never a primary test
+FNDEF = re.compile(r"(?m)^(?:static\s+)?(?:unsigned\s+|signed\s+|const\s+)*[A-Za-z_][\w\s\*]*?\bfn_\d+\s*\([^;{)]*\)\s*\{")
+
+
+def auroc(s, y):
+    pos = [a for a, b in zip(s, y) if b]; neg = [a for a, b in zip(s, y) if not b]
+    if not pos or not neg:
+        return 0.5
+    return sum((p > n) + 0.5 * (p == n) for p in pos for n in neg) / (len(pos) * len(neg))
+
+
+def structure(cases):
+    """(function-count-only, static-count-only) AUROC, best direction"""
+    y = [c.get("label") == "VULNERABLE" for c in cases]
+    f = auroc([len(FNDEF.findall(text(c))) for c in cases], y)
+    st = auroc([len(re.findall(r"\bstatic\b", text(c))) for c in cases], y)
+    return max(f, 1 - f), max(st, 1 - st)
+
+
 def check():
     from ci_plan import SET_FILES
     bad, seen = [], 0
@@ -64,6 +83,12 @@ def check():
         lk, ov = leaky(cs), overlap(cs, pool_rows)
         print(f"  test {k}: {len(cs)} cases; label text in {len(lk)}; shared with a training pool: {len(ov)}")
         if lk: bad.append(f"{k}: label text in {lk[:3]}")
+        fb, sb = structure(cs)
+        if fb > 0.60 or sb > 0.60:
+            if k in DESCRIPTIVE:
+                print(f"::warning::{k} is descriptive only: function count alone scores {fb:.3f}, static count {sb:.3f} (addendum 3i)")
+            else:
+                bad.append(f"{k}: structural shortcut (function count {fb:.3f}, static count {sb:.3f})")
         if ov: bad.append(f"{k}: in a training pool {ov[:3]}")
     for f in pools():
         lk = leaky(rows(f))
@@ -86,7 +111,10 @@ def selftest():
     assert overlap([{"id": "qh:s1k1:V", "code": "different text"}], pool), "blind to a held-out SQLi pair that is in a pool"
     assert overlap([{"id": "x:1", "code": "int  g(){return 2;}"}], pool), "blind to duplicate code under another id"
     assert not leaky([{"id": "123", "code": "int bad_count; /* FIX later */"}]), "real-world code must be exempt from (a)"
-    print("data hygiene control: clean passes; FIX comment, bad identifier, held-out pair in pool and duplicate code are caught")
+    lop = [{"id": "j4s:a:V", "label": "VULNERABLE", "code": "void fn_0(){}"}, {"id": "j4s:a:S", "label": "SAFE", "code": "void fn_0(){}\nstatic void fn_1(){}\nvoid fn_2(){ fn_0(); fn_1(); }"}] * 10
+    even = [{"id": "j4s:b:V", "label": "VULNERABLE", "code": "void fn_0(){}"}, {"id": "j4s:b:S", "label": "SAFE", "code": "void fn_0(){}"}] * 10
+    assert structure(lop)[0] > 0.9 and structure(even)[0] <= 0.6, "blind to a function-count shortcut"
+    print("data hygiene control: clean passes; FIX comment, bad identifier, held-out pair in pool, duplicate code and a function-count shortcut are caught")
 
 
 def check_items(path):
