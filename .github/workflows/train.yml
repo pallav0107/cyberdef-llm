@@ -99,14 +99,23 @@ jobs:
           LANE="${{ needs.route.outputs.lane_name }}"
           LOCK=".box_gpu.lock"; [ "$LANE" = "spark" ] && LOCK=".spark_ci.lock"
           OUT="out/imp_${{ inputs.out_tag }}"
-          # flock serializes against the legacy lane scripts during cutover; one GPU job at a time
-          exec 9>"$LOCK"; flock 9
-          "${CYBERDEF_PY:-python3}" scripts/imp_train.py \
-            --base "${{ inputs.base }}" --out "$OUT" \
-            --dataset "${{ inputs.dataset }}" --n-per-class "${{ inputs.n_per_class }}" \
-            --epochs "${{ inputs.epochs }}" --lr "${{ inputs.lr }}" --seed "${{ inputs.seed }}" \
-            --meta "ci run=${{ github.run_id }} sha=${{ github.sha }} lane=$LANE" \
-            ${{ inputs.arm }}
+          ARGS=(--base "${{ inputs.base }}" --out "$OUT" --dataset "${{ inputs.dataset }}" --n-per-class "${{ inputs.n_per_class }}"
+                --epochs "${{ inputs.epochs }}" --lr "${{ inputs.lr }}" --seed "${{ inputs.seed }}"
+                --meta "ci run=${{ github.run_id }} sha=${{ github.sha }} lane=$LANE")
+          echo "trainer sha256: $(sha256sum scripts/imp_train.py | cut -c1-16)"
+          if [ "$LANE" = "spark" ]; then
+            # Spark: system python has no torch; train inside cyberdef-train:aarch64 via gdock (same as the Spark queue jobs),
+            # admitted like the queue runner: wait until MemAvailable >= job + 40 GB reserve.
+            source scripts/gpu_job_lib.sh; source scripts/imp_job_lib.sh 2>/dev/null || true; export IMP_PYLIB=/work/imp_pylib
+            export MEM_GB=40; need=$((MEM_GB + 40))
+            until [ "$(awk '/MemAvailable/{print int($2/1048576)}' /proc/meminfo)" -ge "$need" ]; do echo "waiting: need ${need} GB MemAvailable"; sleep 60; done
+            exec 9>"$LOCK"; echo "waiting for Spark CI lock..."; flock 9
+            gdock '' scripts/imp_train.py "${ARGS[@]}" ${{ inputs.arm }}
+          else
+            # box: flock serializes against the legacy lane scripts; one GPU job at a time
+            exec 9>"$LOCK"; echo "waiting for box GPU lock..."; flock 9
+            "${CYBERDEF_PY:-python3}" scripts/imp_train.py "${ARGS[@]}" ${{ inputs.arm }}
+          fi
           flock -u 9
 
       - name: Stamp provenance

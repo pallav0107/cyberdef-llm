@@ -14,7 +14,7 @@ permissions:
 
 jobs:
   smoke:
-    runs-on: [self-hosted, cyberdef]
+    runs-on: [self-hosted, cyberdef, cpu-box]
     env:
       PYTHONPATH: src
     steps:

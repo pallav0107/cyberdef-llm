@@ -89,9 +89,14 @@ jobs:
           exec 9>"$LOCK"; flock 9
           if [ "${{ inputs.scorer }}" = "selective" ]; then
             ADAPTER=""; [ -n "$TAG" ] && ADAPTER="--adapter out/imp_$TAG"
-            "${CYBERDEF_PY:-python3}" scripts/imp_selective.py --model "${{ inputs.model }}" $ADAPTER \
-              --cases-file "${{ inputs.cases_file }}" --out "$OUT" \
-              --meta "ci eval run=${{ github.run_id }} sha=${{ github.sha }} lane=$LANE"
+            SEL=(scripts/imp_selective.py --model "${{ inputs.model }}" $ADAPTER --cases-file "${{ inputs.cases_file }}" --out "$OUT"
+                 --meta "ci eval run=${{ github.run_id }} sha=${{ github.sha }} lane=$LANE")
+            if [ "$LANE" = "spark" ]; then   # Spark: torch only inside the container
+              source scripts/gpu_job_lib.sh; source scripts/imp_job_lib.sh 2>/dev/null || true; export IMP_PYLIB=/work/imp_pylib MEM_GB=28
+              gdock '' "${SEL[@]}"
+            else
+              "${CYBERDEF_PY:-python3}" "${SEL[@]}"
+            fi
           else
             "${CYBERDEF_PY:-python3}" scripts/imp_zs_probe.py --model "${{ inputs.model }}" --tag "$SLUG" \
               --think "${{ inputs.think }}" --cases-file "${{ inputs.cases_file }}" --set "${{ inputs.set_key }}" \

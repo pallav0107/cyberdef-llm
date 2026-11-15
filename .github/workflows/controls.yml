@@ -1,0 +1,67 @@
+name: controls
+
+# Fail-first controls for the backbone (each is a pair: the real control must PASS, a deliberately broken mutant
+# must be CAUGHT). CPU/Docker only -> runs on the CPU runner, alongside GPU jobs. No pull_request trigger (public repo).
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ["src/cyberdef/exec_oracle.py", "src/cyberdef/imp_common.py", "src/cyberdef/feed.py", "scripts/imp_oracle*.py",
+            "scripts/imp_shim.c", "acceptance/**", "scripts/ci_controls.py", "scripts/ci_data_manifest.py",
+            "data/DATA_MANIFEST.json", ".github/workflows/controls.yml"]
+  schedule:
+    - cron: "17 */6 * * *"   # every 6 h (UTC): catches drift in the box environment
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cyberdef-controls
+  cancel-in-progress: false
+
+jobs:
+  data_integrity:
+    runs-on: [self-hosted, cyberdef, cpu-box]
+    steps:
+      - name: Manifest self-test (a corrupted copy must be caught)
+        run: |
+          cd "${CYBERDEF_REPO:=$HOME/missions/cyberdef-llm}"
+          "${CYBERDEF_PY:-$CYBERDEF_REPO/.venv/bin/python}" scripts/ci_data_manifest.py --selftest
+      - name: Canonical datasets match data/DATA_MANIFEST.json (sha256)
+        run: |
+          cd "${CYBERDEF_REPO:=$HOME/missions/cyberdef-llm}"
+          "${CYBERDEF_PY:-$CYBERDEF_REPO/.venv/bin/python}" scripts/ci_data_manifest.py --check
+
+  length_matched_sets:
+    runs-on: [self-hosted, cyberdef, cpu-box]
+    steps:
+      - name: Length-only AUROC in [0.45, 0.55] on every matched eval set (+ mutant must leave the band)
+        run: |
+          cd "${CYBERDEF_REPO:=$HOME/missions/cyberdef-llm}"
+          set +e
+          PYTHONPATH=src "${CYBERDEF_PY:-$CYBERDEF_REPO/.venv/bin/python}" scripts/ci_controls.py --only length \
+            --out results/ci_controls_length.json --md /tmp/ctl_length_$GITHUB_RUN_ID.md; rc=$?
+          cat /tmp/ctl_length_$GITHUB_RUN_ID.md >> "$GITHUB_STEP_SUMMARY"; exit $rc
+
+  execution_oracle:
+    runs-on: [self-hosted, cyberdef, cpu-box]
+    steps:
+      - name: exec_oracle self-tests (real must pass; never/always mutants must be caught)
+        run: |
+          cd "${CYBERDEF_REPO:=$HOME/missions/cyberdef-llm}"
+          set +e
+          PYTHONPATH=src "${CYBERDEF_PY:-$CYBERDEF_REPO/.venv/bin/python}" scripts/ci_controls.py --only oracle --timeout 900 \
+            --out results/ci_controls_oracle.json --md /tmp/ctl_oracle_$GITHUB_RUN_ID.md; rc=$?
+          cat /tmp/ctl_oracle_$GITHUB_RUN_ID.md >> "$GITHUB_STEP_SUMMARY"; exit $rc
+
+  acceptance_selftests:
+    runs-on: [self-hosted, cyberdef, cpu-box]
+    steps:
+      - name: acceptance/improve self-tests and their --broken mutants (per MUTATION_PROOF.md)
+        run: |
+          cd "${CYBERDEF_REPO:=$HOME/missions/cyberdef-llm}"
+          set +e
+          PYTHONPATH=src "${CYBERDEF_PY:-$CYBERDEF_REPO/.venv/bin/python}" scripts/ci_controls.py --only accept --timeout 900 \
+            --out results/ci_controls_accept.json --md /tmp/ctl_accept_$GITHUB_RUN_ID.md; rc=$?
+          cat /tmp/ctl_accept_$GITHUB_RUN_ID.md >> "$GITHUB_STEP_SUMMARY"; exit $rc

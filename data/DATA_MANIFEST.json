@@ -1,0 +1,72 @@
+{
+  "written": "2026-11-15T13:09:51+1100",
+  "files": {
+    "results/lenmatched_eval_cases.json": {
+      "sha256": "dca5c04f041806e6e3444712876117048abe3ff98c690a09bea8bc451baf7dcf",
+      "bytes": 2931996,
+      "n": 1074,
+      "what": "PrimeVul TEST, length-matched (537 pairs) - primary reading eval set"
+    },
+    "results/vs_holdout_matched_cases.json": {
+      "sha256": "1423bc49ffed99c1e14febb62bf29316cf9f7692e456f9fa32cdf6cbc9feea2c",
+      "bytes": 4637380,
+      "n": 1200,
+      "what": "VulSpot project-holdout, length-matched"
+    },
+    "results/vs_nolinux_matched_cases.json": {
+      "sha256": "717329b04a9341b392d084c989e15f2e1147068bab4c36f302b620f0b9b67569",
+      "bytes": 1456014,
+      "n": 624,
+      "what": "VulSpot chrono test (no linux), length-matched"
+    },
+    "results/xdata_castle_cases.json": {
+      "sha256": "0bd98cb2bdf94747b8c6c2c25ea5ffecd17842703faf054fd9f5f453f1680006",
+      "bytes": 225499,
+      "n": 198,
+      "what": "CASTLE 198 executable programs (99/99)"
+    },
+    "results/imp_castle_input_channels.json": {
+      "sha256": "3b17b1c64971b4c7eca4bd874e46a18751bdc743e89741d96fbdffc13030bbce",
+      "bytes": 120359,
+      "n": 198,
+      "what": "static input-channel detector output for CASTLE"
+    },
+    "results/imp_2o_floor_b60.json": {
+      "sha256": "a8e04f8cc77f21c91fb4f747b09c571a7c8a758e2c5b15dade8cc8e90fb905ca",
+      "bytes": 105062,
+      "n": 198,
+      "what": "fuzzer floor on CASTLE (execution baseline)"
+    },
+    "data/witness_train.jsonl": {
+      "sha256": "2220e88b5e9e5ae8c90ef8bbcf7de5a7f307ce808442af4fd3abec6420ebea87",
+      "bytes": 270296,
+      "n": 198,
+      "what": "oracle-confirmed witness set (Phase-A capture)"
+    },
+    "results/imp_cotq_2_items.json": {
+      "sha256": "b878bf1bfb2493962812b28bad2ad847a06fbfc566a1475ac1e3074f0ea670cf",
+      "bytes": 3168570,
+      "n": 386,
+      "what": "CoT arm 2 training items"
+    },
+    "results/imp_cotq_2_twin_items.json": {
+      "sha256": "6a28a6a4f3591b8592c927e76ca5d82bb51441a8b0fb6841ed50b0626b5ef793",
+      "bytes": 616751,
+      "n": 386,
+      "what": "CoT arm 2 verdict-only twin items"
+    },
+    "results/imp_cotq_6_items.json": {
+      "sha256": "55a9f2bdfc5460b94b14cb6423abde28be387f48e6672a7ea9b198ceebd031a4",
+      "bytes": 5397215,
+      "n": 672,
+      "what": "CoT arm 6 (counterfactual) training items"
+    },
+    "results/imp_cotq_6_twin_items.json": {
+      "sha256": "03b0a779beb369635a63ef42bad74a4e8a0365245b9068b2f3ef173cb4f5bba4",
+      "bytes": 1014436,
+      "n": 672,
+      "what": "CoT arm 6 verdict-only twin items"
+    }
+  },
+  "missing_at_write": []
+}
