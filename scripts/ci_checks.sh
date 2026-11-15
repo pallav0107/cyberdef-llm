@@ -26,9 +26,9 @@ env_pin() {   # drift is recorded as a warning, never a failure
   diff -q constraints.txt "$TMP/env_now.txt" >/dev/null 2>&1 || { echo "::warning::environment differs from constraints.txt"; diff -u constraints.txt "$TMP/env_now.txt" | head -40; }
   true
 }
-router_planner() {
-  # hermetic: the job's own inputs (DATA, SCORER, TEST_SET, ...) must not leak into the planner tests. ci_checks.sh is its
-  # own process and no other control reads these, so unsetting them here cannot affect anything else.
+router_planner() (
+  # runs in a SUBSHELL (note the parentheses): the job's own inputs (DATA, SCORER, TEST_SET, ...) must not leak into the
+  # planner tests, and unsetting them must not touch this script's own variables (MACHINE is this script's argument)
   unset DATA SCORER TEST_SET STEPS MODEL TAG MACHINE ACK_OOM TRAIN_FLAGS
   chk() { local got; got=$(python3 scripts/ci_route.py --mode "$3" --model "$1" 2>/dev/null | grep '^lane_name=' | cut -d= -f2)
           [ "$got" = "$2" ] || { echo "route $1: expected $2, got $got"; return 1; }; echo "route $1 -> $got OK"; }
@@ -57,7 +57,7 @@ router_planner() {
   if MACHINE=gpu-box MODEL="Qwen/Qwen2.5-7B-Instruct" STEPS="train only" TAG="" python3 scripts/ci_plan.py >/dev/null 2>&1; then
     echo "planner accepted training without a tag"; return 1; fi
   echo "planner OK"
-}
+)
 parser_selftest() {
   "$PY" - <<'PY'
 import sys; sys.path.insert(0, "scripts")
