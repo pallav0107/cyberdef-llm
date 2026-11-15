@@ -1,7 +1,9 @@
 name: cyberdef pipeline
 run-name: >-
-  ${{ github.event_name == 'workflow_dispatch' && format('{0} · box: {1} · spark: {2}{3}', inputs.steps, inputs.gpu_model || '-', inputs.spark_model || '-',
-  inputs.tag != '' && format(' · {0}', inputs.tag) || '') || github.event_name == 'push' && 'checks after push' || 'scheduled checks' }}
+  ${{ github.event_name != 'workflow_dispatch' && (github.event_name == 'push' && 'checks after push' || 'scheduled checks')
+  || inputs.steps == 'checks + status' && 'checks + status'
+  || inputs.steps == 'trace bank' && format('trace bank · {0}{1}', inputs.spark_model || '-', inputs.tag != '' && format(' · {0}', inputs.tag) || '')
+  || format('{0} · box: {1} · spark: {2}{3}', inputs.steps, inputs.gpu_model || '-', inputs.spark_model || '-', inputs.tag != '' && format(' · {0}', inputs.tag) || '') }}
 
 # The ONE workflow for cyberdef. Every run has exactly TWO jobs, one per machine, each listing every pipeline step:
 #   1 plan · 2 checks · 3 trace bank · 4 funnel · 5 train · 6 test · 7 grade · 8 provenance · 9 upload · 10 status
@@ -73,7 +75,15 @@ permissions:
 
 jobs:
   pipeline:
-    name: "${{ matrix.title }}${{ matrix.machine == 'spark' && inputs.spark_model && format(' · {0}', inputs.spark_model) || '' }}${{ matrix.machine == 'gpu-box' && inputs.gpu_model && format(' · {0}', inputs.gpu_model) || '' }}"
+    # the title names a model only when this machine trains, tests or generates with it in this run
+    name: >-
+      ${{ matrix.title }} · ${{
+      matrix.machine == 'gpu-box' && inputs.gpu_model && contains(fromJSON('["train + test","train only","test only"]'), inputs.steps)
+        && format('{0} · {1}', inputs.steps, inputs.gpu_model)
+      || matrix.machine == 'spark' && inputs.spark_model && contains(fromJSON('["train + test","train only","test only","trace bank"]'), inputs.steps)
+        && format('{0} · {1}', inputs.steps, inputs.spark_model)
+      || matrix.machine == 'spark' && 'checks only'
+      || 'checks + status' }}
     strategy:
       fail-fast: false
       matrix: >-
