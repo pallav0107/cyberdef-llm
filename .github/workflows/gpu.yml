@@ -1,8 +1,9 @@
 name: "GPU · train + test"
 run-name: "GPU · ${{ inputs.train && 'train + test' || 'test only' }} · ${{ inputs.model }}${{ inputs.train && format(' · {0}', inputs.data) || '' }}${{ inputs.tag != '' && format(' · {0}', inputs.tag) || '' }}"
 
-# Box GPU (24 GB CUDA; <=14B, 4-bit QLoRA). The same eight steps as "Spark · train + test", in the same order:
-#   1 plan · 2 checks · 3 train · 4 test · 5 grade · 6 provenance · 7 upload · 8 status
+# Box GPU (24 GB CUDA; <=14B, 4-bit QLoRA). The same nine steps as "Spark · train + test", in the same order, on the same data:
+#   1 plan · 2 checks · 3 dataset · 4 train · 5 test · 6 grade · 7 provenance · 8 upload · 9 status
+# CoT data is built once on Spark (trace generation needs vLLM) from the v2.3 trace bank and copied here byte-identical.
 # The work is in scripts/ci_step.sh, shared with the Spark workflow. Untick "train" to test an existing adapter
 # (out/imp_<tag>) or, with a blank tag, the base model. Public repo + self-hosted runner: manual dispatch only.
 
@@ -79,17 +80,19 @@ jobs:
         run: bash "$CYBERDEF_REPO/scripts/ci_step.sh" plan
       - name: 2. Checks (every control on this machine passes and catches its broken mutant)
         run: bash "$CYBERDEF_REPO/scripts/ci_step.sh" checks
-      - name: 3. Train (waits for this machine's GPU lock)
+      - name: 3. Dataset (the same training data on both machines; CoT items built once on Spark, sha256 shown)
+        run: bash "$CYBERDEF_REPO/scripts/ci_step.sh" dataset
+      - name: 4. Train (waits for this machine's GPU lock)
         if: steps.plan.outputs.train == 'true'
         run: bash "$CYBERDEF_REPO/scripts/ci_step.sh" train
-      - name: 4. Test (waits for this machine's GPU lock)
+      - name: 5. Test (waits for this machine's GPU lock)
         run: bash "$CYBERDEF_REPO/scripts/ci_step.sh" test
-      - name: 5. Grade (recompute AUROC from per_case, compare to the 0.60 bar; an integrity mismatch fails)
+      - name: 6. Grade (recompute AUROC from per_case, compare to the 0.60 bar; an integrity mismatch fails)
         run: bash "$CYBERDEF_REPO/scripts/ci_step.sh" grade
-      - name: 6. Stamp provenance
+      - name: 7. Stamp provenance
         if: ${{ !cancelled() }}
         run: bash "$CYBERDEF_REPO/scripts/ci_step.sh" provenance
-      - name: 7. Upload adapter, result, per_case and provenance
+      - name: 8. Upload adapter, result, per_case and provenance
         if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v4
         with:
@@ -97,6 +100,6 @@ jobs:
           path: artifacts/
           if-no-files-found: warn
           retention-days: 90
-      - name: 8. Status of every stage, from its evidence
+      - name: 9. Status of every stage, from its evidence
         if: ${{ !cancelled() }}
         run: bash "$CYBERDEF_REPO/scripts/ci_step.sh" status
