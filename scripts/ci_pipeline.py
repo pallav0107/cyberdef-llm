@@ -446,13 +446,24 @@ def emit_yaml(path):
         sid = s["id"]
         ref = f"fromJSON(needs.plan.outputs.board).{sid}"
         needs = ["plan"] + s["after"]
+        static = s["kind"] == "artifact" and not s["art"] and s["state"] in ("pending", "blocked")
+        if static:
+            # pending/blocked by design: GitHub does not evaluate the name of a skipped job, so the reason goes in a static name
+            tag = "⏳ PENDING" if s["state"] == "pending" else "⏸ BLOCKED"
+            out += [f"  {sid}:", f"    name: {q((s['label'] + ' · ' + tag + ' — ' + s['reason'])[:220])}",
+                    f"    needs: [{', '.join(needs)}]", "    if: ${{ false }}", "    runs-on: ubuntu-latest", "    steps:",
+                    "      - run: |", f"          echo {q(s['reason'])}", ""]
+            continue
+        # evidence-backed or derived: always runs; red only when FAILED; RUNNING/PENDING/BLOCKED are annotated, not hidden
         out += [f"  {sid}:",
                 f"    name: {q(s['label'] + ' · ')[:-1]}${{{{ {ref}.status }}}}\"",
                 f"    needs: [{', '.join(needs)}]",
-                f"    if: ${{{{ always() && needs.plan.result == 'success' && !contains(fromJSON('[\"PENDING\",\"BLOCKED\",\"RUNNING\"]'), {ref}.status) }}}}",
+                "    if: ${{ always() && needs.plan.result == 'success' }}",
                 "    runs-on: ubuntu-latest", "    steps:", f"      - name: {q(s['sec'] + ' · ' + s['label'])}", "        env:",
                 f"          STATUS: ${{{{ {ref}.status }}}}", f"          DETAIL: ${{{{ {ref}.detail }}}}", "        run: |",
-                '          echo "status: $STATUS"', "          printf '%s\\n' \"$DETAIL\" | tr '|' '\\n'", '          [ "$STATUS" = "VERIFIED" ]', ""]
+                '          echo "status: $STATUS"', "          printf '%s\\n' \"$DETAIL\" | tr '|' '\\n'",
+                '          if [ "$STATUS" = "FAILED" ]; then exit 1; fi',
+                '          if [ "$STATUS" != "VERIFIED" ]; then echo "::warning title=$STATUS::$DETAIL"; fi', ""]
     # section 1b: one job per monitor category; each link of the CoT chain is a visible step
     for key, m, label, _ in CATEGORIES:
         ref = f"fromJSON(needs.plan.outputs.board).cats.{key}"
