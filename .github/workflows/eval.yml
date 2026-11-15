@@ -1,0 +1,130 @@
+name: eval
+
+# Standardized testing entry point. Replaces hand-run box_eval / P18 launches. Runs the SAME
+# scorers the lanes use (imp_selective.py for HF adapters, imp_zs_probe.py for ollama models),
+# on a size-routed runner, then grades the result through ci_gate.py (recompute-from-per_case +
+# pre-registered bar). A NULL never fails the job; only an integrity mismatch does.
+
+on:
+  workflow_dispatch:
+    inputs:
+      scorer:
+        description: "selective (HF adapter, logprob) | zeroshot (ollama, generate)"
+        required: true
+        default: "selective"
+      model:
+        description: "HF base id (selective) or ollama tag (zeroshot)"
+        required: true
+      adapter_tag:
+        description: "selective only: adapter tag -> out/imp_<tag> (blank = base model)"
+        required: false
+        default: ""
+      cases_file:
+        description: "length-matched cases json"
+        required: true
+        default: "results/lenmatched_eval_cases.json"
+      set_key:
+        description: "short set label used in the output name (and zeroshot --set)"
+        required: true
+        default: "pv"
+      think:
+        required: false
+        default: "medium"
+      num_predict:
+        required: false
+        default: "4096"
+      workers:
+        required: false
+        default: "4"
+      bar:
+        description: "pre-registered AUROC bar for the informational verdict"
+        required: false
+        default: "0.60"
+      force_lane:
+        required: false
+        default: ""
+
+permissions:
+  contents: read
+
+jobs:
+  route:
+    runs-on: [self-hosted, cyberdef]
+    outputs:
+      lane: ${{ steps.r.outputs.lane }}
+      lane_name: ${{ steps.r.outputs.lane_name }}
+      reason: ${{ steps.r.outputs.reason }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: r
+        run: python3 scripts/ci_route.py --mode eval --model "${{ inputs.model }}" --force "${{ inputs.force_lane }}" >> "$GITHUB_OUTPUT"
+
+  eval:
+    needs: route
+    runs-on: ${{ fromJSON(needs.route.outputs.lane) }}
+    concurrency:
+      group: cyberdef-eval-${{ needs.route.outputs.lane_name }}
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Preflight
+        run: |
+          echo "lane=${{ needs.route.outputs.lane_name }} :: ${{ needs.route.outputs.reason }}"
+          command -v "${CYBERDEF_PY:-python3}" >/dev/null || { echo "::error::python interpreter not found — set CYBERDEF_PY in the runner .env (see docs/CI_RUNNERS.md)"; exit 1; }
+
+      - name: Run scorer (GPU-locked; same engine as the lanes)
+        id: run
+        env:
+          PYTHONPATH: src
+          HF_HUB_DISABLE_XET: "1"
+        run: |
+          cd "${CYBERDEF_REPO:=$HOME/missions/cyberdef-llm}"   # shared GPU lock file + data live in the maintained repo
+          LANE="${{ needs.route.outputs.lane_name }}"
+          LOCK=".box_gpu.lock"; [ "$LANE" = "spark" ] && LOCK=".spark_ci.lock"
+          TAG="${{ inputs.adapter_tag }}"
+          SLUG=$(echo "${TAG:-$(basename "${{ inputs.model }}")}" | tr -c 'A-Za-z0-9._-' '_')
+          OUT="results/ci_ev_${SLUG}_${{ inputs.set_key }}.json"
+          echo "out=$OUT" >> "$GITHUB_OUTPUT"
+          exec 9>"$LOCK"; flock 9
+          if [ "${{ inputs.scorer }}" = "selective" ]; then
+            ADAPTER=""; [ -n "$TAG" ] && ADAPTER="--adapter out/imp_$TAG"
+            "${CYBERDEF_PY:-python3}" scripts/imp_selective.py --model "${{ inputs.model }}" $ADAPTER \
+              --cases-file "${{ inputs.cases_file }}" --out "$OUT" \
+              --meta "ci eval run=${{ github.run_id }} sha=${{ github.sha }} lane=$LANE"
+          else
+            "${CYBERDEF_PY:-python3}" scripts/imp_zs_probe.py --model "${{ inputs.model }}" --tag "$SLUG" \
+              --think "${{ inputs.think }}" --cases-file "${{ inputs.cases_file }}" --set "${{ inputs.set_key }}" \
+              --out "$OUT" --num-predict "${{ inputs.num_predict }}" --workers "${{ inputs.workers }}"
+          fi
+          flock -u 9
+
+      - name: Grade (recompute-from-per_case + bar; integrity mismatch fails)
+        id: gate
+        env:
+          PYTHONPATH: src
+        run: |
+          cd "${CYBERDEF_REPO:=$HOME/missions/cyberdef-llm}"
+          "${CYBERDEF_PY:-python3}" scripts/ci_gate.py --result "${{ steps.run.outputs.out }}" --bar "${{ inputs.bar }}"
+
+      - name: Stamp provenance
+        if: always()
+        env:
+          PYTHONPATH: src
+        run: |
+          cd "${CYBERDEF_REPO:=$HOME/missions/cyberdef-llm}"
+          "${CYBERDEF_PY:-python3}" scripts/ci_provenance.py --kind eval --lane "${{ needs.route.outputs.lane_name }}" \
+            --result "${{ steps.run.outputs.out }}" \
+            --inputs "scorer=${{ inputs.scorer }};model=${{ inputs.model }};adapter_tag=${{ inputs.adapter_tag }};cases=${{ inputs.cases_file }};set=${{ inputs.set_key }}" \
+            --out "${{ steps.run.outputs.out }}.provenance.json" || echo "::warning::provenance step failed"
+          mkdir -p "$GITHUB_WORKSPACE/artifacts"
+          cp "${{ steps.run.outputs.out }}" "${{ steps.run.outputs.out }}.provenance.json" "$GITHUB_WORKSPACE/artifacts/" 2>/dev/null || true
+
+      - name: Upload result + per_case + provenance
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: eval-${{ inputs.set_key }}-${{ github.run_id }}
+          path: artifacts/
+          if-no-files-found: warn
+          retention-days: 30

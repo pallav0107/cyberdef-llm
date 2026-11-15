@@ -1,0 +1,143 @@
+name: witness-train-test
+
+# Execution-signal train -> test, every step visible here. Trains a witness generator on oracle-confirmed
+# (program -> witness) pairs, then scores it by RUNNING its witnesses in the sanitizer/behaviour oracle, against
+# the pre-registered bar in acceptance/witness_bar.json. Runs in the maintained repo ($CYBERDEF_REPO, set in the
+# runner .env) because the data, the HF cache and the oracle image live on the box. Manual dispatch only.
+
+on:
+  workflow_dispatch:
+    inputs:
+      base:
+        description: "Base model (must fit the box GPU): fdtn-ai/Foundation-Sec-8B or Qwen/Qwen2.5-14B-Instruct"
+        required: true
+        default: "fdtn-ai/Foundation-Sec-8B"
+      tag:
+        description: "Short tag for output files"
+        required: true
+        default: "fsec8b"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cyberdef-witness-${{ inputs.tag }}
+  cancel-in-progress: false
+
+env:
+  PYTHONPATH: src
+  HF_HUB_DISABLE_XET: "1"
+  PYTORCH_CUDA_ALLOC_CONF: expandable_segments:True
+
+jobs:
+  prepare:
+    runs-on: [self-hosted, cyberdef, gpu-box]
+    outputs:
+      model_path: ${{ steps.m.outputs.model_path }}
+    steps:
+      - name: Repo state (provenance)
+        run: |
+          cd "${CYBERDEF_REPO:=$HOME/missions/cyberdef-llm}"
+          echo "repo HEAD: $(git rev-parse HEAD)   dispatched sha: ${{ github.sha }}"
+          [ "$(git rev-parse HEAD)" = "${{ github.sha }}" ] || echo "::warning::repo HEAD differs from the dispatched commit"
+          echo "uncommitted files in working tree: $(git status --porcelain | wc -l)"
+      - name: Route check (model must fit the box GPU)
+        run: |
+          cd "${CYBERDEF_REPO:=$HOME/missions/cyberdef-llm}"
+          lane=$(python3 scripts/ci_route.py --mode train --model "${{ inputs.base }}" | grep '^lane_name=' | cut -d= -f2)
+          echo "route: ${{ inputs.base }} -> $lane"
+          [ "$lane" = "gpu-box" ] || { echo "::error::${{ inputs.base }} does not fit the box GPU"; exit 1; }
+      - name: Pre-registered bar (committed before any model output)
+        run: |
+          cd "${CYBERDEF_REPO:=$HOME/missions/cyberdef-llm}"
+          cat acceptance/witness_bar.json
+          echo "bar committed in: $(git log -1 --format='%h %ci' -- acceptance/witness_bar.json)"
+      - name: Model path (adds a chat template if the base model has none)
+        id: m
+        run: |
+          cd "${CYBERDEF_REPO:=$HOME/missions/cyberdef-llm}"
+          "${CYBERDEF_PY:-$CYBERDEF_REPO/.venv/bin/python}" scripts/imp_witness_chatmodel.py --model "${{ inputs.base }}" >> "$GITHUB_OUTPUT"
+      - name: Build 2-fold SFT items from the oracle-confirmed witnesses
+        run: |
+          cd "${CYBERDEF_REPO:=$HOME/missions/cyberdef-llm}"
+          "${CYBERDEF_PY:-$CYBERDEF_REPO/.venv/bin/python}" scripts/imp_witness_items.py --k 2 --out-dir results/witness
+
+  train:
+    needs: prepare
+    runs-on: [self-hosted, cyberdef, gpu-box]
+    strategy:
+      max-parallel: 1
+      matrix:
+        fold: [0, 1]
+    steps:
+      - name: Train fold ${{ matrix.fold }} (waits for the box GPU lock)
+        run: |
+          cd "${CYBERDEF_REPO:=$HOME/missions/cyberdef-llm}"
+          exec 9>"$CYBERDEF_REPO/.box_gpu.lock"; echo "waiting for GPU lock..."; flock 9; echo "GPU lock acquired"
+          "${CYBERDEF_PY:-$CYBERDEF_REPO/.venv/bin/python}" scripts/imp_train.py \
+            --base "${{ needs.prepare.outputs.model_path }}" \
+            --out "out/imp_witness_${{ inputs.tag }}_f${{ matrix.fold }}" \
+            --items-file "results/witness/items_fold${{ matrix.fold }}.json" \
+            --dataset primevul --val-per-class 1 \
+            --epochs 6 --lr 2e-4 --warmup-steps 2 --seed 0 \
+            --meta "ci witness run=${{ github.run_id }} sha=${{ github.sha }} fold=${{ matrix.fold }}"
+
+  eval_base:
+    needs: prepare
+    runs-on: [self-hosted, cyberdef, gpu-box]
+    steps:
+      - name: Base model zero-shot -> witnesses -> oracle
+        run: |
+          cd "${CYBERDEF_REPO:=$HOME/missions/cyberdef-llm}"
+          exec 9>"$CYBERDEF_REPO/.box_gpu.lock"; echo "waiting for GPU lock..."; flock 9; echo "GPU lock acquired"
+          "${CYBERDEF_PY:-$CYBERDEF_REPO/.venv/bin/python}" scripts/imp_witness_eval.py --model "${{ needs.prepare.outputs.model_path }}" \
+            --out "results/witness/eval_${{ inputs.tag }}_base.json"
+
+  eval_finetuned:
+    needs: [prepare, train]
+    runs-on: [self-hosted, cyberdef, gpu-box]
+    steps:
+      - name: Fine-tuned (2-fold cross-fit) -> witnesses -> oracle
+        run: |
+          cd "${CYBERDEF_REPO:=$HOME/missions/cyberdef-llm}"
+          exec 9>"$CYBERDEF_REPO/.box_gpu.lock"; echo "waiting for GPU lock..."; flock 9; echo "GPU lock acquired"
+          "${CYBERDEF_PY:-$CYBERDEF_REPO/.venv/bin/python}" scripts/imp_witness_eval.py --model "${{ needs.prepare.outputs.model_path }}" \
+            --adapter "out/imp_witness_${{ inputs.tag }}_f{k}" --k 2 \
+            --out "results/witness/eval_${{ inputs.tag }}_ft.json"
+
+  gate:
+    needs: [eval_base, eval_finetuned]
+    runs-on: [self-hosted, cyberdef, gpu-box]
+    steps:
+      - name: Integrity (ci_gate recompute from per_case)
+        run: |
+          cd "${CYBERDEF_REPO:=$HOME/missions/cyberdef-llm}"
+          "${CYBERDEF_PY:-$CYBERDEF_REPO/.venv/bin/python}" scripts/ci_gate.py --result "results/witness/eval_${{ inputs.tag }}_base.json"
+          "${CYBERDEF_PY:-$CYBERDEF_REPO/.venv/bin/python}" scripts/ci_gate.py --result "results/witness/eval_${{ inputs.tag }}_ft.json"
+      - name: Pre-registered hypotheses (paired bootstrap)
+        run: |
+          cd "${CYBERDEF_REPO:=$HOME/missions/cyberdef-llm}"
+          "${CYBERDEF_PY:-$CYBERDEF_REPO/.venv/bin/python}" scripts/imp_witness_compare.py \
+            --base "results/witness/eval_${{ inputs.tag }}_base.json" \
+            --ft "results/witness/eval_${{ inputs.tag }}_ft.json" \
+            --out "results/witness/compare_${{ inputs.tag }}.json" \
+            --md "results/witness/compare_${{ inputs.tag }}.md"
+          cat "results/witness/compare_${{ inputs.tag }}.md" >> "$GITHUB_STEP_SUMMARY"
+      - name: Provenance + collect artifacts
+        if: always()
+        run: |
+          cd "${CYBERDEF_REPO:=$HOME/missions/cyberdef-llm}"
+          "${CYBERDEF_PY:-$CYBERDEF_REPO/.venv/bin/python}" scripts/ci_provenance.py --kind eval --lane gpu-box \
+            --result "results/witness/eval_${{ inputs.tag }}_ft.json" \
+            --inputs "base=${{ inputs.base }};tag=${{ inputs.tag }}" \
+            --out "results/witness/provenance_${{ inputs.tag }}.json" || true
+          mkdir -p "$GITHUB_WORKSPACE/artifacts"
+          cp results/witness/*${{ inputs.tag }}* results/witness/items_manifest.json acceptance/witness_bar.json "$GITHUB_WORKSPACE/artifacts/" 2>/dev/null || true
+          cp out/imp_witness_${{ inputs.tag }}_f*_imp_train_log.json "$GITHUB_WORKSPACE/artifacts/" 2>/dev/null || true
+      - name: Upload results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: witness-${{ inputs.tag }}-${{ github.run_id }}
+          path: artifacts/
+          retention-days: 90

@@ -1,0 +1,37 @@
+{
+  "registered": "2026-11-15T12:47:19+11:00",
+  "registered_note": "Written and committed BEFORE any model generated a single witness. The authoritative timestamp is this file's git commit.",
+  "experiment": "witness-generation SFT on CASTLE (execution signal)",
+  "models": [
+    "fdtn-ai/Foundation-Sec-8B",
+    "Qwen/Qwen2.5-14B-Instruct"
+  ],
+  "data": "data/witness_train.jsonl positives (n=50: VULNERABLE programs with an oracle-confirmed, reproduced witness from the Phase-A deterministic capture). 2-fold cross-fitting by sha1(id) % 2: each adapter trains on the positives outside its fold and scores only its fold, so every one of the 198 programs is scored by a model that never saw it.",
+  "score": "per program: 1 iff the model's witness is confirmed by exec_oracle routed to the program's CWE oracle AND reproduced by a second independent run; else 0. CWEs with no runtime monitor (oracle 'none') score 0.",
+  "hypotheses": {
+    "H2_primary_beats_no_model_baseline": "AUROC(fine-tuned, cross-fitted) - AUROC(deterministic no-model witnesses, same 198 programs) > 2 x paired-bootstrap SE (B=2000)",
+    "H1_finetuning_teaches_witnessing": "AUROC(fine-tuned) - AUROC(same base model zero-shot, same prompt, same programs) > 2 x paired-bootstrap SE",
+    "H3_beats_fuzzer_floor": "AUROC(fine-tuned) - AUROC(fuzzer floor results/imp_2o_floor_b60.json, same programs) > 2 x paired-bootstrap SE"
+  },
+  "claims": "Only H2 PASS supports 'the model beats execution without a model'. H1 alone means fine-tuning taught the witness protocol, not that the model beats a template list. H3 alone is weaker than H2 because the deterministic baseline already includes the floor's empty input. No claim leaves the repo without integrity (stored AUROC == recomputed from per_case) and an experiment-auditor pass.",
+  "disclosed": [
+    "The deterministic Phase-A capture and its AUROC (0.7323 routed, vs floor 0.7172 on the same programs) were seen before this bar was written; no model output existed.",
+    "The CWE is given in the prompt (from the CASTLE file name, present for SAFE and VULNERABLE alike), exactly as the deterministic baseline uses it.",
+    "Train and eval programs share CWE families (CASTLE siblings), so this measures within-family generalisation, not unseen-class generalisation.",
+    "Positives are dominated by empty-input witnesses (40/50); a model can match the baseline by learning 'empty input' and the four CANARY templates."
+  ],
+  "train_hparams": {
+    "epochs": 6,
+    "lr": 0.0002,
+    "lora_r": 16,
+    "lora_alpha": 32,
+    "warmup_steps": 2,
+    "seed": 0,
+    "quant": "4-bit NF4 QLoRA on the box GPU"
+  },
+  "eval_hparams": {
+    "decoding": "greedy",
+    "max_new_tokens": 256,
+    "reproduce_runs": 2
+  }
+}
