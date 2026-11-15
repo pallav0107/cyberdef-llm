@@ -21,15 +21,20 @@ on:
         type: boolean
         default: true
       data:
-        description: "Training data (for test only: what the adapter was trained on). CoT arms: pre-registered recipe, items from the J2-amended v2.3 bank; train each arm AND its twin"
+        description: "Training data (for test only: what the adapter was trained on). CoT arms: pre-registered recipe on the batch-2 bank (amendment 2); train each arm AND its twin; arm 7 only if its gate passes"
         type: choice
         options:
-          - "answer-only (PrimeVul)"
+          - "answer-only, length-matched PrimeVul"
+          - "answer-only, raw PrimeVul (length-confounded contrast)"
           - "CoT arm 2: traces passing V+P+S"
           - "CoT arm 2 twin: same rows, verdict only"
           - "CoT arm 6: counterfactual traces"
           - "CoT arm 6 twin: same rows, verdict only"
-        default: "answer-only (PrimeVul)"
+          - "CoT arm 7: execution-grounded traces"
+          - "CoT arm 7 twin: same rows, verdict only"
+          - "Qwen3.8 self-training: CoT items (amendment 3; results/<tag>_items.json)"
+          - "Qwen3.8 self-training: twin (amendment 3; tag ends _twin)"
+        default: "answer-only, length-matched PrimeVul"
       train_flags:
         description: "Extra trainer flags, space-separated (e.g. --items-file results/x.json --epochs 3). Defaults: --n-per-class 1000 --epochs 2 --lr 1e-4 --seed 0"
         default: ""
@@ -37,13 +42,15 @@ on:
         description: "Test sets. Pre-registered = what the queue jobs P60/P61 evaluate; CoT arms are scored by generating the SC-CoT, on Spark"
         type: choice
         options:
-          - "pre-registered sets (PrimeVul, VulSpot x2, CASTLE; CoT arms add localisation)"
+          - "pre-registered sets (PrimeVul, VulSpot x2, CASTLE, J3 held-out matched + all; CoT arms add localisation)"
           - "PrimeVul length-matched (1,074)"
           - "PrimeVul length-matched sample (300)"
           - "VulSpot holdout, length-matched"
           - "VulSpot no-linux, length-matched"
           - "CASTLE (198 runnable programs)"
-        default: "pre-registered sets (PrimeVul, VulSpot x2, CASTLE; CoT arms add localisation)"
+          - "amendment 3 round sets (J3 matched, SQLi held-out, J4 matched, CASTLE, PrimeVul 300)"
+          - "amendment 3 category round, J3 (J3 matched, CASTLE, PrimeVul 300)"
+        default: "pre-registered sets (PrimeVul, VulSpot x2, CASTLE, J3 held-out matched + all; CoT arms add localisation)"
       scorer:
         description: "Selective = verdict probability for HF models and adapters (CoT arms switch to SC-CoT generation automatically)"
         type: choice

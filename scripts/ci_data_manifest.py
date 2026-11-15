@@ -18,6 +18,17 @@ CANONICAL = [
     ("results/imp_castle_input_channels.json", "static input-channel detector output for CASTLE"),
     ("results/imp_2o_floor_b60.json", "fuzzer floor on CASTLE (execution baseline)"),
     ("data/witness_train.jsonl", "oracle-confirmed witness set (Phase-A capture)"),
+    ("results/j3_heldout_cases.json", "J3 held-out per-class test (2b): 840 verified Juliet pairs not used in training (3b: exemplar file excluded; 3g: label-leak cleaned)"),
+    ("results/j3_heldout_matched_cases.json", "J3 held-out, per-CWE length-matched (2c, cleaned 3g): primary test for command injection, path traversal, format string"),
+    ("results/j4_heldout_matched_cases.json", "J4b held-out, execution-verified, per-CWE length-matched (3e, cleaned 3g): primary test for memory and divide-by-zero"),
+    ("results/q_heldout_cases.json", "SQLi held-out, 44 oracle-verified pairs never in any pool (3g: cleaned, re-verified): primary test for SQL injection"),
+    ("results/imp_fewshot_exemplars.json", "few-shot exemplars templated from Juliet _02 ground truth (quick bank; no model)"),
+    ("results/imp_fewshot_exemplars_st_cmd_injection.json", "addendum 3b: quick exemplars + templated SAFE command-injection exemplar"),
+    ("results/imp_fewshot_exemplars_st_path_traversal.json", "addendum 3c: quick exemplars + templated VULNERABLE and SAFE path-traversal exemplars"),
+    ("results/imp_fewshot_exemplars_st_sqli.json", "addendum 3d: quick exemplars + templated VULNERABLE and SAFE SQL-injection exemplars"),
+    ("results/imp_fewshot_exemplars_st_format_string.json", "addendum 3f: quick exemplars + templated VULNERABLE and SAFE format-string exemplars"),
+    ("results/imp_fewshot_exemplars_st_integer.json", "addendum 3e: quick exemplars + templated VULNERABLE and SAFE integer exemplars"),
+    ("results/imp_fewshot_exemplars_st_leak.json", "addendum 3e: quick exemplars + templated VULNERABLE and SAFE leak exemplars"),
     # CoT item files are NOT canonical: they are rebuilt from each trace-bank build and pinned per build by the sha256s
     # in results/imp_cotq_BUILD_OK.json, which the Dataset step checks on both machines. (Until 15 Nov this list pinned
     # the v2.2 items, built under the SC-CoT grammar bug: INVALID, and the reason --check failed once they were rebuilt.)

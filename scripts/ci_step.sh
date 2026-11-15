@@ -17,6 +17,17 @@ SUMMARY="${GITHUB_STEP_SUMMARY:-/dev/null}"
 wait_mem() { until [ "$(awk '/MemAvailable/{print int($2/1048576)}' /proc/meminfo)" -ge "$1" ]; do echo "waiting: need $1 GB MemAvailable"; sleep 60; done; }
 spark_env() { source scripts/gpu_job_lib.sh; source scripts/imp_job_lib.sh 2>/dev/null || true; export IMP_PYLIB=/work/imp_pylib; }
 take_gpu() { exec 9>"$LOCK"; echo "waiting for the $MACHINE GPU lock..."; flock 9; }
+gpu_free_check() {   # box only, after the lock: the 24 GB card must be (nearly) free before a model is loaded on it
+  [ "$MACHINE" = gpu-box ] || return 0
+  local free; free=$(nvidia-smi --query-gpu=memory.free --format=csv,noheader,nounits 2>/dev/null | head -1)
+  if [ "${free:-0}" -lt 20000 ]; then
+    echo "::error::the box GPU has only ${free:-?} MiB free; these processes hold it:"
+    nvidia-smi --query-compute-apps=pid,process_name,used_memory --format=csv,noheader 2>/dev/null
+    ollama ps 2>/dev/null | tail -n +2
+    exit 1
+  fi
+  echo "box GPU free: ${free} MiB"
+}
 # Spark memory a step needs (GB), from the model size: 4-bit QLoRA training ~0.7 GB/B + 24 activations (>= 40);
 # bf16 testing ~2.1 GB/B + 12. Unknown size -> the 32B figure.
 need_gb() { python3 -c "import sys; p=float(sys.argv[2] or 32); print(max(40, int(0.7*p+24)) if sys.argv[1]=='train' else int(2.1*p+12))" "$1" "${P_params_b:-}"; }
@@ -25,7 +36,7 @@ need_gb() { python3 -c "import sys; p=float(sys.argv[2] or 32); print(max(40, in
 # Every file the pipeline runs on BOTH machines (box-only execution-oracle modules excluded). Both machines must hold
 # byte-identical copies, or the "same steps, same data" comparison is not a comparison.
 CODE_FILES="scripts/ci_step.sh scripts/ci_plan.py scripts/ci_route.py scripts/ci_checks.sh scripts/ci_gate.py scripts/ci_provenance.py
-  scripts/ci_bank_funnel.py scripts/ci_schema_control.py scripts/imp_train.py scripts/imp_selective.py scripts/imp_zs_probe.py
+  scripts/ci_bank_funnel.py scripts/ci_schema_control.py scripts/ci_per_class.py scripts/ci_data_hygiene.py scripts/imp_train.py scripts/imp_selective.py scripts/imp_zs_probe.py
   scripts/imp_trace_bank.py scripts/imp_bank_merge.py scripts/imp_bank_strictx.py scripts/imp_build_cot_items.py scripts/reason_C_witness.py"
 code_manifest() { { printf '%s\n' $CODE_FILES; ls src/cyberdef/*.py | grep -v -E '/(exec_harness|exec_oracle|feed)\.py$'; } \
                   | sort | while read -r f; do [ -f "$f" ] && sha256sum "$f" || echo "MISSING  $f"; done; }
@@ -33,9 +44,11 @@ code_manifest() { { printf '%s\n' $CODE_FILES; ls src/cyberdef/*.py | grep -v -E
 # verdict-token probability. gpu-util 0.45 as pre-registered, raised only when a larger model needs more to load.
 cot_eval_here() {   # model  adapter-tag-or-''  cases-file  out
   claim_spark; spark_env
-  local U AD=(); U=$(python3 -c "import sys; p=float(sys.argv[1] or 32); print(round(max(0.45, min(0.85, (2.2*p+16)/118)), 2))" "${P_params_b:-}")
+  # vLLM reserves gpu-util x 121 GB of Spark's UNIFIED memory: bf16 weights ~1.92 GB/B + 14 GB for KV and activations, and
+  # 25 GB must stay free beyond it (15 Nov: a 27B at 0.65 = ~78 GB with ~10 GB spare froze Spark; no OOM kill).
+  local U AD=(); U=$(python3 -c "import sys; p=float(sys.argv[1] or 32); print(round(max(0.45, min(0.85, (1.92*p+14)/120)), 2))" "${P_params_b:-}")
   export MEM_GB=$(python3 -c "print(int($U*121))"); echo "CoT eval: gpu-util $U (~${MEM_GB} GB) for ${P_params_b:-?}B"
-  wait_mem $((MEM_GB + 5)); take_gpu
+  wait_mem $((MEM_GB + 25)); take_gpu
   [ -n "$2" ] && AD=(--adapter "out/imp_$2")
   gdock '' scripts/imp_eval_cot.py --model "$1" "${AD[@]}" --cases-file "$3" --out "$4" --max-tokens 4096 --gpu-util "$U" \
     --meta "ci test run=${GITHUB_RUN_ID:-} sha=${GITHUB_SHA:-} trained_on=${TRAINED_ON:-$MACHINE}"
@@ -108,6 +121,20 @@ dataset)
     echo "Training data: PrimeVul train, answer-only, $npc per class, seed $seed: the same deterministic sampler on both machines."
     echo "**Training data** PrimeVul train, answer-only, $npc per class, seed $seed" >> "$SUMMARY"; exit 0
   fi
+  case "$P_items_file" in results/st_*)   # amendment 3: self-training items from scripts/imp_st_round.sh (Spark only)
+    [ -s "$P_items_file" ] || { echo "::error::$P_items_file is missing: run scripts/imp_st_round.sh for this category and round first"; exit 1; }
+    read -r N NV NS < <(python3 -c "
+import json, sys; it = json.load(open(sys.argv[1]))['items']
+print(len(it), sum(i.get('label') == 'VULNERABLE' for i in it), sum(i.get('label') == 'SAFE' for i in it))" "$P_items_file")
+    HAVE=$(sha256sum "$P_items_file" | cut -c1-64)
+    [ "$NV" -ge 20 ] && [ "$NS" -ge 20 ] || { echo "::error::$P_items_file has $NV vulnerable / $NS safe items; addendum 3a needs >= 20 per class"; exit 1; }
+    printf 'BANK_BUILD=%q
+' "amendment3 items=${HAVE:0:12}" >> "$PLAN"
+    python3 scripts/ci_data_hygiene.py --items "$P_items_file" || exit 1   # addendum 3g
+    echo "Training data: $P_items_file  n=$N (VULNERABLE $NV, SAFE $NS)  sha256 ${HAVE:0:16}"
+    echo "**Training data** \`$P_items_file\` · n=$N (VULNERABLE $NV, SAFE $NS) · sha256 \`${HAVE:0:16}\`" >> "$SUMMARY"
+    exit 0 ;;
+  esac
   FIX=$(cd scripts && python3 -c "import ci_plan as c; print(c.SC_FIX_EPOCH)")
   AMEND=$(cd scripts && python3 -c "import ci_plan as c; print(c.QUICK_BANK_AMENDMENT)")
   MARK=results/imp_cotq_BUILD_OK.json
@@ -122,8 +149,9 @@ PY
   echo "Bank make-up: $AMEND (acceptance/improve/$AMEND.md, sha256 $(sha256sum "acceptance/improve/$AMEND.md" 2>/dev/null | cut -c1-16))"
   if [ "$MACHINE" = spark ]; then
     claim_spark; exec 8>.spark_dataset.lock; echo "waiting for the dataset lock..."; flock 8
-    PIECES="results/imp_bankq_g14.jsonl results/imp_bankq_g14_j2.jsonl"          # quick subset + J2 (the amendment)
-    [ -s results/imp_train_sqli_items.json ] && PIECES="$PIECES results/imp_bankq_g14_q.jsonl"   # + Q once P35's items exist
+    PIECES="results/imp_bankq_g14.jsonl results/imp_bankq_g14_j2.jsonl"          # quick subset + J2 (amendment 1)
+    [ -s results/imp_train_juliet3_items.json ] && PIECES="$PIECES results/imp_bankq_g14_j3.jsonl"   # + J3 (amendment 2)
+    [ -s results/imp_train_sqli_items.json ] && PIECES="$PIECES results/imp_bankq_g14_q.jsonl"      # + Q (amendment 2)
     if mark_ok "$MARK" "$PIECES"; then
       echo "CoT items already built under $AMEND from: $PIECES ($(date -d @"$(stat -c %Y "$MARK")" '+%F %H:%M')): reusing"
     else
@@ -145,6 +173,7 @@ PY
       fi
       gen_slice results/imp_bankq_g14.jsonl --pools J,J2 --subset quick
       gen_slice results/imp_bankq_g14_j2.jsonl --pools J2
+      case "$PIECES" in *_j3.jsonl*) gen_slice results/imp_bankq_g14_j3.jsonl --pools J3 ;; esac
       case "$PIECES" in *_q.jsonl*) gen_slice results/imp_bankq_g14_q.jsonl --pools Q ;; esac
       python3 scripts/imp_bank_merge.py quick > /dev/null
       echo "execution check (X_strict) on the merged quick bank"
@@ -159,8 +188,10 @@ import glob, hashlib, json, sys, time
 sha = lambda f: hashlib.sha256(open(f, "rb").read()).hexdigest()
 items = {f: {"sha256": sha(f), "n": json.load(open(f))["n"]} for f in sorted(glob.glob("results/imp_cotq_*_items.json"))}
 bank = "results/imp_trace_bank_quick.jsonl"
+counts = json.load(open("results/imp_trace_bank_quick_counts.json"))
 json.dump({"built": time.strftime("%Y-%m-%dT%H:%M:%S%z"), "amendment": sys.argv[2], "pieces": {p: sha(p) for p in sys.argv[3:]},
-           "bank": bank, "bank_sha256": sha(bank), "items": items}, open(sys.argv[1], "w"), indent=1)
+           "bank": bank, "bank_sha256": sha(bank), "x_strict_traces": counts.get("x_strict_traces_total"),
+           "items": items}, open(sys.argv[1], "w"), indent=1)
 PY
     fi
   else
@@ -183,12 +214,21 @@ PY
   HAVE=$(sha256sum "$P_items_file" | cut -c1-64)
   WANT=$(python3 -c "import json,sys; print(json.load(open(sys.argv[1]))['items'][sys.argv[2]]['sha256'])" "$MARK" "$P_items_file")
   [ "$HAVE" = "$WANT" ] || { echo "::error::$P_items_file on $MACHINE does not match the Spark build (sha256 $HAVE vs $WANT)"; exit 1; }
+  python3 scripts/ci_data_hygiene.py --items "$P_items_file" || exit 1   # addendum 3g: no label text in what this run trains on
   read -r N NV NS < <(python3 -c "
 import json, sys; it = json.load(open(sys.argv[1]))['items']
 print(len(it), sum(i.get('label') == 'VULNERABLE' for i in it), sum(i.get('label') == 'SAFE' for i in it))" "$P_items_file")
   echo "Training data: $P_items_file  n=$N (VULNERABLE $NV, SAFE $NS)  sha256 ${HAVE:0:16}  (identical on both machines)"
   echo "**Training data** \`$P_items_file\` · n=$N (VULNERABLE $NV, SAFE $NS) · sha256 \`${HAVE:0:16}\`" >> "$SUMMARY"
   [ "$N" -gt 0 ] || { echo "::error::$P_items_file has no items: this arm cannot be trained from the current bank"; exit 1; }
+  if [ -n "${P_arm7_gate:-}" ]; then   # pre-registered gate for arm 7: enough execution-confirmed traces in THIS build
+    XS=$(python3 -c "import json,sys; print(json.load(open(sys.argv[1])).get('x_strict_traces') or 0)" "$MARK")
+    [ "$XS" -ge "$P_arm7_gate" ] || { echo "::error::arm 7 gate not met: $XS X_strict traces in this build, the pre-registered minimum is $P_arm7_gate"; exit 1; }
+    echo "arm 7 gate met: $XS X_strict traces (>= $P_arm7_gate)"
+  fi
+  read -r BANKSHA BANKPIECES < <(python3 -c "import json,sys; m=json.load(open(sys.argv[1])); print(m['bank_sha256'][:12], '+'.join(p.split('_')[-1].replace('.jsonl','') for p in m.get('pieces', {})))" "$MARK")
+  printf 'BANK_BUILD=%q\n' "$P_amendment bank=$BANKSHA pieces=$BANKPIECES" >> "$PLAN"
+  echo "bank build: $P_amendment bank=$BANKSHA pieces=$BANKPIECES"
   minority=$(( NV < NS ? NV : NS ))
   [ $(( 100 * minority / N )) -ge 20 ] || echo "::warning::class balance is ${NV}/${NS} (VULNERABLE/SAFE): a model trained on this mostly learns the majority answer"
   ;;
@@ -208,13 +248,13 @@ funnel)
   ;;
 train)
   OUT="out/imp_$P_adapter_tag"; read -r -a XF <<< "${TRAIN_FLAGS:-}"
+  read -r -a DF <<< "${P_data_flags:-}"
   if [ -n "$P_items_file" ]; then   # CoT arm: the pre-registered P60/P61 recipe (items come from the file; n-per-class unused)
-    read -r -a DF <<< "$P_data_flags"
     ARGS=(--base "$P_model" --out "$OUT" --dataset primevul --items-file "$P_items_file" --epochs 2 --lr 1e-4 --max-chars 4000 --seed 0 "${DF[@]}"
+          --meta "ci run=$GITHUB_RUN_ID sha=$GITHUB_SHA machine=$MACHINE data=$DATA build=${BANK_BUILD:-}")
+  else                              # answer-only: length-matched by default (--length-match comes from the data choice)
+    ARGS=(--base "$P_model" --out "$OUT" --dataset primevul --n-per-class 1000 --epochs 2 --lr 1e-4 --seed 0 "${DF[@]}"
           --meta "ci run=$GITHUB_RUN_ID sha=$GITHUB_SHA machine=$MACHINE data=$DATA")
-  else
-    ARGS=(--base "$P_model" --out "$OUT" --dataset primevul --n-per-class 1000 --epochs 2 --lr 1e-4 --seed 0
-          --meta "ci run=$GITHUB_RUN_ID sha=$GITHUB_SHA machine=$MACHINE data=answer-only")
   fi
   echo "trainer sha256: $(sha256sum scripts/imp_train.py | cut -c1-16)  adapter: $OUT  data: ${DATA:-answer-only}  extra flags: ${XF[*]:-none}"
   if [ "$MACHINE" = spark ]; then   # torch only inside cyberdef-train:aarch64; admitted like the queue (job + 40 GB reserve)
@@ -222,8 +262,12 @@ train)
     wait_mem $((MEM_GB + 40)); take_gpu
     gdock '' scripts/imp_train.py "${ARGS[@]}" "${XF[@]}"
   else
-    take_gpu; "$PY" scripts/imp_train.py "${ARGS[@]}" "${XF[@]}"
+    take_gpu; gpu_free_check; "$PY" scripts/imp_train.py "${ARGS[@]}" "${XF[@]}"
   fi
+  # the CI recipe is 4-bit QLoRA on both machines: a silent fallback to bf16 would change the recipe, so it is refused
+  MODE=$(python3 -c "import json,sys; print(json.load(open(sys.argv[1]))['flags'].get('mode'))" "${OUT}_imp_train_log.json" 2>/dev/null || echo missing)
+  [ "$MODE" = 4bit ] || { echo "::error::training ran in mode '$MODE', not 4bit; the adapter is not accepted (CI recipe = 4-bit QLoRA)"; exit 1; }
+  echo "training mode: $MODE"
   ;;
 test)
   # every set of the plan; CoT arms are scored by generating the SC-CoT (vLLM) on Spark, whichever machine trained them
@@ -248,7 +292,7 @@ test)
         scp -q -p -o BatchMode=yes "$SH:$SR/$OUT" "$OUT"
       fi
     else
-      [ "$local_lock" = 1 ] || { take_gpu; local_lock=1; }
+      [ "$local_lock" = 1 ] || { take_gpu; gpu_free_check; local_lock=1; }
       if [ "$P_scorer" = selective ]; then
         AD=(); [ -n "$P_adapter_tag" ] && AD=(--adapter "out/imp_$P_adapter_tag")
         SEL=(scripts/imp_selective.py --model "$P_model" "${AD[@]}" --cases-file "$cases" --out "$OUT"
@@ -279,11 +323,14 @@ a = re.search(r'"recomputed_auroc":\s*([0-9.]+|null)', g); n = re.search(r'"n":\
 print(f"| {key} | {a.group(1) if a else '?'} | {n.group(1) if n else '?'} | {v.group(1) if v else '?'} |")
 PY
   done
+  for r in $RESULTS; do   # per-class tables (CASTLE by bug family; J3 held-out by CWE, with length-only)
+    case "$r" in *_castle.json|*_j3h.json|*_j3m.json|*_qh.json|*_j4m.json) python3 scripts/ci_per_class.py "$r" >> "$SUMMARY" || true ;; esac
+  done
   [ "$fails" -eq 0 ]
   ;;
 provenance)
   mkdir -p "$GITHUB_WORKSPACE/artifacts"
-  IN="model=$P_model;machine=$MACHINE;adapter=$P_adapter_tag;data=${DATA:-answer-only};items=$P_items_file;flags=${TRAIN_FLAGS:-};sets=$P_test_sets;scorer=$P_scorer;amendment=$P_amendment"
+  IN="model=$P_model;machine=$MACHINE;adapter=$P_adapter_tag;data=${DATA:-answer-only};items=$P_items_file;flags=${TRAIN_FLAGS:-};sets=$P_test_sets;scorer=$P_scorer;build=${BANK_BUILD:-none}"
   if [ "$P_train" = true ]; then
     "$PY" scripts/ci_provenance.py --kind train --out-tag "$P_adapter_tag" --lane "$MACHINE" --inputs "$IN" \
       --out "out/imp_${P_adapter_tag}_provenance.json" || echo "::warning::train provenance failed"

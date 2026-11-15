@@ -30,3 +30,4 @@ scripts/campaign_*.sh
 data/castle/
 scripts/dl72b.py
 data/multilang/
+.ci_pending/

@@ -1,5 +1,5 @@
 {
-  "written": "2026-11-15T18:11:22+1100",
+  "written": "2026-11-16T01:08:33+1100",
   "files": {
     "results/lenmatched_eval_cases.json": {
       "sha256": "dca5c04f041806e6e3444712876117048abe3ff98c690a09bea8bc451baf7dcf",
@@ -42,6 +42,72 @@
       "bytes": 270296,
       "n": 198,
       "what": "oracle-confirmed witness set (Phase-A capture)"
+    },
+    "results/j3_heldout_cases.json": {
+      "sha256": "52020993eb597afa6b20a972ba0ab8e85d019e1f28941cde2156a512108e6a83",
+      "bytes": 2387923,
+      "n": 1680,
+      "what": "J3 held-out per-class test (2b): 840 verified Juliet pairs not used in training (3b: exemplar file excluded; 3g: label-leak cleaned)"
+    },
+    "results/j3_heldout_matched_cases.json": {
+      "sha256": "46afd0127b161a16cbb9674d09fd7bca505e2946ee66efcef03beb93796084a4",
+      "bytes": 1076305,
+      "n": 780,
+      "what": "J3 held-out, per-CWE length-matched (2c, cleaned 3g): primary test for command injection, path traversal, format string"
+    },
+    "results/j4_heldout_matched_cases.json": {
+      "sha256": "a977fb0b16810083e50c57786f9fcadbf7309b7ed270f5790ce71d5e1a52289c",
+      "bytes": 744311,
+      "n": 772,
+      "what": "J4b held-out, execution-verified, per-CWE length-matched (3e, cleaned 3g): primary test for memory and divide-by-zero"
+    },
+    "results/q_heldout_cases.json": {
+      "sha256": "3e6d67e14f177421a97cb7aa578dd320b2f84168ad1893bc0f958fdc2aae2bcc",
+      "bytes": 140862,
+      "n": 88,
+      "what": "SQLi held-out, 44 oracle-verified pairs never in any pool (3g: cleaned, re-verified): primary test for SQL injection"
+    },
+    "results/imp_fewshot_exemplars.json": {
+      "sha256": "8b2564d676f7838d032141281a4af0df7175429f54677adce23ce86e485a3426",
+      "bytes": 10152,
+      "n": null,
+      "what": "few-shot exemplars templated from Juliet _02 ground truth (quick bank; no model)"
+    },
+    "results/imp_fewshot_exemplars_st_cmd_injection.json": {
+      "sha256": "921fecce0f8355704e24b0ffbeeb6407bcf1d8520a7c1de2714ab172297968f5",
+      "bytes": 14452,
+      "n": null,
+      "what": "addendum 3b: quick exemplars + templated SAFE command-injection exemplar"
+    },
+    "results/imp_fewshot_exemplars_st_path_traversal.json": {
+      "sha256": "b6519af3e498e607bbc22880371e3c5637b72b0bfb8c63fecb7fa1023b3551c0",
+      "bytes": 19252,
+      "n": null,
+      "what": "addendum 3c: quick exemplars + templated VULNERABLE and SAFE path-traversal exemplars"
+    },
+    "results/imp_fewshot_exemplars_st_sqli.json": {
+      "sha256": "69778ed2d8ae00467ed9b9717550ea8fed119c9113eefec450f74c00bd124b98",
+      "bytes": 17716,
+      "n": null,
+      "what": "addendum 3d: quick exemplars + templated VULNERABLE and SAFE SQL-injection exemplars"
+    },
+    "results/imp_fewshot_exemplars_st_format_string.json": {
+      "sha256": "0b42fe25483342a4879df4adfa853cdccf320e6b33daa52393fb1672d519295e",
+      "bytes": 22382,
+      "n": null,
+      "what": "addendum 3f: quick exemplars + templated VULNERABLE and SAFE format-string exemplars"
+    },
+    "results/imp_fewshot_exemplars_st_integer.json": {
+      "sha256": "01769fc1b905bfca88541170b94d7070bc2c621e214346409112c9ce5b5e6f07",
+      "bytes": 15228,
+      "n": null,
+      "what": "addendum 3e: quick exemplars + templated VULNERABLE and SAFE integer exemplars"
+    },
+    "results/imp_fewshot_exemplars_st_leak.json": {
+      "sha256": "90b487aca2324e33d87b7c448b2f653d803e517f437b775c7f5d716f12278b86",
+      "bytes": 15288,
+      "n": null,
+      "what": "addendum 3e: quick exemplars + templated VULNERABLE and SAFE leak exemplars"
     }
   },
   "missing_at_write": []

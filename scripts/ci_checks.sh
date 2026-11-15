@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Every fail-first control for one machine, as one step of the `cyberdef pipeline` workflow.
-#   scripts/ci_checks.sh box   [summary.md]   9 controls (code, router + planner, gate, parser, data, length, oracle, acceptance)
+#   scripts/ci_checks.sh box   [summary.md]   12 controls (code, env, router + planner, gate, parser, no-think, data, exemplar leak, data hygiene, length, oracle, acceptance)
 #   scripts/ci_checks.sh spark [summary.md]   the SC-CoT guided-decoding grammar control (needs the Spark container)
 # Each control: the real thing must PASS and its deliberately broken mutant must be CAUGHT. Every control runs even if an
 # earlier one fails; the script exits non-zero if any failed. A table of results goes to the summary file.
@@ -41,7 +41,7 @@ router_planner() (
     && grep -qx "test_sets=pv=results/lenmatched_eval_cases.json" "$TMP/plan.txt" && grep -qx "scorer=selective" "$TMP/plan.txt" \
     || { echo "planner output wrong:"; cat "$TMP/plan.txt"; return 1; }
   # CoT arms: the pre-registered generation scorer plus localisation (arm 6 adds pairs); twins stay on the verdict scorer
-  PRE="pre-registered sets (PrimeVul, VulSpot x2, CASTLE; CoT arms add localisation)"
+  PRE="pre-registered sets (PrimeVul, VulSpot x2, CASTLE, J3 held-out matched + all; CoT arms add localisation)"
   MACHINE=spark MODEL="Qwen/Qwen2.5-14B-Instruct" STEPS="train + test" TAG=t TEST_SET="$PRE" DATA="CoT arm 6: counterfactual traces" \
     python3 scripts/ci_plan.py 2>/dev/null > "$TMP/plan6.txt"
   grep -qx "scorer=cot" "$TMP/plan6.txt" && grep -q "^test_sets=pv=.* vh=.* vn=.* castle=.* loc=.* pairs=" "$TMP/plan6.txt" \
@@ -58,6 +58,25 @@ router_planner() (
     echo "planner accepted training without a tag"; return 1; fi
   echo "planner OK"
 )
+no_think_prompts() {   # fail-first: a thinking-style template must render a CLOSED think block, a Qwen2.5 one must not change
+  HF_HUB_OFFLINE=1 PYTHONPATH=src "$PY" - <<'PY'
+import copy
+from transformers import AutoTokenizer
+tok = AutoTokenizer.from_pretrained("Qwen/Qwen2.5-1.5B-Instruct")
+m = [{"role": "system", "content": "S"}, {"role": "user", "content": "U"}]
+base = tok.apply_chat_template(m, add_generation_prompt=True, tokenize=False)
+think = copy.deepcopy(tok)
+think.chat_template = tok.chat_template + ("{% if add_generation_prompt %}{% if enable_thinking is defined and enable_thinking is false %}"
+                                           "<think>\n\n</think>\n\n{% else %}<think>\n{% endif %}{% endif %}")
+assert think.apply_chat_template(m, add_generation_prompt=True, tokenize=False).endswith("<think>\n"), \
+    "control is blind: the stub does not open a think block by default"
+import cyberdef  # noqa: F401  (installs the no-thinking default)
+assert think.apply_chat_template(m, add_generation_prompt=True, tokenize=False).endswith("</think>\n\n"), \
+    "a thinking template still opens a <think> block: verdict scoring would read the wrong position"
+assert tok.apply_chat_template(m, add_generation_prompt=True, tokenize=False) == base, "a non-thinking (Qwen2.5) prompt changed"
+print("no-think default OK; Qwen2.5 prompts unchanged")
+PY
+}
 parser_selftest() {
   "$PY" - <<'PY'
 import sys; sys.path.insert(0, "scripts")
@@ -89,8 +108,13 @@ else
   run "Router and planner send each model to the right machine; planner refuses bad plans" router_planner
   run "Result-integrity gate catches a tampered headline" env PYTHONPATH=src "$PY" scripts/ci_gate.py --selftest
   run "Witness parser self-test" parser_selftest
+  run "Prompts never open a think block (thinking templates closed; Qwen2.5 unchanged)" no_think_prompts
   run "Datasets are byte-identical to their manifest; a corrupted copy is caught" \
       sh -c "'$PY' scripts/ci_data_manifest.py --selftest && '$PY' scripts/ci_data_manifest.py --check"
+  run "No test case shares a source file or code with a few-shot exemplar (3b); same-file and same-code mutants are caught" \
+      sh -c "'$PY' scripts/ci_exemplar_leak.py --selftest --check"
+  run "No label text in synthetic test sets or pools; no test case in a training pool (3g); leaky and duplicate mutants are caught" \
+      sh -c "'$PY' scripts/ci_data_hygiene.py --selftest --check"
   run "Test sets are length-matched (length alone ~0.50); a length-leaking mutant leaves the band" controls length
   run "Execution oracle passes and catches its never/always mutants" controls oracle
   run "Acceptance checks pass and catch their --broken mutants" controls accept
