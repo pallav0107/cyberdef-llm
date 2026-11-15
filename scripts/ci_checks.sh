@@ -27,6 +27,9 @@ env_pin() {   # drift is recorded as a warning, never a failure
   true
 }
 router_planner() {
+  # hermetic: the job's own inputs (DATA, SCORER, TEST_SET, ...) must not leak into the planner tests. ci_checks.sh is its
+  # own process and no other control reads these, so unsetting them here cannot affect anything else.
+  unset DATA SCORER TEST_SET STEPS MODEL TAG MACHINE ACK_OOM TRAIN_FLAGS
   chk() { local got; got=$(python3 scripts/ci_route.py --mode "$3" --model "$1" 2>/dev/null | grep '^lane_name=' | cut -d= -f2)
           [ "$got" = "$2" ] || { echo "route $1: expected $2, got $got"; return 1; }; echo "route $1 -> $got OK"; }
   chk "Qwen/Qwen2.5-7B-Instruct" gpu-box train && chk "Qwen/Qwen2.5-14B-Instruct" gpu-box train && chk "fdtn-ai/Foundation-Sec-8B" gpu-box train \

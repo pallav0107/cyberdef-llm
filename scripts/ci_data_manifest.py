@@ -18,10 +18,9 @@ CANONICAL = [
     ("results/imp_castle_input_channels.json", "static input-channel detector output for CASTLE"),
     ("results/imp_2o_floor_b60.json", "fuzzer floor on CASTLE (execution baseline)"),
     ("data/witness_train.jsonl", "oracle-confirmed witness set (Phase-A capture)"),
-    ("results/imp_cotq_2_items.json", "CoT arm 2 training items"),
-    ("results/imp_cotq_2_twin_items.json", "CoT arm 2 verdict-only twin items"),
-    ("results/imp_cotq_6_items.json", "CoT arm 6 (counterfactual) training items"),
-    ("results/imp_cotq_6_twin_items.json", "CoT arm 6 verdict-only twin items"),
+    # CoT item files are NOT canonical: they are rebuilt from each trace-bank build and pinned per build by the sha256s
+    # in results/imp_cotq_BUILD_OK.json, which the Dataset step checks on both machines. (Until 15 Nov this list pinned
+    # the v2.2 items, built under the SC-CoT grammar bug: INVALID, and the reason --check failed once they were rebuilt.)
 ]
 
 
