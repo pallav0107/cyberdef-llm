@@ -21,11 +21,23 @@ from ci_route import decide  # noqa: E402
 # (2026-11-15 14:01 AEDT). Trace banks and CoT items written before it were decoded under the bug: INVALID.
 SC_FIX_EPOCH = 1794711662
 
-TEST_SETS = {
-    "PrimeVul length-matched (1,074)": ("results/lenmatched_eval_cases.json", "pv"),
-    "PrimeVul length-matched sample (300)": ("results/lenmatched_eval_cases_300.json", "pv300"),
-    "VulSpot holdout, length-matched": ("results/vs_holdout_matched_cases.json", "vh"),
-    "VulSpot no-linux, length-matched": ("results/vs_nolinux_matched_cases.json", "vn"),
+# The quick v2.3 bank's make-up is fixed by this amendment; every CoT item build is stamped with it, so a machine can
+# never train on items built before it (acceptance/improve/QUICK_BANK_J2_AMENDMENT_2026-11-15.md).
+QUICK_BANK_AMENDMENT = "QUICK_BANK_J2_AMENDMENT_2026-11-15"
+
+SET_FILES = {
+    "pv": "results/lenmatched_eval_cases.json", "pv300": "results/lenmatched_eval_cases_300.json",
+    "vh": "results/vs_holdout_matched_cases.json", "vn": "results/vs_nolinux_matched_cases.json",
+    "castle": "results/xdata_castle_cases.json", "loc": "results/imp_loc_cases.json", "pairs": "results/imp_vs_pairs_eval_cases.json",
+}
+PREREG = "pre-registered sets (PrimeVul, VulSpot x2, CASTLE; CoT arms add localisation)"
+TEST_SETS = {   # choice -> set keys. PREREG is completed per arm in plan() (the queue jobs P60/P61/P86 evaluate exactly these)
+    PREREG: ["pv", "vh", "vn", "castle"],
+    "PrimeVul length-matched (1,074)": ["pv"],
+    "PrimeVul length-matched sample (300)": ["pv300"],
+    "VulSpot holdout, length-matched": ["vh"],
+    "VulSpot no-linux, length-matched": ["vn"],
+    "CASTLE (198 runnable programs)": ["castle"],
 }
 # Training data. CoT arms use the pre-registered recipes of the queue jobs P60 (arm 2) and P61 (arm 6), on the items built
 # from the QUICK v2.3 trace bank (imp_cotq_*). Each arm has a verdict-only twin on identical rows: the arm-vs-twin
@@ -76,16 +88,25 @@ def plan(env) -> dict:
             warn = decide(model, "spark")[2] or spark_warn
     s = slug(model) if model else ""
     adapter = tag if (model and (train or test)) else ""
-    cases_file, set_key = TEST_SETS.get(test_set, ("", "")) if test else ("", "")
     data = env.get("DATA", "").strip() or "answer-only (PrimeVul)"
-    if train and data not in DATA:
+    if (train or test) and data not in DATA:
         raise SystemExit(f"plan: unknown training data '{data}'")
     items_file, data_flags = DATA.get(data, ("", "")) if train else ("", "")
+    # scorer: CoT arms are tested the pre-registered way, by generating the SC-CoT (imp_eval_cot.py, vLLM, on Spark);
+    # their twins, answer-only adapters and base models by the verdict probability (imp_selective.py)
+    cot_arm = data.startswith("CoT arm") and "twin" not in data
+    if scorer != "zeroshot" and cot_arm:
+        scorer = "cot"
+    keys = list(TEST_SETS[test_set]) if test else []
+    if test and test_set == PREREG and cot_arm:
+        keys += ["loc"] + (["pairs"] if data.startswith("CoT arm 6") else [])
+    test_sets = " ".join(f"{k}={SET_FILES[k]}" for k in keys)
     from ci_route import params_b
     p = params_b(model) if model else None
     return {"model": model, "slug": s, "adapter_tag": adapter, "train": train, "test": test, "bank": bank,
-            "cases_file": cases_file, "set_key": set_key, "scorer": scorer, "train_warn": warn,
-            "items_file": items_file, "data_flags": data_flags, "params_b": "" if p is None else p}
+            "test_sets": test_sets, "scorer": scorer, "train_warn": warn,
+            "items_file": items_file, "data_flags": data_flags, "params_b": "" if p is None else p,
+            "amendment": QUICK_BANK_AMENDMENT}
 
 
 def main():
@@ -95,7 +116,8 @@ def main():
     what = [w for w in ("bank", "train", "test") if p[w]]
     print(f"[plan] {os.environ.get('MACHINE')}: " + (f"{p['model']} -> {', '.join(what) or 'checks only'}" if p["model"] else "no model this run")
           + (f" :: adapter out/imp_{p['adapter_tag']}" if p["adapter_tag"] and (p["train"] or p["test"]) else "")
-          + (f" :: test set {p['set_key']}" if p["test"] else "") + (f" :: WARN {p['train_warn']}" if p["train_warn"] else ""),
+          + (f" :: test ({p['scorer']}) on {' '.join(t.split('=')[0] for t in p['test_sets'].split())}" if p["test"] else "")
+          + (f" :: WARN {p['train_warn']}" if p["train_warn"] else ""),
           file=sys.stderr)
 
 

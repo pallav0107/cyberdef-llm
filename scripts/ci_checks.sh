@@ -34,8 +34,19 @@ router_planner() {
   # planner: adapter naming, per-machine steps, and the refusals it must make
   MACHINE=spark MODEL="Qwen/Qwen2.5-14B-Instruct" STEPS="train + test" TAG=t \
     TEST_SET="PrimeVul length-matched (1,074)" python3 scripts/ci_plan.py > "$TMP/plan.txt" 2>/dev/null || { echo "planner rejected a valid plan"; return 1; }
-  grep -qx "adapter_tag=t" "$TMP/plan.txt" && grep -qx "train=true" "$TMP/plan.txt" && grep -qx "set_key=pv" "$TMP/plan.txt" \
+  grep -qx "adapter_tag=t" "$TMP/plan.txt" && grep -qx "train=true" "$TMP/plan.txt" \
+    && grep -qx "test_sets=pv=results/lenmatched_eval_cases.json" "$TMP/plan.txt" && grep -qx "scorer=selective" "$TMP/plan.txt" \
     || { echo "planner output wrong:"; cat "$TMP/plan.txt"; return 1; }
+  # CoT arms: the pre-registered generation scorer plus localisation (arm 6 adds pairs); twins stay on the verdict scorer
+  PRE="pre-registered sets (PrimeVul, VulSpot x2, CASTLE; CoT arms add localisation)"
+  MACHINE=spark MODEL="Qwen/Qwen2.5-14B-Instruct" STEPS="train + test" TAG=t TEST_SET="$PRE" DATA="CoT arm 6: counterfactual traces" \
+    python3 scripts/ci_plan.py 2>/dev/null > "$TMP/plan6.txt"
+  grep -qx "scorer=cot" "$TMP/plan6.txt" && grep -q "^test_sets=pv=.* vh=.* vn=.* castle=.* loc=.* pairs=" "$TMP/plan6.txt" \
+    || { echo "planner: arm 6 not on the pre-registered CoT scorer and sets:"; cat "$TMP/plan6.txt"; return 1; }
+  MACHINE=spark MODEL="Qwen/Qwen2.5-14B-Instruct" STEPS="train + test" TAG=t TEST_SET="$PRE" DATA="CoT arm 2 twin: same rows, verdict only" \
+    python3 scripts/ci_plan.py 2>/dev/null > "$TMP/plan2t.txt"
+  grep -qx "scorer=selective" "$TMP/plan2t.txt" && ! grep -q "loc=" "$TMP/plan2t.txt" \
+    || { echo "planner: the arm 2 twin is not on the verdict scorer and the four sets:"; cat "$TMP/plan2t.txt"; return 1; }
   MACHINE=gpu-box MODEL="Qwen/Qwen2.5-32B-Instruct" STEPS="train + test" TAG=t TEST_SET="PrimeVul length-matched (1,074)" \
     python3 scripts/ci_plan.py 2>/dev/null | grep -q "^train_warn=..*" || { echo "planner did not flag a 32B model on the 24 GB box"; return 1; }
   MACHINE=gpu-box MODEL="Qwen/Qwen2.5-7B-Instruct" STEPS="trace bank" TAG=t python3 scripts/ci_plan.py 2>/dev/null | grep -qx "bank=false" \

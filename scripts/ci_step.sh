@@ -7,9 +7,9 @@
 # `test` writes $RUNNER_TEMP/cyberdef_result.env; later steps read them.
 set -eo pipefail
 STEP="${1:?step name}"
-cd "${CYBERDEF_REPO:?set CYBERDEF_REPO in the runner .env}"
+CYBERDEF_REPO="${CYBERDEF_REPO:-$(cd "$(dirname "$0")/.." && pwd)}"; cd "$CYBERDEF_REPO" || exit 1
 T="${RUNNER_TEMP:-/tmp}"; PLAN="$T/cyberdef_plan.env"; RES="$T/cyberdef_result.env"
-if [ "$STEP" != plan ]; then [ -f "$PLAN" ] || { echo "::error::no plan for this job (step 1 did not run)"; exit 1; }; source "$PLAN"; fi
+if [ "$STEP" != plan ] && [ "$STEP" != manifest ] && [ "$STEP" != cot_eval ]; then [ -f "$PLAN" ] || { echo "::error::no plan for this job (step 1 did not run)"; exit 1; }; source "$PLAN"; fi
 [ -f "$RES" ] && source "$RES"
 PY="${CYBERDEF_PY:-python3}"
 LOCK=.box_gpu.lock; [ "$MACHINE" = spark ] && LOCK=.spark_ci.lock
@@ -22,6 +22,25 @@ take_gpu() { exec 9>"$LOCK"; echo "waiting for the $MACHINE GPU lock..."; flock 
 need_gb() { python3 -c "import sys; p=float(sys.argv[2] or 32); print(max(40, int(0.7*p+24)) if sys.argv[1]=='train' else int(2.1*p+12))" "$1" "${P_params_b:-}"; }
 # While a CI step waits for or uses Spark, the Spark queue starts nothing new (a job already running finishes normally).
 # The claim holds this step's PID, so a cancelled or crashed step stops blocking the queue on its own.
+# Every file the pipeline runs on BOTH machines (box-only execution-oracle modules excluded). Both machines must hold
+# byte-identical copies, or the "same steps, same data" comparison is not a comparison.
+CODE_FILES="scripts/ci_step.sh scripts/ci_plan.py scripts/ci_route.py scripts/ci_checks.sh scripts/ci_gate.py scripts/ci_provenance.py
+  scripts/ci_bank_funnel.py scripts/ci_schema_control.py scripts/imp_train.py scripts/imp_selective.py scripts/imp_zs_probe.py
+  scripts/imp_trace_bank.py scripts/imp_bank_merge.py scripts/imp_bank_strictx.py scripts/imp_build_cot_items.py scripts/reason_C_witness.py"
+code_manifest() { { printf '%s\n' $CODE_FILES; ls src/cyberdef/*.py | grep -v -E '/(exec_harness|exec_oracle|feed)\.py$'; } \
+                  | sort | while read -r f; do [ -f "$f" ] && sha256sum "$f" || echo "MISSING  $f"; done; }
+# Pre-registered CoT evaluation (as in the queue jobs P60/P61/P86): SC-CoT greedy generation with vLLM, 4096 tokens,
+# verdict-token probability. gpu-util 0.45 as pre-registered, raised only when a larger model needs more to load.
+cot_eval_here() {   # model  adapter-tag-or-''  cases-file  out
+  claim_spark; spark_env
+  local U AD=(); U=$(python3 -c "import sys; p=float(sys.argv[1] or 32); print(round(max(0.45, min(0.85, (2.2*p+16)/118)), 2))" "${P_params_b:-}")
+  export MEM_GB=$(python3 -c "print(int($U*121))"); echo "CoT eval: gpu-util $U (~${MEM_GB} GB) for ${P_params_b:-?}B"
+  wait_mem $((MEM_GB + 5)); take_gpu
+  [ -n "$2" ] && AD=(--adapter "out/imp_$2")
+  gdock '' scripts/imp_eval_cot.py --model "$1" "${AD[@]}" --cases-file "$3" --out "$4" --max-tokens 4096 --gpu-util "$U" \
+    --meta "ci test run=${GITHUB_RUN_ID:-} sha=${GITHUB_SHA:-} trained_on=${TRAINED_ON:-$MACHINE}"
+  flock -u 9
+}
 claim_spark() { [ "$MACHINE" = spark ] || return 0; echo "$$ $STEP ${GITHUB_RUN_ID:-local}" > "$CYBERDEF_REPO/.ci_priority"
                 trap 'grep -q "^$$ " "$CYBERDEF_REPO/.ci_priority" 2>/dev/null && rm -f "$CYBERDEF_REPO/.ci_priority"' EXIT; }
 
@@ -29,13 +48,37 @@ case "$STEP" in
 plan)
   # drift guard: this runner executes the CI scripts in $CYBERDEF_REPO, so they must match the commit being run
   if [ -n "${GITHUB_SHA:-}" ] && [ -n "${GITHUB_REPOSITORY:-}" ]; then
+    checked=0
     for f in scripts/ci_step.sh scripts/ci_plan.py scripts/ci_checks.sh scripts/ci_route.py; do
       if want=$(curl -fsS --max-time 20 "https://raw.githubusercontent.com/$GITHUB_REPOSITORY/$GITHUB_SHA/$f" | sha256sum | cut -c1-64); then
         [ "$want" = "$(sha256sum "$f" | cut -c1-64)" ] || { echo "::error::$CYBERDEF_REPO/$f on $MACHINE is not the version in commit ${GITHUB_SHA:0:7}; sync it, then re-run"; exit 1; }
+        checked=$((checked + 1))
       else
         echo "::warning::could not fetch $f at ${GITHUB_SHA:0:7} to check this machine's copy"
       fi
     done
+    echo "CI scripts on $MACHINE match commit ${GITHUB_SHA:0:7} ($checked/4 checked)"
+  fi
+  # the two machines must run identical pipeline code (the box can read Spark; Spark compares with the box's last manifest)
+  code_manifest > "$T/code_here.txt"
+  if [ "$MACHINE" = gpu-box ]; then
+    SPARK=$(cd scripts && python3 -c "import ci_pipeline as c; print(c.SPARK + ' ' + c.SPARK_REPO)" 2>/dev/null) || SPARK=""
+    if [ -n "$SPARK" ] && ssh -o BatchMode=yes -o ConnectTimeout=10 "${SPARK%% *}" "cd ${SPARK#* } && bash scripts/ci_step.sh manifest" > "$T/code_other.txt" 2>/dev/null; then
+      ssh -o BatchMode=yes -o ConnectTimeout=10 "${SPARK%% *}" "cat > ${SPARK#* }/results/ci_code_manifest_box.txt" < "$T/code_here.txt" || true
+    else
+      echo "::warning::could not read Spark's code fingerprint"; : > "$T/code_other.txt"
+    fi
+  else
+    if [ -s results/ci_code_manifest_box.txt ]; then cp results/ci_code_manifest_box.txt "$T/code_other.txt"
+    else echo "::warning::no box code fingerprint on Spark yet (it arrives with the next GPU run)"; : > "$T/code_other.txt"; fi
+  fi
+  if [ -s "$T/code_other.txt" ]; then
+    if ! diff -q "$T/code_here.txt" "$T/code_other.txt" >/dev/null; then
+      echo "::error::pipeline code differs between the box and Spark; run scripts/ci_sync_spark.sh on the box, then re-run. Differing files:"
+      diff <(awk '{print $2, $1}' "$T/code_here.txt") <(awk '{print $2, $1}' "$T/code_other.txt") | grep '^[<>]' | awk '{print "  " $2}' | sort -u
+      exit 1
+    fi
+    echo "pipeline code identical on box and Spark ($(wc -l < "$T/code_here.txt") files, fingerprint $(sha256sum "$T/code_here.txt" | cut -c1-12))"
   fi
   python3 scripts/ci_plan.py > "$T/plan.out"
   cat "$T/plan.out" >> "${GITHUB_OUTPUT:-/dev/null}"
@@ -48,7 +91,8 @@ plan)
     echo "::error::no adapter out/imp_$P_adapter_tag on $MACHINE to test"; exit 1; fi
   [ -z "$P_train_warn" ] || echo "::warning::$P_train_warn"
   todo="checks"; [ "$P_bank" = true ] && todo="$todo, trace bank + funnel"; [ "$P_train" = true ] && todo="$todo, train"
-  [ "$P_test" = true ] && todo="$todo, test on $P_set_key + grade"; [ "$MACHINE" = gpu-box ] && todo="$todo, status"
+  [ "$P_test" = true ] && todo="$todo, test ($P_scorer) on $(for kv in $P_test_sets; do printf '%s ' "${kv%%=*}"; done)+ grade"
+  [ "$MACHINE" = gpu-box ] && todo="$todo, status"
   echo "This job runs: $todo${P_model:+ · model $P_model}${P_adapter_tag:+ · adapter out/imp_$P_adapter_tag}"
   ;;
 checks)
@@ -59,31 +103,49 @@ dataset)
   # from the quick v2.3 trace bank; the box copies the same file and both print its sha256.
   if [ "$P_train" != true ]; then echo "This run does not train: no training data needed."; exit 0; fi
   if [ -z "$P_items_file" ]; then
-    echo "Training data: PrimeVul train, answer-only, 1000 per class, seed 0: the same deterministic sampler on both machines."; exit 0
+    npc=1000; seed=0; read -r -a XF <<< "${TRAIN_FLAGS:-}"   # report what the trainer will really use (flags override)
+    for ((i = 0; i < ${#XF[@]}; i++)); do case "${XF[i]}" in --n-per-class) npc="${XF[i+1]}";; --seed) seed="${XF[i+1]}";; esac; done
+    echo "Training data: PrimeVul train, answer-only, $npc per class, seed $seed: the same deterministic sampler on both machines."
+    echo "**Training data** PrimeVul train, answer-only, $npc per class, seed $seed" >> "$SUMMARY"; exit 0
   fi
   FIX=$(cd scripts && python3 -c "import ci_plan as c; print(c.SC_FIX_EPOCH)")
+  AMEND=$(cd scripts && python3 -c "import ci_plan as c; print(c.QUICK_BANK_AMENDMENT)")
   MARK=results/imp_cotq_BUILD_OK.json
   postfix() { [ -s "$1" ] && [ "$(stat -c %Y "$1")" -ge "$FIX" ]; }
+  mark_ok() {   # marker: post-fix, stamped with the current bank amendment, and (when given) built from exactly these slices
+    postfix "$1" && python3 - "$1" "$AMEND" "${2:-}" <<'PY'
+import json, sys
+m = json.load(open(sys.argv[1])); want = sys.argv[3].split()
+sys.exit(0 if m.get("amendment") == sys.argv[2] and (not want or sorted(m.get("pieces", {})) == sorted(want)) else 1)
+PY
+  }
+  echo "Bank make-up: $AMEND (acceptance/improve/$AMEND.md, sha256 $(sha256sum "acceptance/improve/$AMEND.md" 2>/dev/null | cut -c1-16))"
   if [ "$MACHINE" = spark ]; then
     claim_spark; exec 8>.spark_dataset.lock; echo "waiting for the dataset lock..."; flock 8
-    if postfix "$MARK"; then
-      echo "CoT items already built from the v2.3 bank ($(date -d @"$(stat -c %Y "$MARK")" '+%F %H:%M')): reusing"
+    PIECES="results/imp_bankq_g14.jsonl results/imp_bankq_g14_j2.jsonl"          # quick subset + J2 (the amendment)
+    [ -s results/imp_train_sqli_items.json ] && PIECES="$PIECES results/imp_bankq_g14_q.jsonl"   # + Q once P35's items exist
+    if mark_ok "$MARK" "$PIECES"; then
+      echo "CoT items already built under $AMEND from: $PIECES ($(date -d @"$(stat -c %Y "$MARK")" '+%F %H:%M')): reusing"
     else
       mkdir -p results/invalid_v22      # pre-fix bank pieces and items are INVALID: kept, but moved out of the way
       for f in results/imp_bankq_g*.jsonl results/imp_trace_bank_quick.jsonl results/imp_trace_bank_quick_counts.json results/imp_cotq_*; do
         [ -e "$f" ] && ! postfix "$f" && mv "$f" results/invalid_v22/ && echo "moved pre-fix $f to results/invalid_v22/"
       done
-      if ! postfix results/imp_bankq_g14.jsonl; then
-        if postfix results/imp_bank_v23_quick_g14.jsonl; then
-          cp results/imp_bank_v23_quick_g14.jsonl results/imp_bankq_g14.jsonl; echo "using the finished v2.3 quick bank (imp_bank_v23_quick_g14)"
-        else
-          echo "generating the quick v2.3 trace bank (Qwen2.5-14B, about 2.5 h)"
-          spark_env; export MEM_GB=56; wait_mem $((MEM_GB + 20)); take_gpu
-          gdock '' scripts/imp_trace_bank.py --gen g14 --model Qwen/Qwen2.5-14B-Instruct --pools J,J2 --subset quick --k 2 \
-            --fewshot results/imp_fewshot_exemplars.json --gpu-util 0.40 --out results/imp_bankq_g14.jsonl
-          flock -u 9
-        fi
+      gen_slice() {   # out-file  generator-flags...   (same generator, schema, few-shot and k as the quick bank)
+        local out=$1; shift
+        postfix "$out" && { echo "slice $out: present"; return 0; }
+        echo "generating slice $out ($*)"
+        spark_env; export MEM_GB=56; wait_mem $((MEM_GB + 20)); take_gpu
+        gdock '' scripts/imp_trace_bank.py --gen g14 --model Qwen/Qwen2.5-14B-Instruct "$@" --k 2 \
+          --fewshot results/imp_fewshot_exemplars.json --gpu-util 0.40 --out "$out"
+        flock -u 9; test -s "$out" || { echo "::error::slice $out was not written"; exit 1; }
+      }
+      if ! postfix results/imp_bankq_g14.jsonl && postfix results/imp_bank_v23_quick_g14.jsonl; then
+        cp results/imp_bank_v23_quick_g14.jsonl results/imp_bankq_g14.jsonl; echo "slice results/imp_bankq_g14.jsonl: the finished v2.3 quick bank"
       fi
+      gen_slice results/imp_bankq_g14.jsonl --pools J,J2 --subset quick
+      gen_slice results/imp_bankq_g14_j2.jsonl --pools J2
+      case "$PIECES" in *_q.jsonl*) gen_slice results/imp_bankq_g14_q.jsonl --pools Q ;; esac
       python3 scripts/imp_bank_merge.py quick > /dev/null
       echo "execution check (X_strict) on the merged quick bank"
       docker run --rm --network none --memory 8g --pids-limit 512 --cpus 4 --cap-drop ALL --user "$(id -u):$(id -g)" -e HOME=/tmp \
@@ -92,24 +154,23 @@ dataset)
       spark_env; gdock '' IMP_BANK=quick scripts/imp_build_cot_items.py
       python3 scripts/ci_bank_funnel.py results/imp_trace_bank_quick.jsonl --json results/imp_trace_bank_quick_funnel.json --md "$T/funnel.md" \
         && cat "$T/funnel.md" >> "$SUMMARY"
-      python3 - "$MARK" <<'PY'
+      python3 - "$MARK" "$AMEND" $PIECES <<'PY'
 import glob, hashlib, json, sys, time
-items = {f: {"sha256": hashlib.sha256(open(f, "rb").read()).hexdigest(), "n": json.load(open(f))["n"]}
-         for f in sorted(glob.glob("results/imp_cotq_*_items.json"))}
+sha = lambda f: hashlib.sha256(open(f, "rb").read()).hexdigest()
+items = {f: {"sha256": sha(f), "n": json.load(open(f))["n"]} for f in sorted(glob.glob("results/imp_cotq_*_items.json"))}
 bank = "results/imp_trace_bank_quick.jsonl"
-json.dump({"built": time.strftime("%Y-%m-%dT%H:%M:%S%z"), "bank": bank,
-           "bank_sha256": hashlib.sha256(open(bank, "rb").read()).hexdigest(), "items": items}, open(sys.argv[1], "w"), indent=1)
+json.dump({"built": time.strftime("%Y-%m-%dT%H:%M:%S%z"), "amendment": sys.argv[2], "pieces": {p: sha(p) for p in sys.argv[3:]},
+           "bank": bank, "bank_sha256": sha(bank), "items": items}, open(sys.argv[1], "w"), indent=1)
 PY
     fi
   else
-    # box: wait for Spark's build, then copy the identical file
+    # box: wait for Spark's build under the current amendment, then copy the identical file
     SPARK=$(cd scripts && python3 -c "import ci_pipeline as c; print(c.SPARK + ' ' + c.SPARK_REPO)"); SH="${SPARK%% *}"; SR="${SPARK#* }"
-    for i in $(seq 1 240); do   # up to 8 h: Spark may be generating the bank
-      ssh -o BatchMode=yes -o ConnectTimeout=10 "$SH" "f=$SR/$MARK; test -s \$f && [ \$(stat -c %Y \$f) -ge $FIX ]" && break
-      [ "$i" -eq 240 ] && { echo "::error::Spark has not built the CoT items after 8 h; start the Spark run with the same data"; exit 1; }
-      echo "waiting for Spark to build the CoT items (start the Spark run with the same data if it is not running)"; sleep 120
+    for i in $(seq 1 240); do   # up to 8 h: Spark may be generating bank slices
+      scp -q -p -o BatchMode=yes -o ConnectTimeout=10 "$SH:$SR/$MARK" "$T/mark.json" 2>/dev/null && mark_ok "$T/mark.json" && break
+      [ "$i" -eq 240 ] && { echo "::error::Spark has not built the CoT items under $AMEND after 8 h; start the Spark run with the same data"; exit 1; }
+      echo "waiting for Spark to build the CoT items under $AMEND (start the Spark run with the same data if it is not running)"; sleep 120
     done
-    scp -q -o BatchMode=yes "$SH:$SR/$MARK" "$T/mark.json"
     WANT=$(python3 -c "import json,sys; print(json.load(open(sys.argv[1]))['items'][sys.argv[2]]['sha256'])" "$T/mark.json" "$P_items_file")
     if [ ! -s "$P_items_file" ] || [ "$(sha256sum "$P_items_file" | cut -c1-64)" != "$WANT" ]; then
       mkdir -p results/invalid_v22
@@ -122,9 +183,14 @@ PY
   HAVE=$(sha256sum "$P_items_file" | cut -c1-64)
   WANT=$(python3 -c "import json,sys; print(json.load(open(sys.argv[1]))['items'][sys.argv[2]]['sha256'])" "$MARK" "$P_items_file")
   [ "$HAVE" = "$WANT" ] || { echo "::error::$P_items_file on $MACHINE does not match the Spark build (sha256 $HAVE vs $WANT)"; exit 1; }
-  N=$(python3 -c "import json,sys; print(json.load(open(sys.argv[1]))['n'])" "$P_items_file")
-  echo "Training data: $P_items_file  n=$N  sha256 ${HAVE:0:16}  (identical on both machines)"
-  echo "**Training data** \`$P_items_file\` · n=$N · sha256 \`${HAVE:0:16}\`" >> "$SUMMARY"
+  read -r N NV NS < <(python3 -c "
+import json, sys; it = json.load(open(sys.argv[1]))['items']
+print(len(it), sum(i.get('label') == 'VULNERABLE' for i in it), sum(i.get('label') == 'SAFE' for i in it))" "$P_items_file")
+  echo "Training data: $P_items_file  n=$N (VULNERABLE $NV, SAFE $NS)  sha256 ${HAVE:0:16}  (identical on both machines)"
+  echo "**Training data** \`$P_items_file\` · n=$N (VULNERABLE $NV, SAFE $NS) · sha256 \`${HAVE:0:16}\`" >> "$SUMMARY"
+  [ "$N" -gt 0 ] || { echo "::error::$P_items_file has no items: this arm cannot be trained from the current bank"; exit 1; }
+  minority=$(( NV < NS ? NV : NS ))
+  [ $(( 100 * minority / N )) -ge 20 ] || echo "::warning::class balance is ${NV}/${NS} (VULNERABLE/SAFE): a model trained on this mostly learns the majority answer"
   ;;
 bank)
   [ "$MACHINE" = spark ] || { echo "::error::the trace bank runs on Spark only"; exit 1; }
@@ -160,39 +226,78 @@ train)
   fi
   ;;
 test)
-  test -s "$P_cases_file" || { echo "::error::test set $P_cases_file is missing on $MACHINE"; exit 1; }
-  OUT="results/ci_ev_${P_adapter_tag:-$P_slug}_${P_set_key}.json"; printf 'RESULT=%q\n' "$OUT" > "$RES"
-  take_gpu
-  if [ "$P_scorer" = selective ]; then
-    AD=(); [ -n "$P_adapter_tag" ] && AD=(--adapter "out/imp_$P_adapter_tag")
-    SEL=(scripts/imp_selective.py --model "$P_model" "${AD[@]}" --cases-file "$P_cases_file" --out "$OUT"
-         --meta "ci test run=$GITHUB_RUN_ID sha=$GITHUB_SHA machine=$MACHINE")
-    if [ "$MACHINE" = spark ]; then
-      claim_spark; spark_env; export MEM_GB=$(need_gb test); echo "needs ${MEM_GB} GB (+10 margin) for ${P_params_b:-?}B in bf16"
-      wait_mem $((MEM_GB + 10)); gdock '' "${SEL[@]}"
-    else "$PY" "${SEL[@]}"; fi
-  else
-    "$PY" scripts/imp_zs_probe.py --model "$P_model" --tag "$P_slug" --think medium --cases-file "$P_cases_file" --set "$P_set_key" \
-      --out "$OUT" --num-predict 4096 --workers 4
-  fi
+  # every set of the plan; CoT arms are scored by generating the SC-CoT (vLLM) on Spark, whichever machine trained them
+  RESULTS=""; local_lock=0
+  for kv in $P_test_sets; do
+    key=${kv%%=*}; cases=${kv#*=}
+    test -s "$cases" || { echo "::error::test set $cases is missing on $MACHINE"; exit 1; }
+    OUT="results/ci_ev_${P_adapter_tag:-$P_slug}_${key}.json"
+    echo "::group::test $key ($P_scorer) -> $OUT"
+    if [ "$P_scorer" = cot ]; then
+      if [ "$MACHINE" = spark ]; then
+        cot_eval_here "$P_model" "$P_adapter_tag" "$cases" "$OUT"
+      else
+        read -r SH SR < <(cd scripts && python3 -c "import ci_pipeline as c; print(c.SPARK, c.SPARK_REPO)")
+        if [ -n "$P_adapter_tag" ]; then   # the box's adapter goes to Spark under the same name; never over a different one
+          mine=$(sha256sum "out/imp_$P_adapter_tag/adapter_model.safetensors" | cut -c1-64)
+          theirs=$(ssh -o BatchMode=yes "$SH" "sha256sum $SR/out/imp_$P_adapter_tag/adapter_model.safetensors 2>/dev/null | cut -c1-64")
+          if [ -z "$theirs" ]; then rsync -a "out/imp_$P_adapter_tag/" "$SH:$SR/out/imp_$P_adapter_tag/"; echo "adapter copied to Spark"
+          elif [ "$theirs" != "$mine" ]; then echo "::error::Spark already has a different adapter named imp_$P_adapter_tag; use a new tag"; exit 1; fi
+        fi
+        ssh -o BatchMode=yes "$SH" "cd $SR && MACHINE=spark P_params_b='$P_params_b' GITHUB_RUN_ID='$GITHUB_RUN_ID' GITHUB_SHA='$GITHUB_SHA' TRAINED_ON=gpu-box bash scripts/ci_step.sh cot_eval '$P_model' '$P_adapter_tag' '$cases' '$OUT'"
+        scp -q -p -o BatchMode=yes "$SH:$SR/$OUT" "$OUT"
+      fi
+    else
+      [ "$local_lock" = 1 ] || { take_gpu; local_lock=1; }
+      if [ "$P_scorer" = selective ]; then
+        AD=(); [ -n "$P_adapter_tag" ] && AD=(--adapter "out/imp_$P_adapter_tag")
+        SEL=(scripts/imp_selective.py --model "$P_model" "${AD[@]}" --cases-file "$cases" --out "$OUT"
+             --meta "ci test run=$GITHUB_RUN_ID sha=$GITHUB_SHA machine=$MACHINE")
+        if [ "$MACHINE" = spark ]; then
+          claim_spark; spark_env; export MEM_GB=$(need_gb test); echo "needs ${MEM_GB} GB (+10 margin) for ${P_params_b:-?}B in bf16"
+          wait_mem $((MEM_GB + 10)); gdock '' "${SEL[@]}"
+        else "$PY" "${SEL[@]}"; fi
+      else
+        "$PY" scripts/imp_zs_probe.py --model "$P_model" --tag "$P_slug" --think medium --cases-file "$cases" --set "$key" \
+          --out "$OUT" --num-predict 4096 --workers 4
+      fi
+    fi
+    echo "::endgroup::"
+    test -s "$OUT" || { echo "::error::no result written for $key"; exit 1; }
+    RESULTS="$RESULTS $OUT"; printf 'RESULTS=%q\n' "$RESULTS" > "$RES"
+  done
   ;;
 grade)
-  # the pre-registered bar is fixed here on purpose: it is not a run-time knob
-  "$PY" scripts/ci_gate.py --result "$RESULT" --bar 0.60
+  # the pre-registered bar is fixed here on purpose: it is not a run-time knob. A NULL never fails; an integrity mismatch does.
+  fails=0; { echo "### Results (bar 0.60, recomputed from per_case)"; echo; echo "| set | AUROC | n | verdict |"; echo "|---|---|---|---|"; } >> "$SUMMARY"
+  for r in $RESULTS; do
+    echo "== $r"; "$PY" scripts/ci_gate.py --result "$r" --bar 0.60 > "$T/gate.txt" 2>&1 || fails=$((fails + 1)); cat "$T/gate.txt"
+    python3 - "$r" "$T/gate.txt" >> "$SUMMARY" <<'PY'
+import json, re, sys
+g = open(sys.argv[2]).read(); key = sys.argv[1].rsplit("_", 1)[-1].replace(".json", "")
+a = re.search(r'"recomputed_auroc":\s*([0-9.]+|null)', g); n = re.search(r'"n":\s*(\d+)', g); v = re.search(r'"verdict":\s*"([^"]+)"', g)
+print(f"| {key} | {a.group(1) if a else '?'} | {n.group(1) if n else '?'} | {v.group(1) if v else '?'} |")
+PY
+  done
+  [ "$fails" -eq 0 ]
   ;;
 provenance)
   mkdir -p "$GITHUB_WORKSPACE/artifacts"
-  IN="model=$P_model;machine=$MACHINE;adapter=$P_adapter_tag;data=${DATA:-answer-only};items=$P_items_file;flags=${TRAIN_FLAGS:-};set=$P_set_key;scorer=$P_scorer"
+  IN="model=$P_model;machine=$MACHINE;adapter=$P_adapter_tag;data=${DATA:-answer-only};items=$P_items_file;flags=${TRAIN_FLAGS:-};sets=$P_test_sets;scorer=$P_scorer;amendment=$P_amendment"
   if [ "$P_train" = true ]; then
     "$PY" scripts/ci_provenance.py --kind train --out-tag "$P_adapter_tag" --lane "$MACHINE" --inputs "$IN" \
       --out "out/imp_${P_adapter_tag}_provenance.json" || echo "::warning::train provenance failed"
     cp -r "out/imp_$P_adapter_tag" out/imp_"${P_adapter_tag}"_*.json "$GITHUB_WORKSPACE/artifacts/" 2>/dev/null || true
   fi
-  if [ -n "${RESULT:-}" ] && [ -f "$RESULT" ]; then
-    "$PY" scripts/ci_provenance.py --kind eval --lane "$MACHINE" --result "$RESULT" --inputs "$IN" --out "$RESULT.provenance.json" \
-      || echo "::warning::test provenance failed"
-    cp "$RESULT" "$RESULT.provenance.json" "$GITHUB_WORKSPACE/artifacts/" 2>/dev/null || true
-  fi
+  for r in ${RESULTS:-}; do
+    [ -f "$r" ] || continue
+    "$PY" scripts/ci_provenance.py --kind eval --lane "$MACHINE" --result "$r" --inputs "$IN" --out "$r.provenance.json" \
+      || echo "::warning::test provenance failed for $r"
+    cp "$r" "$r.provenance.json" "$GITHUB_WORKSPACE/artifacts/" 2>/dev/null || true
+  done
+  ;;
+cot_eval)   # on Spark: cot_eval <model> <adapter-tag or ''> <cases-file> <out>  (also called over ssh by the box's test step)
+  cot_eval_here "$2" "$3" "$4" "$5"
   ;;
 status)
   LATEST=results/ci_status_latest.md
@@ -215,6 +320,9 @@ status)
   fi
   cat "$T/status.md" >> "$SUMMARY"
   head -3 "$T/status.md" | tail -1 | sed "s/^/::notice title=pipeline status::/"
+  ;;
+manifest)
+  code_manifest
   ;;
 *) echo "::error::unknown step $STEP"; exit 2 ;;
 esac
