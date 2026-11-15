@@ -16,10 +16,19 @@ SPARK = "spark-75cf@10.55.0.14"
 SPARK_REPO = "~/cyberdef-lm"
 
 
-def S(sec, sid, label, after=(), art=(), state="done", reason="", fail=None, running=None, kind="artifact"):
-    """art: 'box:path' / 'spark:path'. fail: (host:path, needle_or_None, reason). running: host:path marker."""
+def S(sec, sid, label, after=(), art=(), state="done", reason="", fail=None, running=None, kind="artifact", invalid=False):
+    """art: 'box:path' / 'spark:path'. fail: (host:path, needle_or_None, reason). running: host:path marker.
+    invalid=True: the stage's artifacts were decoded with the SC-CoT schema; any older than the v2.3 fix are INVALID."""
     return dict(sec=sec, id=sid, label=label, after=list(after), art=list(art), state=state, reason=reason,
-                fail=fail, running=running, kind=kind)
+                fail=fail, running=running, kind=kind, invalid=invalid)
+
+
+# SC-CoT schema v2.1/v2.2 guided-decoding bug: witness.values could only be {} (proof: scripts/ci_schema_control.py).
+# Fixed by schema v2.3 (commit c8851c0); the fixed file landed on Spark at this epoch. Older SC-schema output is INVALID.
+SC_FIX_EPOCH = 1794711662
+SC_BAD_HASHES = {"ecdfdd87d617f06f", "92b74cee"}
+INVALID_REASON = ("INVALID: decoded under the SC-CoT schema v2.1/v2.2 grammar bug (a concrete witness could not be written); "
+                  "measures a crippled decoder, neither a pass nor a fail. Regenerate under schema v2.3")
 
 
 D, T, A, C, W, R, G, E, P, B, Z = ("0 DATA", "1 TRAIN", "1 ARMS (answer-only)", "1 ARMS (CoT)", "EXECUTION TRACK",
@@ -39,19 +48,21 @@ STAGES = [
     S(D, "d_test_castle", "TEST · CASTLE 198 runnable programs (99/99)", art=["box:results/xdata_castle_cases.json"]),
     # ---- 1. Train pipeline
     S(T, "t_sccot", "SC-CoT v2 (11-step format, CWE+OWASP, monitor, witness)", after=["d_train_A", "d_train_B", "d_train_J", "d_train_J2"], art=["box:src/cyberdef/schemas_cot.py", "box:src/cyberdef/sc_cot.py"]),
-    S(T, "t_bank_quick", "① Trace bank · quick (7B+14B, tagged V P S K O C X)", after=["t_sccot"], art=["spark:results/imp_trace_bank_quick.jsonl", "spark:results/imp_trace_bank_quick_counts.json"]),
+    S(T, "t_bank_quick", "① Trace bank · quick (7B+14B, tagged V P S K O C X)", after=["t_sccot"], art=["spark:results/imp_trace_bank_quick.jsonl", "spark:results/imp_trace_bank_quick_counts.json"], invalid=True),
+    S(T, "t_bank_v23", "① Trace bank · v2.3 pilot (Juliet J+J2, Qwen-14B) after the grammar fix", after=["t_sccot"], art=["spark:results/imp_bank_v23_pilot_g14_funnel.json"],
+      running="spark:results/imp_bank_v23_pilot_g14.jsonl", state="pending", reason="pilot dispatched on the Spark runner (trace-bank workflow)"),
     S(T, "t_bank_full", "① Trace bank · full (+Coder-7B, gpt-oss-20b, 4 samples)", after=["t_bank_quick"], state="pending", reason="P55 not started"),
-    S(T, "t_category", "1b · per-category balancing (>=5% per monitor class)", after=["t_bank_quick"], art=["spark:results/imp_cotq_items_stats.json"]),
+    S(T, "t_category", "1b · per-category balancing (>=5% per monitor class)", after=["t_bank_quick"], art=["spark:results/imp_cotq_items_stats.json"], invalid=True),
     S(A, "a1", "#1 vuln-vs-patch pairs (control + pairwise)", after=["d_train_A", "d_train_B"], art=["spark:results/imp_ev_1ctl_pv.json", "spark:results/imp_ev_1arm_pv.json", "spark:results/imp_ev_1arm_castle.json"]),
     S(A, "a6", "#6 anti-length head (gradient reversal)", after=["d_train_A"], art=["box:results/box_ev_advctl_pv.json", "box:results/box_ev_adv_pv.json", "box:results/box_6_probe.json"]),
     S(A, "a7", "#7 clean vs unfiltered labels", after=["d_train_A"], art=["box:results/box_ev_7clean_pv.json", "box:results/box_ev_7unfilt_pv.json"]),
     S(C, "c2", "② CoT-SFT on traces passing V+P+S", after=["t_bank_quick", "t_category", "cat_memory", "cat_integer", "cat_leak", "cat_race", "cat_resource", "cat_cmdinj", "cat_fmtstr", "cat_pathtrav", "cat_sqli", "cat_nomon"], art=["box:out/imp_box_2cot/adapter_model.safetensors"],
-      fail=("box:logs/box_train.log", "END train_2cot rc=1", "train_2cot crashed: CUDA out of memory on the 24 GB box (11:35); its verdict-only twin trained (box_ev_2twin_*). Re-run on Spark")),
+      fail=("box:logs/box_train.log", "END train_2cot rc=1", "train_2cot crashed: CUDA out of memory on the 24 GB box (11:35). Its training items are also INVALID (built from the v2.2 bank: 386 items, 0 VULNERABLE). Re-run only after a v2.3 bank yields vulnerable traces")),
     S(C, "c3", "③ CoT x pairs (vuln cites sink, fix cites guard)", after=["t_bank_quick"], state="pending", reason="round 2 (items built: imp_cotq_3)"),
     S(C, "c4", "④ CoT x anti-length head", after=["t_bank_quick"], state="pending", reason="round 2"),
     S(C, "c5", "⑤ CoT x clean labels (weak contrast)", after=["t_bank_quick"], state="pending", reason="end of queue (items built: imp_cotq_5clean/5unfilt)"),
     S(C, "c6", "⑥ counterfactual CoT (padded/renamed -> same verdict)", after=["t_bank_quick", "t_category", "cat_memory", "cat_integer", "cat_leak", "cat_race", "cat_resource", "cat_cmdinj", "cat_fmtstr", "cat_pathtrav", "cat_sqli", "cat_nomon"], art=["box:out/imp_box_6cf/adapter_model.safetensors"],
-      fail=("box:logs/box_train.log", "END train_6cf rc=1", "train_6cf crashed: CUDA out of memory on the 24 GB box (11:58). Re-run on Spark")),
+      fail=("box:logs/box_train.log", "END train_6cf rc=1", "train_6cf crashed: CUDA out of memory on the 24 GB box (11:58). Its items are also INVALID (built from the v2.2 bank). Re-run only after a v2.3 bank yields vulnerable traces")),
     S(C, "c7", "⑦ execution-grounded CoT (X_strict traces only)", after=["t_bank_quick"], state="blocked", reason="needs >=200 strict (monitor-confirmed) traces; the quick bank has ~0"),
     S(C, "c8", "⑧ exec-loop revision traces", after=["t_bank_quick"], state="blocked", reason="needs Stage F (exec-loop)"),
     S(C, "c9", "⑨ repair CoT (fix verified by the repair checker)", after=["t_bank_quick"], state="blocked", reason="needs Stage G (repair)"),
@@ -65,7 +76,7 @@ STAGES = [
     S(R, "r_C", "C · witness prompt", after=["adapters", "d_test_pv"], art=["box:results/reason_C_base7b_matched.json", "box:results/reason_C_tuned7b_matched.json"]),
     S(R, "r_C2", "C2 · witness prompt, forced JSON", after=["adapters", "d_test_pv"], art=["spark:results/reason_C_base7b_c2_matched.json", "spark:results/reason_C_tuned7b_c2_matched.json"],
       fail=("spark:queue/failed/P17b_C2_tuned7b.sh", None, "tuned-7B C2 (P17b) failed: vLLM engine-core init error; base-7B C2 done. Needs a requeue")),
-    S(R, "r_SC", "SC · SC-CoT v2 (base + tuned)", after=["adapters", "d_test_pv"], art=["spark:results/reason_CSC_base7b_matched.json", "spark:results/reason_CSC_tuned7b_matched.json"]),
+    S(R, "r_SC", "SC · SC-CoT v2 (base + tuned)", after=["adapters", "d_test_pv"], art=["spark:results/reason_CSC_base7b_matched.json", "spark:results/reason_CSC_tuned7b_matched.json"], invalid=True),
     S(R, "r_5", "#5 stronger models zero-shot (gpt-oss, nemotron, glm, qwen3.8, deepseek)", after=["adapters", "d_test_pv"], art=["spark:results/imp_zs_gptoss20b_pv.json"],
       running="spark:results/imp_zs_gptoss20b_pv.json.cache.jsonl"),
     S(R, "r_3", "#3 + context", after=["adapters", "d_test_vs"], state="pending", reason="context cases built (imp_ctx_*); model evals queued (P20-21)"),
@@ -123,6 +134,14 @@ except Exception as e:
     rows = []; out["bank_error"] = type(e).__name__
 agg = collections.defaultdict(lambda: collections.Counter())
 errs = collections.defaultdict(collections.Counter)
+hashes = collections.Counter()
+for r in rows:
+    dec = r.get("decoding")
+    if isinstance(dec, str):
+        try: dec = json.loads(dec)
+        except Exception: dec = {}
+    hashes[str((dec or {}).get("schema_hash"))] += 1
+out["bank_schema_hashes"] = dict(hashes)
 for r in rows:
     m = mon(r.get("cwe_id")); a = agg[m]
     if r.get("label") != "VULNERABLE":
@@ -205,8 +224,12 @@ def compute_categories(box_files):
             add("10 · CASTLE · no runtime monitor: never execution-verified", False, na=True)
             add("11 · CASTLE · no runtime monitor: scored by class + localization only", False, na=True)
         broken = next((s["name"].split(" · ")[1] for s in steps if not s["ok"] and not s["na"]), None)
-        cats[key] = {"label": label, "status": f"CHAIN BREAKS AT {broken}" if broken else "CHAIN OK",
-                     "ok": broken is None, "steps": steps}
+        bad_bank = any(h in SC_BAD_HASHES for h in sp.get("bank_schema_hashes", {}))
+        if bad_bank:
+            status = "INVALID — computed from a bank decoded under the v2.2 empty-witness grammar bug; regenerate under v2.3"
+        else:
+            status = f"CHAIN BREAKS AT {broken}" if broken else "CHAIN OK"
+        cats[key] = {"label": label, "status": status, "ok": broken is None and not bad_bank, "steps": steps}
     note = sp.get("bank_error") or sp.get("slice_error") or ""
     return cats, note
 
@@ -235,6 +258,7 @@ KEYS = ["auroc", "model_auroc", "headline_project_grouped.auroc", "detector_dete
 def probe(p):
     r = {"exists": os.path.exists(p)}
     if not r["exists"]: return r
+    r["mtime"] = int(os.path.getmtime(p))
     if os.path.isdir(p) or not (p.endswith(".json") or p.endswith(".jsonl")): return r
     if p.endswith(".jsonl"):
         try: r["n"] = sum(1 for l in open(p, errors="replace") if l.strip())
@@ -350,7 +374,10 @@ def compute():
         if s["running"]:
             h, p = split(s["running"])
             run_hit = bool(res[h]["files"].get(p, {}).get("exists"))
-        if present and not integ_bad:
+        stale = s.get("invalid") and present and any((r.get("mtime") or 0) < SC_FIX_EPOCH for _, r in probes)
+        if stale:
+            st, detail = "INVALID", INVALID_REASON + " | " + detail
+        elif present and not integ_bad:
             st = "VERIFIED"
         elif present and integ_bad:
             st, detail = "FAILED", "integrity mismatch (stored AUROC != per_case) in " + ", ".join(integ_bad) + " | " + detail
@@ -358,8 +385,8 @@ def compute():
             st, detail = "FAILED", s["fail"][2] + " | " + detail
         elif run_hit:
             st, detail = "RUNNING", "in progress | " + detail
-        elif s["state"] in ("pending", "blocked") and not s["art"]:
-            st, detail = s["state"].upper(), s["reason"]
+        elif s["state"] in ("pending", "blocked"):
+            st, detail = s["state"].upper(), s["reason"] + (" | " + detail if s["art"] else "")
         elif unreachable:
             st, detail = "BLOCKED", "host unreachable during this check | " + detail
         else:
@@ -396,7 +423,7 @@ def compute():
 
 
 def to_md(board, meta):
-    icon = {"VERIFIED": "✅", "FAILED": "❌", "RUNNING": "🔄", "PENDING": "⏳", "BLOCKED": "⏸️"}
+    icon = {"VERIFIED": "✅", "FAILED": "❌", "INVALID": "🚫", "RUNNING": "🔄", "PENDING": "⏳", "BLOCKED": "⏸️"}
     lines = ["# cyberdef pipeline board", "", f"generated {meta['generated']} · " +
              " · ".join(f"{icon.get(k, '')} {k} {v}" for k, v in sorted(meta["counts"].items())), ""]
     if meta["notes"]:
@@ -462,7 +489,7 @@ def emit_yaml(path):
                 "    runs-on: ubuntu-latest", "    steps:", f"      - name: {q(s['sec'] + ' · ' + s['label'])}", "        env:",
                 f"          STATUS: ${{{{ {ref}.status }}}}", f"          DETAIL: ${{{{ {ref}.detail }}}}", "        run: |",
                 '          echo "status: $STATUS"', "          printf '%s\\n' \"$DETAIL\" | tr '|' '\\n'",
-                '          if [ "$STATUS" = "FAILED" ]; then exit 1; fi',
+                '          if [ "$STATUS" = "FAILED" ] || [ "$STATUS" = "INVALID" ]; then exit 1; fi',
                 '          if [ "$STATUS" != "VERIFIED" ]; then echo "::warning title=$STATUS::$DETAIL"; fi', ""]
     # section 1b: one job per monitor category; each link of the CoT chain is a visible step
     for key, m, label, _ in CATEGORIES:
