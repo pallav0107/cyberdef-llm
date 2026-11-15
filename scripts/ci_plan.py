@@ -17,11 +17,25 @@ import os, re, sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from ci_route import decide  # noqa: E402
 
+# The SC-CoT grammar bug was fixed by schema v2.3 (commit c8851c0); the fixed file landed on Spark at this epoch
+# (2026-11-15 14:01 AEDT). Trace banks and CoT items written before it were decoded under the bug: INVALID.
+SC_FIX_EPOCH = 1794711662
+
 TEST_SETS = {
     "PrimeVul length-matched (1,074)": ("results/lenmatched_eval_cases.json", "pv"),
     "PrimeVul length-matched sample (300)": ("results/lenmatched_eval_cases_300.json", "pv300"),
     "VulSpot holdout, length-matched": ("results/vs_holdout_matched_cases.json", "vh"),
     "VulSpot no-linux, length-matched": ("results/vs_nolinux_matched_cases.json", "vn"),
+}
+# Training data. CoT arms use the pre-registered recipes of the queue jobs P60 (arm 2) and P61 (arm 6), on the items built
+# from the QUICK v2.3 trace bank (imp_cotq_*). Each arm has a verdict-only twin on identical rows: the arm-vs-twin
+# comparison is the pre-registered test, so train both, on the same machine.
+DATA = {
+    "answer-only (PrimeVul)": ("", ""),
+    "CoT arm 2: traces passing V+P+S": ("results/imp_cotq_2_items.json", "--val-per-class 5 --pair-batches"),
+    "CoT arm 2 twin: same rows, verdict only": ("results/imp_cotq_2_twin_items.json", "--val-per-class 5 --pair-batches"),
+    "CoT arm 6: counterfactual traces": ("results/imp_cotq_6_items.json", "--val-per-class 5 --pair-batches --pair-loss 1"),
+    "CoT arm 6 twin: same rows, verdict only": ("results/imp_cotq_6_twin_items.json", "--val-per-class 5 --pair-batches --pair-loss 1"),
 }
 MODEL_STEPS = {"train + test": (True, True), "train only": (True, False), "test only": (False, True)}
 ALL_STEPS = set(MODEL_STEPS) | {"checks + status", "trace bank"}
@@ -63,8 +77,13 @@ def plan(env) -> dict:
     s = slug(model) if model else ""
     adapter = tag if (model and (train or test)) else ""
     cases_file, set_key = TEST_SETS.get(test_set, ("", "")) if test else ("", "")
+    data = env.get("DATA", "").strip() or "answer-only (PrimeVul)"
+    if train and data not in DATA:
+        raise SystemExit(f"plan: unknown training data '{data}'")
+    items_file, data_flags = DATA.get(data, ("", "")) if train else ("", "")
     return {"model": model, "slug": s, "adapter_tag": adapter, "train": train, "test": test, "bank": bank,
-            "cases_file": cases_file, "set_key": set_key, "scorer": scorer, "train_warn": warn}
+            "cases_file": cases_file, "set_key": set_key, "scorer": scorer, "train_warn": warn,
+            "items_file": items_file, "data_flags": data_flags}
 
 
 def main():

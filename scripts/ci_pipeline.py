@@ -24,8 +24,8 @@ def S(sec, sid, label, after=(), art=(), state="done", reason="", fail=None, run
 
 
 # SC-CoT schema v2.1/v2.2 guided-decoding bug: witness.values could only be {} (proof: scripts/ci_schema_control.py).
-# Fixed by schema v2.3 (commit c8851c0); the fixed file landed on Spark at this epoch. Older SC-schema output is INVALID.
-SC_FIX_EPOCH = 1794711662
+# Fixed by schema v2.3 (commit c8851c0). One definition, shared with the CI planner (which runs on both machines).
+from ci_plan import SC_FIX_EPOCH  # noqa: E402
 SC_BAD_HASHES = {"ecdfdd87d617f06f", "92b74cee"}
 INVALID_REASON = ("INVALID: decoded under the SC-CoT schema v2.1/v2.2 grammar bug (a concrete witness could not be written); "
                   "measures a crippled decoder, neither a pass nor a fail. Regenerate under schema v2.3")

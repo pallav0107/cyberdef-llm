@@ -1,5 +1,5 @@
 name: "Spark · train + test"
-run-name: "Spark · ${{ inputs.train && 'train + test' || 'test only' }} · ${{ inputs.model }}${{ inputs.tag != '' && format(' · {0}', inputs.tag) || '' }}"
+run-name: "Spark · ${{ inputs.train && 'train + test' || 'test only' }} · ${{ inputs.model }}${{ inputs.train && format(' · {0}', inputs.data) || '' }}${{ inputs.tag != '' && format(' · {0}', inputs.tag) || '' }}"
 
 # Spark (GB10, 128 GB unified; models too big for the box). The same eight steps as "GPU · train + test", in the same order:
 #   1 plan · 2 checks · 3 train · 4 test · 5 grade · 6 provenance · 7 upload · 8 status
@@ -19,9 +19,16 @@ on:
         description: "Train first (untick to only test)"
         type: boolean
         default: true
-      train_data:
-        description: "Training dataset (benchdata key)"
-        default: "primevul"
+      data:
+        description: "Training data. CoT arms use the pre-registered recipe on items from the v2.3 trace bank; train each arm AND its twin"
+        type: choice
+        options:
+          - "answer-only (PrimeVul)"
+          - "CoT arm 2: traces passing V+P+S"
+          - "CoT arm 2 twin: same rows, verdict only"
+          - "CoT arm 6: counterfactual traces"
+          - "CoT arm 6 twin: same rows, verdict only"
+        default: "answer-only (PrimeVul)"
       train_flags:
         description: "Extra trainer flags, space-separated (e.g. --items-file results/x.json --epochs 3). Defaults: --n-per-class 1000 --epochs 2 --lr 1e-4 --seed 0"
         default: ""
@@ -61,7 +68,7 @@ jobs:
       TEST_SET: ${{ inputs.test_set }}
       SCORER: ${{ inputs.scorer }}
       ACK_OOM: ${{ inputs.ack_oom }}
-      TRAIN_DATA: ${{ inputs.train_data }}
+      DATA: ${{ inputs.data }}
       TRAIN_FLAGS: ${{ inputs.train_flags }}
       PYTHONPATH: src
       HF_HUB_DISABLE_XET: "1"

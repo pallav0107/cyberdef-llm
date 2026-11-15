@@ -2,7 +2,7 @@
 # One step of the `cyberdef pipeline` workflow. The workflow lists each machine's steps; the work lives here, so the
 # Box GPU and Spark jobs run identical logic.
 #   scripts/ci_step.sh plan|checks|bank|funnel|train|test|grade|provenance|status
-# Inputs arrive as env: MACHINE (gpu-box|spark), MODEL, OTHER, STEPS, TAG, TEST_SET, SCORER, ACK_OOM, TRAIN_DATA,
+# Inputs arrive as env: MACHINE (gpu-box|spark), MODEL, STEPS, TAG, DATA, TEST_SET, SCORER, ACK_OOM,
 # TRAIN_FLAGS, BANK_FLAGS (flags are space-separated, no quoting). `plan` writes $RUNNER_TEMP/cyberdef_plan.env and
 # `test` writes $RUNNER_TEMP/cyberdef_result.env; later steps read them.
 set -eo pipefail
@@ -39,6 +39,14 @@ plan)
     echo "::error::out/imp_$P_adapter_tag already exists on $MACHINE; training would overwrite it. Pick a new tag (or untick train to test it)"; exit 1; fi
   if [ "$P_test" = true ] && [ "$P_train" != true ] && [ -n "$P_adapter_tag" ] && [ ! -e "out/imp_$P_adapter_tag/adapter_config.json" ]; then
     echo "::error::no adapter out/imp_$P_adapter_tag on $MACHINE to test"; exit 1; fi
+  if [ -n "$P_items_file" ]; then
+    # CoT items must exist on THIS machine and be built after the schema v2.3 grammar fix (older ones are INVALID)
+    [ -s "$P_items_file" ] || { echo "::error::CoT items $P_items_file are not on $MACHINE yet: build them from the v2.3 trace bank first"; exit 1; }
+    FIX=$(cd scripts && python3 -c "import ci_plan as c; print(c.SC_FIX_EPOCH)")
+    if [ "$(stat -c %Y "$P_items_file")" -lt "$FIX" ]; then
+      echo "::error::$P_items_file on $MACHINE was built $(date -d @"$(stat -c %Y "$P_items_file")" '+%F %H:%M'), before the schema v2.3 fix ($(date -d @"$FIX" '+%F %H:%M')): INVALID items, refusing to train on them"; exit 1; fi
+    echo "CoT items: $P_items_file ($(python3 -c "import json,sys; print(json.load(open(sys.argv[1]))['n'])" "$P_items_file") items)"
+  fi
   [ -z "$P_train_warn" ] || echo "::warning::$P_train_warn"
   todo="checks"; [ "$P_bank" = true ] && todo="$todo, trace bank + funnel"; [ "$P_train" = true ] && todo="$todo, train"
   [ "$P_test" = true ] && todo="$todo, test on $P_set_key + grade"; [ "$MACHINE" = gpu-box ] && todo="$todo, status"
@@ -63,9 +71,15 @@ funnel)
   ;;
 train)
   OUT="out/imp_$P_adapter_tag"; read -r -a XF <<< "${TRAIN_FLAGS:-}"
-  ARGS=(--base "$P_model" --out "$OUT" --dataset "${TRAIN_DATA:-primevul}" --n-per-class 1000 --epochs 2 --lr 1e-4 --seed 0
-        --meta "ci run=$GITHUB_RUN_ID sha=$GITHUB_SHA machine=$MACHINE")
-  echo "trainer sha256: $(sha256sum scripts/imp_train.py | cut -c1-16)  adapter: $OUT  extra flags: ${XF[*]:-none}"
+  if [ -n "$P_items_file" ]; then   # CoT arm: the pre-registered P60/P61 recipe (items come from the file; n-per-class unused)
+    read -r -a DF <<< "$P_data_flags"
+    ARGS=(--base "$P_model" --out "$OUT" --dataset primevul --items-file "$P_items_file" --epochs 2 --lr 1e-4 --max-chars 4000 --seed 0 "${DF[@]}"
+          --meta "ci run=$GITHUB_RUN_ID sha=$GITHUB_SHA machine=$MACHINE data=$DATA")
+  else
+    ARGS=(--base "$P_model" --out "$OUT" --dataset primevul --n-per-class 1000 --epochs 2 --lr 1e-4 --seed 0
+          --meta "ci run=$GITHUB_RUN_ID sha=$GITHUB_SHA machine=$MACHINE data=answer-only")
+  fi
+  echo "trainer sha256: $(sha256sum scripts/imp_train.py | cut -c1-16)  adapter: $OUT  data: ${DATA:-answer-only}  extra flags: ${XF[*]:-none}"
   if [ "$MACHINE" = spark ]; then   # torch only inside cyberdef-train:aarch64; admitted like the queue (job + 40 GB reserve)
     spark_env; export MEM_GB=40; wait_mem $((MEM_GB + 40)); take_gpu
     gdock '' scripts/imp_train.py "${ARGS[@]}" "${XF[@]}"
@@ -93,7 +107,7 @@ grade)
   ;;
 provenance)
   mkdir -p "$GITHUB_WORKSPACE/artifacts"
-  IN="model=$P_model;machine=$MACHINE;adapter=$P_adapter_tag;data=${TRAIN_DATA:-};flags=${TRAIN_FLAGS:-};set=$P_set_key;scorer=$P_scorer"
+  IN="model=$P_model;machine=$MACHINE;adapter=$P_adapter_tag;data=${DATA:-answer-only};items=$P_items_file;flags=${TRAIN_FLAGS:-};set=$P_set_key;scorer=$P_scorer"
   if [ "$P_train" = true ]; then
     "$PY" scripts/ci_provenance.py --kind train --out-tag "$P_adapter_tag" --lane "$MACHINE" --inputs "$IN" \
       --out "out/imp_${P_adapter_tag}_provenance.json" || echo "::warning::train provenance failed"
