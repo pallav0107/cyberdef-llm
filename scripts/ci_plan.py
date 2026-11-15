@@ -81,9 +81,11 @@ def plan(env) -> dict:
     if train and data not in DATA:
         raise SystemExit(f"plan: unknown training data '{data}'")
     items_file, data_flags = DATA.get(data, ("", "")) if train else ("", "")
+    from ci_route import params_b
+    p = params_b(model) if model else None
     return {"model": model, "slug": s, "adapter_tag": adapter, "train": train, "test": test, "bank": bank,
             "cases_file": cases_file, "set_key": set_key, "scorer": scorer, "train_warn": warn,
-            "items_file": items_file, "data_flags": data_flags}
+            "items_file": items_file, "data_flags": data_flags, "params_b": "" if p is None else p}
 
 
 def main():

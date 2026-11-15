@@ -17,6 +17,13 @@ SUMMARY="${GITHUB_STEP_SUMMARY:-/dev/null}"
 wait_mem() { until [ "$(awk '/MemAvailable/{print int($2/1048576)}' /proc/meminfo)" -ge "$1" ]; do echo "waiting: need $1 GB MemAvailable"; sleep 60; done; }
 spark_env() { source scripts/gpu_job_lib.sh; source scripts/imp_job_lib.sh 2>/dev/null || true; export IMP_PYLIB=/work/imp_pylib; }
 take_gpu() { exec 9>"$LOCK"; echo "waiting for the $MACHINE GPU lock..."; flock 9; }
+# Spark memory a step needs (GB), from the model size: 4-bit QLoRA training ~0.7 GB/B + 24 activations (>= 40);
+# bf16 testing ~2.1 GB/B + 12. Unknown size -> the 32B figure.
+need_gb() { python3 -c "import sys; p=float(sys.argv[2] or 32); print(max(40, int(0.7*p+24)) if sys.argv[1]=='train' else int(2.1*p+12))" "$1" "${P_params_b:-}"; }
+# While a CI step waits for or uses Spark, the Spark queue starts nothing new (a job already running finishes normally).
+# The claim holds this step's PID, so a cancelled or crashed step stops blocking the queue on its own.
+claim_spark() { [ "$MACHINE" = spark ] || return 0; echo "$$ $STEP ${GITHUB_RUN_ID:-local}" > "$CYBERDEF_REPO/.ci_priority"
+                trap 'grep -q "^$$ " "$CYBERDEF_REPO/.ci_priority" 2>/dev/null && rm -f "$CYBERDEF_REPO/.ci_priority"' EXIT; }
 
 case "$STEP" in
 plan)
@@ -58,7 +65,7 @@ dataset)
   MARK=results/imp_cotq_BUILD_OK.json
   postfix() { [ -s "$1" ] && [ "$(stat -c %Y "$1")" -ge "$FIX" ]; }
   if [ "$MACHINE" = spark ]; then
-    exec 8>.spark_dataset.lock; echo "waiting for the dataset lock..."; flock 8
+    claim_spark; exec 8>.spark_dataset.lock; echo "waiting for the dataset lock..."; flock 8
     if postfix "$MARK"; then
       echo "CoT items already built from the v2.3 bank ($(date -d @"$(stat -c %Y "$MARK")" '+%F %H:%M')): reusing"
     else
@@ -145,7 +152,8 @@ train)
   fi
   echo "trainer sha256: $(sha256sum scripts/imp_train.py | cut -c1-16)  adapter: $OUT  data: ${DATA:-answer-only}  extra flags: ${XF[*]:-none}"
   if [ "$MACHINE" = spark ]; then   # torch only inside cyberdef-train:aarch64; admitted like the queue (job + 40 GB reserve)
-    spark_env; export MEM_GB=40; wait_mem $((MEM_GB + 40)); take_gpu
+    claim_spark; spark_env; export MEM_GB=$(need_gb train); echo "needs ${MEM_GB} GB (+40 reserve) for ${P_params_b:-?}B"
+    wait_mem $((MEM_GB + 40)); take_gpu
     gdock '' scripts/imp_train.py "${ARGS[@]}" "${XF[@]}"
   else
     take_gpu; "$PY" scripts/imp_train.py "${ARGS[@]}" "${XF[@]}"
@@ -159,7 +167,10 @@ test)
     AD=(); [ -n "$P_adapter_tag" ] && AD=(--adapter "out/imp_$P_adapter_tag")
     SEL=(scripts/imp_selective.py --model "$P_model" "${AD[@]}" --cases-file "$P_cases_file" --out "$OUT"
          --meta "ci test run=$GITHUB_RUN_ID sha=$GITHUB_SHA machine=$MACHINE")
-    if [ "$MACHINE" = spark ]; then spark_env; export MEM_GB=28; gdock '' "${SEL[@]}"; else "$PY" "${SEL[@]}"; fi
+    if [ "$MACHINE" = spark ]; then
+      claim_spark; spark_env; export MEM_GB=$(need_gb test); echo "needs ${MEM_GB} GB (+10 margin) for ${P_params_b:-?}B in bf16"
+      wait_mem $((MEM_GB + 10)); gdock '' "${SEL[@]}"
+    else "$PY" "${SEL[@]}"; fi
   else
     "$PY" scripts/imp_zs_probe.py --model "$P_model" --tag "$P_slug" --think medium --cases-file "$P_cases_file" --set "$P_set_key" \
       --out "$OUT" --num-predict 4096 --workers 4
