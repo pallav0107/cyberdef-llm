@@ -1,0 +1,234 @@
+name: cyberdef pipeline
+run-name: >-
+  ${{ github.event_name == 'workflow_dispatch' && format('{0} · box: {1} · spark: {2}{3}', inputs.steps, inputs.gpu_model || '-', inputs.spark_model || '-',
+  inputs.tag != '' && format(' · {0}', inputs.tag) || '') || github.event_name == 'push' && 'checks after push' || 'scheduled checks' }}
+
+# The ONE workflow for cyberdef. Every run has exactly TWO jobs, one per machine, each listing every pipeline step:
+#   1 plan · 2 checks · 3 trace bank · 4 funnel · 5 train · 6 test · 7 grade · 8 provenance · 9 upload · 10 status
+# Steps that do not apply to a run or a machine show as skipped. Click "Run workflow", choose the steps, and give each
+# machine a model (blank = that machine only runs its checks): e.g. 7B on the box GPU and 14B on Spark, side by side.
+# Push and the 6-hourly schedule run the box job only (checks + status), so they never wait behind Spark.
+# Public repo + self-hosted runners: deliberately NO pull_request trigger, so code from a fork never runs on the box or Spark.
+
+on:
+  workflow_dispatch:
+    inputs:
+      steps:
+        description: "Steps to run (checks always run first; status runs last on the box)"
+        type: choice
+        options:
+          - "train + test"
+          - "train only"
+          - "test only"
+          - "trace bank"
+          - "checks + status"
+        default: "train + test"
+      gpu_model:
+        description: "Box GPU model, <=14B (blank = checks only on the box)"
+        default: "Qwen/Qwen2.5-7B-Instruct"
+      spark_model:
+        description: "Spark model (blank = checks only on Spark). Trace bank: the generator"
+        default: "Qwen/Qwen2.5-14B-Instruct"
+      tag:
+        description: "Experiment name. Adapter = out/imp_<tag>, or out/imp_<tag>_<model> when both machines train. Test only: existing adapter tag, blank = base model. Trace bank: output tag"
+        default: ""
+      train_data:
+        description: "Training dataset (benchdata key)"
+        default: "primevul"
+      train_flags:
+        description: "Extra trainer flags, verbatim (e.g. --items-file results/x.json --epochs 3). Defaults: --n-per-class 1000 --epochs 2 --lr 1e-4 --seed 0"
+        default: ""
+      test_set:
+        description: "Test set"
+        type: choice
+        options:
+          - "PrimeVul length-matched (1,074)"
+          - "PrimeVul length-matched sample (300)"
+          - "VulSpot holdout, length-matched"
+          - "VulSpot no-linux, length-matched"
+        default: "PrimeVul length-matched (1,074)"
+      scorer:
+        description: "How the test scores each case"
+        type: choice
+        options:
+          - "selective (HF model or adapter)"
+          - "zero-shot (Ollama model, test only)"
+        default: "selective (HF model or adapter)"
+      bank_flags:
+        description: "Trace bank only: generator flags"
+        default: "--gen g14 --pools J,J2 --subset quick --k 2"
+      ack_oom:
+        description: "Train a model flagged as too big for its machine anyway"
+        type: boolean
+        default: false
+  push:
+    branches: [main]
+    paths: ["src/**", "acceptance/**", "scripts/imp_*.py", "scripts/imp_shim.c", "scripts/ci_*", "data/DATA_MANIFEST.json",
+            "constraints.txt", ".github/workflows/cyberdef.yml"]
+  schedule:
+    - cron: "17 */6 * * *"   # checks + status every 6 h (UTC): catches drift in the box environment
+
+permissions:
+  contents: read
+
+jobs:
+  pipeline:
+    name: "${{ matrix.title }} · ${{ matrix.machine == 'spark' && inputs.spark_model || '' }}${{ matrix.machine == 'gpu-box' && inputs.gpu_model || '' }}"
+    strategy:
+      fail-fast: false
+      matrix: >-
+        ${{ fromJSON(github.event_name == 'workflow_dispatch'
+        && '{"include":[{"machine":"gpu-box","title":"Box GPU"},{"machine":"spark","title":"Spark"}]}'
+        || '{"include":[{"machine":"gpu-box","title":"Box GPU"}]}') }}
+    runs-on: [self-hosted, cyberdef, "${{ matrix.machine }}"]
+    env:
+      PYTHONPATH: src
+      HF_HUB_DISABLE_XET: "1"
+    steps:
+      - name: 1. Plan this machine's work (model, adapter, test set)
+        id: plan
+        env:
+          MACHINE: ${{ matrix.machine }}
+          MODEL: ${{ matrix.machine == 'spark' && inputs.spark_model || '' }}${{ matrix.machine == 'gpu-box' && inputs.gpu_model || '' }}
+          OTHER: ${{ matrix.machine == 'spark' && inputs.gpu_model || '' }}${{ matrix.machine == 'gpu-box' && inputs.spark_model || '' }}
+          STEPS: ${{ inputs.steps }}
+          TAG: ${{ inputs.tag }}
+          TEST_SET: ${{ inputs.test_set }}
+          SCORER: ${{ inputs.scorer }}
+          ACK_OOM: ${{ inputs.ack_oom }}
+        run: |
+          cd "${CYBERDEF_REPO:?set CYBERDEF_REPO in the runner .env}"
+          python3 scripts/ci_plan.py | tee -a "$GITHUB_OUTPUT"
+          WARN=$(grep '^train_warn=' "$GITHUB_OUTPUT" | tail -1 | cut -d= -f2-)
+          if [ -n "$WARN" ] && [ "$ACK_OOM" != "true" ]; then echo "::error::$WARN"; exit 1; fi
+          [ -z "$WARN" ] || echo "::warning::$WARN"
+
+      - name: 2. Checks (every control passes and catches its broken mutant)
+        run: |
+          cd "$CYBERDEF_REPO"
+          bash scripts/ci_checks.sh "${{ matrix.machine == 'spark' && 'spark' || 'box' }}" "$GITHUB_STEP_SUMMARY"
+
+      - name: 3. Trace bank (Spark, schema v2.3, guided JSON, few-shot)
+        if: steps.plan.outputs.bank == 'true'
+        env:
+          MODEL: ${{ steps.plan.outputs.model }}
+          TAG: ${{ inputs.tag }}
+        run: |
+          cd "$CYBERDEF_REPO"
+          source scripts/gpu_job_lib.sh; source scripts/imp_job_lib.sh 2>/dev/null || true; export IMP_PYLIB=/work/imp_pylib
+          export MEM_GB=56; need=$((MEM_GB + 20))
+          until [ "$(awk '/MemAvailable/{print int($2/1048576)}' /proc/meminfo)" -ge "$need" ]; do echo "waiting: need ${need} GB MemAvailable"; sleep 60; done
+          exec 9>"$CYBERDEF_REPO/.spark_ci.lock"; echo "waiting for the Spark CI lock..."; flock 9
+          OUT="results/imp_bank_${TAG}.jsonl"; echo "generator: $MODEL -> $OUT"
+          gdock '' scripts/imp_trace_bank.py --model "$MODEL" ${{ inputs.bank_flags }} --fewshot results/imp_fewshot_exemplars.json --gpu-util 0.40 --out "$OUT"
+          test -s "$OUT" || { echo "::error::no traces written to $OUT"; exit 1; }
+          echo "traces: $(wc -l < "$OUT")"
+
+      - name: 4. Funnel per category (CWE -> OWASP -> monitor -> witness -> kept)
+        if: steps.plan.outputs.bank == 'true'
+        env:
+          TAG: ${{ inputs.tag }}
+        run: |
+          cd "$CYBERDEF_REPO"
+          python3 scripts/ci_bank_funnel.py "results/imp_bank_${TAG}.jsonl" --json "results/imp_bank_${TAG}_funnel.json" --md "/tmp/funnel_$GITHUB_RUN_ID.md"
+          cat "/tmp/funnel_$GITHUB_RUN_ID.md" >> "$GITHUB_STEP_SUMMARY"
+          mkdir -p "$GITHUB_WORKSPACE/artifacts"; cp "results/imp_bank_${TAG}_funnel.json" "$GITHUB_WORKSPACE/artifacts/"
+
+      - name: 5. Train (waits for this machine's GPU lock)
+        if: steps.plan.outputs.train == 'true'
+        env:
+          PYTORCH_CUDA_ALLOC_CONF: expandable_segments:True
+          MODEL: ${{ steps.plan.outputs.model }}
+          ADAPTER: ${{ steps.plan.outputs.adapter_tag }}
+          DATA: ${{ inputs.train_data }}
+        run: |
+          cd "$CYBERDEF_REPO"
+          OUT="out/imp_$ADAPTER"
+          ARGS=(--base "$MODEL" --out "$OUT" --dataset "$DATA" --n-per-class 1000 --epochs 2 --lr 1e-4 --seed 0
+                --meta "ci run=${{ github.run_id }} sha=${{ github.sha }} machine=${{ matrix.machine }}")
+          echo "trainer sha256: $(sha256sum scripts/imp_train.py | cut -c1-16)  adapter: $OUT"
+          if [ "${{ matrix.machine }}" = "spark" ]; then
+            # torch only inside cyberdef-train:aarch64 (gdock); admitted like the queue: MemAvailable >= job + 40 GB reserve
+            source scripts/gpu_job_lib.sh; source scripts/imp_job_lib.sh 2>/dev/null || true; export IMP_PYLIB=/work/imp_pylib
+            export MEM_GB=40; need=$((MEM_GB + 40))
+            until [ "$(awk '/MemAvailable/{print int($2/1048576)}' /proc/meminfo)" -ge "$need" ]; do echo "waiting: need ${need} GB MemAvailable"; sleep 60; done
+            exec 9>.spark_ci.lock; echo "waiting for the Spark CI lock..."; flock 9
+            gdock '' scripts/imp_train.py "${ARGS[@]}" ${{ inputs.train_flags }}
+          else
+            exec 9>.box_gpu.lock; echo "waiting for the box GPU lock..."; flock 9
+            "${CYBERDEF_PY:-python3}" scripts/imp_train.py "${ARGS[@]}" ${{ inputs.train_flags }}
+          fi
+
+      - name: 6. Test (waits for this machine's GPU lock)
+        id: test
+        if: steps.plan.outputs.test == 'true'
+        env:
+          MODEL: ${{ steps.plan.outputs.model }}
+          ADAPTER: ${{ steps.plan.outputs.adapter_tag }}
+          SLUG: ${{ steps.plan.outputs.slug }}
+          CASES: ${{ steps.plan.outputs.cases_file }}
+          SET: ${{ steps.plan.outputs.set_key }}
+        run: |
+          cd "$CYBERDEF_REPO"
+          test -s "$CASES" || { echo "::error::test set $CASES is missing on ${{ matrix.machine }}"; exit 1; }
+          OUT="results/ci_ev_${ADAPTER:-$SLUG}_${SET}.json"; echo "out=$OUT" >> "$GITHUB_OUTPUT"
+          LOCK=.box_gpu.lock; [ "${{ matrix.machine }}" = "spark" ] && LOCK=.spark_ci.lock
+          exec 9>"$LOCK"; echo "waiting for the GPU lock..."; flock 9
+          if [ "${{ steps.plan.outputs.scorer }}" = "selective" ]; then
+            AD=(); [ -n "$ADAPTER" ] && AD=(--adapter "out/imp_$ADAPTER")
+            SEL=(scripts/imp_selective.py --model "$MODEL" "${AD[@]}" --cases-file "$CASES" --out "$OUT"
+                 --meta "ci test run=${{ github.run_id }} sha=${{ github.sha }} machine=${{ matrix.machine }}")
+            if [ "${{ matrix.machine }}" = "spark" ]; then
+              source scripts/gpu_job_lib.sh; source scripts/imp_job_lib.sh 2>/dev/null || true; export IMP_PYLIB=/work/imp_pylib MEM_GB=28
+              gdock '' "${SEL[@]}"
+            else
+              "${CYBERDEF_PY:-python3}" "${SEL[@]}"
+            fi
+          else
+            "${CYBERDEF_PY:-python3}" scripts/imp_zs_probe.py --model "$MODEL" --tag "$SLUG" --think medium \
+              --cases-file "$CASES" --set "$SET" --out "$OUT" --num-predict 4096 --workers 4
+          fi
+
+      - name: 7. Grade (recompute AUROC from per_case, compare to the 0.60 bar; an integrity mismatch fails)
+        if: steps.plan.outputs.test == 'true'
+        run: |
+          cd "$CYBERDEF_REPO"
+          # the pre-registered bar is fixed here on purpose: it is not a run-time knob
+          "${CYBERDEF_PY:-python3}" scripts/ci_gate.py --result "${{ steps.test.outputs.out }}" --bar 0.60
+
+      - name: 8. Stamp provenance
+        if: ${{ !cancelled() && (steps.plan.outputs.train == 'true' || steps.plan.outputs.test == 'true') }}
+        env:
+          ADAPTER: ${{ steps.plan.outputs.adapter_tag }}
+          RESULT: ${{ steps.test.outputs.out }}
+          IN: "model=${{ steps.plan.outputs.model }};machine=${{ matrix.machine }};adapter=${{ steps.plan.outputs.adapter_tag }};data=${{ inputs.train_data }};flags=${{ inputs.train_flags }};set=${{ steps.plan.outputs.set_key }};scorer=${{ steps.plan.outputs.scorer }}"
+        run: |
+          cd "$CYBERDEF_REPO"
+          mkdir -p "$GITHUB_WORKSPACE/artifacts"
+          if [ "${{ steps.plan.outputs.train }}" = "true" ]; then
+            "${CYBERDEF_PY:-python3}" scripts/ci_provenance.py --kind train --out-tag "$ADAPTER" --lane "${{ matrix.machine }}" --inputs "$IN" \
+              --out "out/imp_${ADAPTER}_provenance.json" || echo "::warning::train provenance failed"
+            cp -r "out/imp_$ADAPTER" out/imp_${ADAPTER}_*.json "$GITHUB_WORKSPACE/artifacts/" 2>/dev/null || true
+          fi
+          if [ -n "$RESULT" ] && [ -f "$RESULT" ]; then
+            "${CYBERDEF_PY:-python3}" scripts/ci_provenance.py --kind eval --lane "${{ matrix.machine }}" --result "$RESULT" --inputs "$IN" \
+              --out "$RESULT.provenance.json" || echo "::warning::test provenance failed"
+            cp "$RESULT" "$RESULT.provenance.json" "$GITHUB_WORKSPACE/artifacts/" 2>/dev/null || true
+          fi
+
+      - name: 9. Upload adapter, traces funnel, result and provenance
+        if: ${{ !cancelled() && (steps.plan.outputs.train == 'true' || steps.plan.outputs.test == 'true' || steps.plan.outputs.bank == 'true') }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.machine }}-${{ github.run_id }}
+          path: artifacts/
+          if-no-files-found: warn
+          retention-days: 90
+
+      - name: 10. Status of every stage, from its evidence (box)
+        if: ${{ !cancelled() && matrix.machine == 'gpu-box' }}
+        run: |
+          cd "$CYBERDEF_REPO"
+          "${CYBERDEF_PY:-$CYBERDEF_REPO/.venv/bin/python}" scripts/ci_pipeline.py --status --json /tmp/status_$GITHUB_RUN_ID.json --md /tmp/status_$GITHUB_RUN_ID.md > /dev/null
+          cat /tmp/status_$GITHUB_RUN_ID.md >> "$GITHUB_STEP_SUMMARY"
+          head -3 /tmp/status_$GITHUB_RUN_ID.md | tail -1 | sed "s/^/::notice title=pipeline status::/"

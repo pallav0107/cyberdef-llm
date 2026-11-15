@@ -4,7 +4,7 @@
 
   --status --json F --md F : read every stage's artifacts on the box (local) and on Spark (one ssh call), recompute
                              AUROC from per_case where present (integrity), and write the table.
-  --emit-yaml F            : generate .github/workflows/status.yml ("5 · status", one job) from STAGES.
+The table is published by the `status` job of the single `cyberdef pipeline` workflow (.github/workflows/cyberdef.yml).
 
 Stage status: VERIFIED (artifacts present, integrity holds) | FAILED (known failure or integrity mismatch or an artifact
 that should exist is missing) | RUNNING | PENDING | BLOCKED (with the reason). Nothing is ever shown greener than its
@@ -51,7 +51,7 @@ STAGES = [
     S(T, "t_bank_quick", "① Trace bank · quick (7B+14B, tagged V P S K O C X)", after=["t_sccot"], art=["spark:results/imp_trace_bank_quick.jsonl", "spark:results/imp_trace_bank_quick_counts.json"], invalid=True),
     S(T, "t_bank_v23", "① Trace bank · v2.3 pilot (Juliet J+J2, Qwen-14B) after the grammar fix", after=["t_sccot"], art=["spark:results/imp_bank_v23_pilot_g14_funnel.json"],
       running="spark:results/imp_bank_v23_pilot_g14.jsonl", state="pending", reason="pilot dispatched on the Spark runner (trace-bank workflow)"),
-    S(T, "t_bank_full", "① Trace bank · full (+Coder-7B, gpt-oss-20b, 4 samples)", after=["t_bank_quick"], state="pending", reason="P55 not started"),
+    S(T, "t_bank_full", "① Trace bank · full (+Coder-7B, gpt-oss-20b, 4 samples)", after=["t_bank_quick"], state="pending", reason="P55 queued (after P30 seeds and P35 SQLi data); regenerates under schema v2.3"),
     S(T, "t_category", "1b · per-category balancing (>=5% per monitor class)", after=["t_bank_quick"], art=["spark:results/imp_cotq_items_stats.json"], invalid=True),
     S(A, "a1", "#1 vuln-vs-patch pairs (control + pairwise)", after=["d_train_A", "d_train_B"], art=["spark:results/imp_ev_1ctl_pv.json", "spark:results/imp_ev_1arm_pv.json", "spark:results/imp_ev_1arm_castle.json"]),
     S(A, "a6", "#6 anti-length head (gradient reversal)", after=["d_train_A"], art=["box:results/box_ev_advctl_pv.json", "box:results/box_ev_adv_pv.json", "box:results/box_6_probe.json"]),
@@ -77,11 +77,12 @@ STAGES = [
     S(R, "r_C2", "C2 · witness prompt, forced JSON", after=["adapters", "d_test_pv"], art=["spark:results/reason_C_base7b_c2_matched.json", "spark:results/reason_C_tuned7b_c2_matched.json"],
       fail=("spark:queue/failed/P17b_C2_tuned7b.sh", None, "tuned-7B C2 (P17b) failed: vLLM engine-core init error; base-7B C2 done. Needs a requeue")),
     S(R, "r_SC", "SC · SC-CoT v2 (base + tuned)", after=["adapters", "d_test_pv"], art=["spark:results/reason_CSC_base7b_matched.json", "spark:results/reason_CSC_tuned7b_matched.json"], invalid=True),
-    S(R, "r_5", "#5 stronger models zero-shot (gpt-oss, nemotron, glm, qwen3.8, deepseek)", after=["adapters", "d_test_pv"], art=["spark:results/imp_zs_gptoss20b_pv.json"],
-      running="spark:results/imp_zs_gptoss20b_pv.json.cache.jsonl"),
-    S(R, "r_3", "#3 + context", after=["adapters", "d_test_vs"], state="pending", reason="context cases built (imp_ctx_*); model evals queued (P20-21)"),
-    S(R, "r_4", "#4 sink slices", after=["adapters", "d_test_vs"], state="pending", reason="slice cases built (imp_slice_*); model evals queued (P20-21)"),
-    S(R, "r_8", "#8 vote over 5", after=["adapters"], state="pending", reason="P50 not started"),
+    S(R, "r_5", "#5 stronger models zero-shot (gpt-oss, nemotron, glm, qwen3-heavy)", after=["adapters", "d_test_pv"], state="pending",
+      reason="re-prioritised 15 Nov: 300-case length-stratified sample (P87), queued after the CoT + execution work; "
+             "full 1,074 only if the sample cannot rule out 0.60 (acceptance/improve/ZS_SAMPLE_AMENDMENT_2026-11-15.md)"),
+    S(R, "r_3", "#3 + context", after=["adapters", "d_test_vs"], state="pending", reason="context cases built (imp_ctx_*); model evals queued after the CoT work (P89, P91)"),
+    S(R, "r_4", "#4 sink slices", after=["adapters", "d_test_vs"], state="pending", reason="slice cases built (imp_slice_*); model evals queued after the CoT work (P91)"),
+    S(R, "r_8", "#8 vote over 5", after=["adapters"], state="pending", reason="P94, queued after the CoT work"),
     S(R, "r_9c", "#9c confident-only (selective)", after=["adapters", "d_test_pv"], art=["box:results/imp_9c_selective.json"]),
     S(G, "g_H", "H · length edits vs bug-vs-fix edits", after=["adapters", "d_test_vspairs"], art=["box:results/reason_H_base7b_analysis.json", "box:results/reason_H_lm7b_analysis.json", "box:results/reason_H_pub7b_analysis.json"]),
     S(G, "g_I", "I · activation-level probe (Stage I, project-grouped)", after=["adapters", "d_test_pv"], art=["box:results/imp_probe_internal_boxbase7b.json", "box:results/imp_probe_class_boxbase7b.json"]),
@@ -89,7 +90,7 @@ STAGES = [
     S(E, "e_floor", "FLOOR · run with empty input (oracle spec v2)", after=["d_test_castle"], art=["box:results/imp_2o_floor_b60.json"]),
     S(E, "e_D", "D · model witnesses (base / tuned 7B)", after=["adapters", "d_test_castle"], art=["box:results/reason_D2_base7b_castle.json", "box:results/reason_D2_tuned7b_castle.json"]),
     S(E, "e_fuzz", "fuzz · empty / random seeds", after=["d_test_castle"], art=["box:results/imp_2o_empty_b60.json", "box:results/imp_2o_random_b60.json"]),
-    S(E, "e_fuzz_llm", "fuzz · LLM seeds", after=["d_test_castle"], state="pending", reason="P30 queued"),
+    S(E, "e_fuzz_llm", "fuzz · LLM seeds", after=["d_test_castle"], state="pending", reason="P30 is next in the Spark queue (waiting for memory)"),
     S(E, "e_split", "CASTLE split by bug type (a/b/c) + union", after=["e_floor", "e_D"], art=["box:results/imp_2o_summary.json", "box:results/reason_D_byclass.json"]),
     S(E, "e_F", "F · exec-loop (propose -> run -> monitor feedback -> refine)", after=["e_D", "w_sft"], state="blocked", reason="unlocks only if model payloads confirm bugs the floor misses"),
     S(P, "p_G", "G · repair (compiles, closes the crash, keeps behaviour)", after=["e_F"], state="blocked", reason="after Stage F"),
@@ -476,40 +477,12 @@ def to_md(board, meta):
     return "\n".join(lines) + "\n"
 
 
-# ------------------------------------------------------------------ workflow generation
-def emit_yaml(path):
-    """The status page: ONE job that reads every stage's evidence and writes one table into the run summary.
-    (It replaced a 68-job graph whose boxes were hard to read; the table is the same diagram, in pipeline order.)"""
-    py = '"${CYBERDEF_PY:-$CYBERDEF_REPO/.venv/bin/python}"'
-    out = ['name: "5 · status"', "",
-           "# AUTO-GENERATED by `scripts/ci_pipeline.py --emit-yaml`; edit the STAGES registry there, not this file.",
-           "# Reads the real artifacts of every stage of the TRAIN + TEST diagram (box + Spark), recomputes the AUROCs, and",
-           "# writes ONE table into this run's summary: step | stage | status | why. The run is green when the table was",
-           "# computed; the pipeline's own failures are the red/blocked rows inside it, not the colour of the run.", "",
-           "on:", "  workflow_dispatch:", "  schedule:", '    - cron: "40 */3 * * *"   # every 3 h (UTC)', "  workflow_run:",
-           '    workflows: ["2 · trace bank", "3 · train", "4 · test"]', "    types: [completed]", "",
-           "permissions:", "  contents: read", "", "concurrency:", "  group: cyberdef-status", "  cancel-in-progress: true", "",
-           "jobs:", "  status:", '    name: "Pipeline status (every stage, from its evidence)"',
-           "    runs-on: [self-hosted, cyberdef, cpu-box]", "    steps:",
-           "      - name: 1. Read every stage's evidence (box + Spark) and recompute the AUROCs", "        run: |",
-           '          cd "${CYBERDEF_REPO:=$HOME/missions/cyberdef-llm}"',
-           f"          {py} scripts/ci_pipeline.py --status --json /tmp/status_$GITHUB_RUN_ID.json --md /tmp/status_$GITHUB_RUN_ID.md > /dev/null",
-           "      - name: 2. Publish the status table to this run's summary", "        run: |",
-           '          cat /tmp/status_$GITHUB_RUN_ID.md >> "$GITHUB_STEP_SUMMARY"',
-           '          head -3 /tmp/status_$GITHUB_RUN_ID.md | tail -1 | sed "s/^/::notice title=pipeline status::/"', ""]
-    open(path, "w", encoding="utf-8").write("\n".join(out))
-    print(f"wrote {path}: 1 job")
-
-
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--status", action="store_true")
     ap.add_argument("--json", default="")
     ap.add_argument("--md", default="")
-    ap.add_argument("--emit-yaml", default="")
     a = ap.parse_args()
-    if a.emit_yaml:
-        emit_yaml(a.emit_yaml)
     if a.status:
         try:
             board, meta = compute()
