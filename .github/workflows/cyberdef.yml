@@ -73,7 +73,7 @@ permissions:
 
 jobs:
   pipeline:
-    name: "${{ matrix.title }} · ${{ matrix.machine == 'spark' && inputs.spark_model || '' }}${{ matrix.machine == 'gpu-box' && inputs.gpu_model || '' }}"
+    name: "${{ matrix.title }}${{ matrix.machine == 'spark' && inputs.spark_model && format(' · {0}', inputs.spark_model) || '' }}${{ matrix.machine == 'gpu-box' && inputs.gpu_model && format(' · {0}', inputs.gpu_model) || '' }}"
     strategy:
       fail-fast: false
       matrix: >-
