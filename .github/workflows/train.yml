@@ -1,5 +1,7 @@
-name: train
+name: "3 · train"
+run-name: "train ${{ inputs.base }} -> imp_${{ inputs.out_tag }}"
 
+# Step 3 of 5 (1 checks -> 2 trace bank -> 3 train -> 4 test -> 5 status). Manual: Run workflow.
 # Standardized training entry point. Replaces the hand-run scripts/imp_box_lane*.sh launches.
 # Runs the SAME scripts/imp_train.py the lanes call, on a self-hosted runner chosen by model size
 # (<=14B -> gpu-box 4-bit QLoRA; larger -> spark). Nothing auto-triggers training; it is manual.
@@ -48,6 +50,7 @@ permissions:
 
 jobs:
   route:
+    name: "1. Pick the machine (<=14B box GPU, larger Spark)"
     runs-on: [self-hosted, cyberdef]
     outputs:
       lane: ${{ steps.r.outputs.lane }}
@@ -55,11 +58,14 @@ jobs:
       reason: ${{ steps.r.outputs.reason }}
       train_warn: ${{ steps.r.outputs.train_warn }}
     steps:
-      - uses: actions/checkout@v4
+      - name: 1. Check out the code
+        uses: actions/checkout@v4
       - id: r
+        name: 2. Route by model size
         run: python3 scripts/ci_route.py --mode train --model "${{ inputs.base }}" --force "${{ inputs.force_lane }}" >> "$GITHUB_OUTPUT"
 
   train:
+    name: "2. Train on ${{ needs.route.outputs.lane_name }}"
     needs: route
     runs-on: ${{ fromJSON(needs.route.outputs.lane) }}
     # one training job per lane at a time; never cancel a run in progress
@@ -67,9 +73,10 @@ jobs:
       group: cyberdef-train-${{ needs.route.outputs.lane_name }}
       cancel-in-progress: false
     steps:
-      - uses: actions/checkout@v4
+      - name: 1. Check out the code
+        uses: actions/checkout@v4
 
-      - name: Preflight (routing + trainability)
+      - name: 2. Preflight (routing + will it fit)
         run: |
           echo "lane=${{ needs.route.outputs.lane_name }} :: ${{ needs.route.outputs.reason }}"
           WARN='${{ needs.route.outputs.train_warn }}'
@@ -80,7 +87,7 @@ jobs:
           [ -n "$WARN" ] && echo "::warning::$WARN"
           command -v "${CYBERDEF_PY:-python3}" >/dev/null || { echo "::error::python interpreter not found — set CYBERDEF_PY in the runner .env (see docs/CI_RUNNERS.md)"; exit 1; }
 
-      - name: Record env drift vs pinned constraints
+      - name: 3. Record environment drift vs pinned constraints
         run: |
           cd "${CYBERDEF_REPO:=$HOME/missions/cyberdef-llm}"
           "${CYBERDEF_PY:-python3}" -m pip freeze > /tmp/env_now.txt 2>/dev/null || true
@@ -89,7 +96,7 @@ jobs:
             [ -s /tmp/env_drift.txt ] && echo "::warning::env differs from constraints.txt (recorded in provenance)"
           fi
 
-      - name: Train (GPU-locked; same engine as the lanes)
+      - name: 4. Train (waits for the GPU lock; same engine as the lanes)
         env:
           PYTHONPATH: src
           HF_HUB_DISABLE_XET: "1"
@@ -118,7 +125,7 @@ jobs:
           fi
           flock -u 9
 
-      - name: Stamp provenance
+      - name: 5. Stamp provenance
         if: always()
         env:
           PYTHONPATH: src
@@ -132,7 +139,7 @@ jobs:
           mkdir -p "$GITHUB_WORKSPACE/artifacts"
           cp -r "out/imp_${{ inputs.out_tag }}" out/imp_${{ inputs.out_tag }}_*.json "$GITHUB_WORKSPACE/artifacts/" 2>/dev/null || true
 
-      - name: Upload adapter + logs + provenance
+      - name: 6. Upload adapter, logs and provenance
         if: always()
         uses: actions/upload-artifact@v4
         with:

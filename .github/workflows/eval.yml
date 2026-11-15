@@ -1,5 +1,7 @@
-name: eval
+name: "4 · test"
+run-name: "test ${{ inputs.adapter_tag || inputs.model }} on ${{ inputs.set_key }}"
 
+# Step 4 of 5 (1 checks -> 2 trace bank -> 3 train -> 4 test -> 5 status). Manual: Run workflow.
 # Standardized testing entry point. Replaces hand-run box_eval / P18 launches. Runs the SAME
 # scorers the lanes use (imp_selective.py for HF adapters, imp_zs_probe.py for ollama models),
 # on a size-routed runner, then grades the result through ci_gate.py (recompute-from-per_case +
@@ -49,31 +51,36 @@ permissions:
 
 jobs:
   route:
+    name: "1. Pick the machine (<=14B box GPU, larger Spark)"
     runs-on: [self-hosted, cyberdef]
     outputs:
       lane: ${{ steps.r.outputs.lane }}
       lane_name: ${{ steps.r.outputs.lane_name }}
       reason: ${{ steps.r.outputs.reason }}
     steps:
-      - uses: actions/checkout@v4
+      - name: 1. Check out the code
+        uses: actions/checkout@v4
       - id: r
+        name: 2. Route by model size
         run: python3 scripts/ci_route.py --mode eval --model "${{ inputs.model }}" --force "${{ inputs.force_lane }}" >> "$GITHUB_OUTPUT"
 
   eval:
+    name: "2. Score and grade on ${{ needs.route.outputs.lane_name }}"
     needs: route
     runs-on: ${{ fromJSON(needs.route.outputs.lane) }}
     concurrency:
       group: cyberdef-eval-${{ needs.route.outputs.lane_name }}
       cancel-in-progress: false
     steps:
-      - uses: actions/checkout@v4
+      - name: 1. Check out the code
+        uses: actions/checkout@v4
 
-      - name: Preflight
+      - name: 2. Preflight
         run: |
           echo "lane=${{ needs.route.outputs.lane_name }} :: ${{ needs.route.outputs.reason }}"
           command -v "${CYBERDEF_PY:-python3}" >/dev/null || { echo "::error::python interpreter not found — set CYBERDEF_PY in the runner .env (see docs/CI_RUNNERS.md)"; exit 1; }
 
-      - name: Run scorer (GPU-locked; same engine as the lanes)
+      - name: 3. Score the test set (waits for the GPU lock; same scorer as the lanes)
         id: run
         env:
           PYTHONPATH: src
@@ -104,7 +111,7 @@ jobs:
           fi
           flock -u 9
 
-      - name: Grade (recompute-from-per_case + bar; integrity mismatch fails)
+      - name: 4. Grade (recompute AUROC from per_case, compare to the bar; an integrity mismatch fails)
         id: gate
         env:
           PYTHONPATH: src
@@ -112,7 +119,7 @@ jobs:
           cd "${CYBERDEF_REPO:=$HOME/missions/cyberdef-llm}"
           "${CYBERDEF_PY:-python3}" scripts/ci_gate.py --result "${{ steps.run.outputs.out }}" --bar "${{ inputs.bar }}"
 
-      - name: Stamp provenance
+      - name: 5. Stamp provenance
         if: always()
         env:
           PYTHONPATH: src
@@ -125,7 +132,7 @@ jobs:
           mkdir -p "$GITHUB_WORKSPACE/artifacts"
           cp "${{ steps.run.outputs.out }}" "${{ steps.run.outputs.out }}.provenance.json" "$GITHUB_WORKSPACE/artifacts/" 2>/dev/null || true
 
-      - name: Upload result + per_case + provenance
+      - name: 6. Upload result, per_case and provenance
         if: always()
         uses: actions/upload-artifact@v4
         with:

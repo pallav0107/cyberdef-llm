@@ -1,5 +1,6 @@
-name: checks
+name: "1 · checks"
 
+# Step 1 of 5 (1 checks -> 2 trace bank -> 3 train -> 4 test -> 5 status). Runs by itself on every push and every 6 h.
 # All fail-first checks in one place (merged from the former `ci` and `controls` workflows). Each control is a pair:
 # the real thing must PASS and a deliberately broken mutant must be CAUGHT. No GPU. Public repo + self-hosted runners:
 # deliberately NO pull_request trigger, so code from a fork can never run on the box or Spark.
@@ -23,21 +24,22 @@ concurrency:
 
 jobs:
   smoke:
+    name: "1. Code loads; router, result gate and parser pass their self-tests"
     runs-on: [self-hosted, cyberdef, cpu-box]
     env:
       PYTHONPATH: src
     steps:
-      - name: Engine imports + dependency sanity
+      - name: 1. Engine imports + dependency sanity
         run: |
           cd "${CYBERDEF_REPO:=$HOME/missions/cyberdef-llm}"
           "${CYBERDEF_PY:-$CYBERDEF_REPO/.venv/bin/python}" -m pip check || echo "::warning::pip check reported issues"
           "${CYBERDEF_PY:-$CYBERDEF_REPO/.venv/bin/python}" -c "import cyberdef, cyberdef.imp_common, cyberdef.exec_oracle; print('cyberdef imports OK')"
-      - name: Environment matches the pin (drift is a warning, recorded in provenance)
+      - name: 2. Environment matches the pin (drift is a warning, recorded in provenance)
         run: |
           cd "${CYBERDEF_REPO:=$HOME/missions/cyberdef-llm}"
           "${CYBERDEF_PY:-$CYBERDEF_REPO/.venv/bin/python}" -m pip freeze > /tmp/env_now_$GITHUB_RUN_ID.txt
           diff -q constraints.txt /tmp/env_now_$GITHUB_RUN_ID.txt >/dev/null 2>&1 || { echo "::warning::environment differs from constraints.txt"; diff -u constraints.txt /tmp/env_now_$GITHUB_RUN_ID.txt | head -40 || true; }
-      - name: Router routes by model size
+      - name: 3. Router sends each model to the right machine (<=14B box, larger Spark)
         run: |
           cd "${CYBERDEF_REPO:=$HOME/missions/cyberdef-llm}"
           set -e
@@ -48,11 +50,11 @@ jobs:
           chk "fdtn-ai/Foundation-Sec-8B" gpu-box train
           chk "deepseek-r1:32b" spark eval
           chk "qwen3.8:27b" spark eval
-      - name: Result-integrity gate self-test (a tampered headline must be caught)
+      - name: 4. Result-integrity gate catches a tampered headline
         run: |
           cd "${CYBERDEF_REPO:=$HOME/missions/cyberdef-llm}"
           "${CYBERDEF_PY:-$CYBERDEF_REPO/.venv/bin/python}" scripts/ci_gate.py --selftest
-      - name: Witness parser self-test
+      - name: 5. Witness parser self-test
         run: |
           cd "${CYBERDEF_REPO:=$HOME/missions/cyberdef-llm}"
           "${CYBERDEF_PY:-$CYBERDEF_REPO/.venv/bin/python}" - <<'PY'
@@ -66,21 +68,23 @@ jobs:
           PY
 
   data_integrity:
+    name: "2. Datasets are byte-identical to their manifest"
     runs-on: [self-hosted, cyberdef, cpu-box]
     steps:
-      - name: Manifest self-test (a corrupted copy must be caught)
+      - name: 1. Manifest checker catches a corrupted copy
         run: |
           cd "${CYBERDEF_REPO:=$HOME/missions/cyberdef-llm}"
           "${CYBERDEF_PY:-$CYBERDEF_REPO/.venv/bin/python}" scripts/ci_data_manifest.py --selftest
-      - name: Canonical datasets match data/DATA_MANIFEST.json (sha256)
+      - name: 2. Canonical datasets match data/DATA_MANIFEST.json (sha256)
         run: |
           cd "${CYBERDEF_REPO:=$HOME/missions/cyberdef-llm}"
           "${CYBERDEF_PY:-$CYBERDEF_REPO/.venv/bin/python}" scripts/ci_data_manifest.py --check
 
   length_matched_sets:
+    name: "3. Test sets are length-matched (length alone scores ~0.50)"
     runs-on: [self-hosted, cyberdef, cpu-box]
     steps:
-      - name: Length-only AUROC in [0.45, 0.55] on every matched eval set (+ mutant must leave the band)
+      - name: 1. Length-only AUROC in [0.45, 0.55] on every matched set; a length-leaking mutant must leave the band
         run: |
           cd "${CYBERDEF_REPO:=$HOME/missions/cyberdef-llm}"
           set +e
@@ -89,9 +93,10 @@ jobs:
           cat /tmp/ctl_length_$GITHUB_RUN_ID.md >> "$GITHUB_STEP_SUMMARY"; exit $rc
 
   execution_oracle:
+    name: "4. Execution oracle passes and catches its never/always mutants"
     runs-on: [self-hosted, cyberdef, cpu-box]
     steps:
-      - name: exec_oracle self-tests (real must pass; never/always mutants must be caught)
+      - name: 1. exec_oracle self-tests (real must pass; never/always mutants must be caught)
         run: |
           cd "${CYBERDEF_REPO:=$HOME/missions/cyberdef-llm}"
           set +e
@@ -100,9 +105,10 @@ jobs:
           cat /tmp/ctl_oracle_$GITHUB_RUN_ID.md >> "$GITHUB_STEP_SUMMARY"; exit $rc
 
   acceptance_selftests:
+    name: "5. Acceptance checks pass and catch their --broken mutants"
     runs-on: [self-hosted, cyberdef, cpu-box]
     steps:
-      - name: acceptance/improve self-tests and their --broken mutants (per MUTATION_PROOF.md)
+      - name: 1. acceptance/improve self-tests and their --broken mutants (per MUTATION_PROOF.md)
         run: |
           cd "${CYBERDEF_REPO:=$HOME/missions/cyberdef-llm}"
           set +e
@@ -111,9 +117,10 @@ jobs:
           cat /tmp/ctl_accept_$GITHUB_RUN_ID.md >> "$GITHUB_STEP_SUMMARY"; exit $rc
 
   schema_grammar:
+    name: "6. CoT grammar allows concrete witnesses (Spark)"
     runs-on: [self-hosted, cyberdef, spark]
     steps:
-      - name: SC-CoT guided-decoding grammar admits concrete witnesses (and the stripped-fix mutant is caught)
+      - name: 1. SC-CoT guided-decoding grammar admits concrete witnesses; the stripped-fix mutant is caught
         run: |
           cd "${CYBERDEF_REPO:=$HOME/cyberdef-lm}"
           docker run --rm --user "$(id -u):$(id -g)" -e HOME=/tmp -e HF_HOME=/hf -e HF_HUB_OFFLINE=1 -e PYTHONPATH=/work/src \

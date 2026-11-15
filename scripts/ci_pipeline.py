@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-"""The cyberdef pipeline board: yesterday's TRAIN + TEST diagram (PIPELINE_REVIEW_2026-11-14.md), box for box, as a
-GitHub Actions job graph whose colours are computed from the real artifacts.
+"""The cyberdef pipeline status: the TRAIN + TEST diagram (PIPELINE_REVIEW_2026-11-14.md), box for box, as one table
+(step | stage | status | why) whose statuses are computed from the real artifacts.
 
   --status --json F --md F : read every stage's artifacts on the box (local) and on Spark (one ssh call), recompute
-                             AUROC from per_case where present (integrity), and write the board.
-  --emit-yaml F            : generate .github/workflows/pipeline.yml from STAGES (single source of truth).
+                             AUROC from per_case where present (integrity), and write the table.
+  --emit-yaml F            : generate .github/workflows/status.yml ("5 · status", one job) from STAGES.
 
 Stage status: VERIFIED (artifacts present, integrity holds) | FAILED (known failure or integrity mismatch or an artifact
 that should exist is missing) | RUNNING | PENDING | BLOCKED (with the reason). Nothing is ever shown greener than its
@@ -422,92 +422,83 @@ def compute():
     return board, meta
 
 
+def _short(b):
+    """one short human reason per stage for the at-a-glance table"""
+    d = b["detail"].split(" | ")[0]
+    return (d[:110] + "…") if len(d) > 110 else d
+
+
 def to_md(board, meta):
     icon = {"VERIFIED": "✅", "FAILED": "❌", "INVALID": "🚫", "RUNNING": "🔄", "PENDING": "⏳", "BLOCKED": "⏸️"}
-    lines = ["# cyberdef pipeline board", "", f"generated {meta['generated']} · " +
-             " · ".join(f"{icon.get(k, '')} {k} {v}" for k, v in sorted(meta["counts"].items())), ""]
+    lines = ["# cyberdef pipeline status", "",
+             f"generated {meta['generated']} · " + " · ".join(f"{icon.get(k, '')} {k} {v}" for k, v in sorted(meta["counts"].items())), "",
+             "✅ ran, and its evidence checks out (this is NOT the same as beating its bar; see GATE) · ❌ failed · "
+             "🚫 invalid (built under the fixed schema bug; re-run needed) · "
+             "🔄 running · ⏳ not started · ⏸️ blocked by an earlier stage", ""]
     if meta["notes"]:
         lines += ["> " + n for n in meta["notes"]] + [""]
-    sec = None
+    # 1. the diagram at a glance: one row per box, in pipeline order
+    lines += ["## The pipeline at a glance", "", "| step | stage | status | why |", "|---|---|---|---|"]
+    sec, n = None, 0
     for s in STAGES:
         b = board.get(s["id"])
-        if not b:
+        if not b or s["kind"] == "join":
             continue
-        if s["sec"] != sec:
-            sec = s["sec"]
-            lines += ["", f"### {sec}", "", "| | stage | evidence |", "|---|---|---|"]
-        lines.append(f"| {icon.get(b['status'], '')} {b['status']} | {s['label']} | {b['detail'].replace('|', '/')} |")
+        n += 1
+        head = s["sec"] if s["sec"] != sec else ""
+        sec = s["sec"]
+        # verified rows stay quiet, except where "verified" could be misread as "won": the gate and the witness-SFT result
+        quiet = b["status"] == "VERIFIED" and s["kind"] != "gate" and s["id"] != "w_sft"
+        reason = "" if quiet else _short(b).replace("|", "/")
+        lines.append(f"| {n} | {('**' + head + '** · ') if head else ''}{s['label']} | {icon.get(b['status'], '')} {b['status']} | {reason} |")
+    # 2. full evidence, collapsed
+    lines += ["", "<details><summary>Evidence behind every stage (files, recomputed AUROCs)</summary>", "",
+              "| stage | evidence |", "|---|---|"]
+    for s in STAGES:
+        b = board.get(s["id"])
+        if b and s["kind"] != "join":
+            lines.append(f"| {s['label']} | {b['detail'].replace('|', '/')} |")
+    lines += ["", "</details>"]
     cats = board.get("cats") or {}
     if cats:
-        lines += ["", "### 1b · CoT -> class (CWE) -> OWASP -> monitor -> witness -> confirmation, per category", "",
-                  "Each link is measured on the vulnerable traces of the quick trace bank (train side) and on CASTLE executions "
-                  "(test side). ✅ = this link happens at least once · ❌ = it never happens / nothing survives · n/a = no runtime monitor.", ""]
+        lines += ["", "## Per category: CoT → CWE class → OWASP → monitor → witness → confirmation", "",
+                  "| category | status |", "|---|---|"]
         for key, c in cats.items():
-            lines += [f"**{'✅' if c['ok'] else '❌'} {c['label']}** — {c['status']}", ""]
+            lines.append(f"| {c['label'].split(' · ')[0]} | {'✅' if c['ok'] else ('🚫' if c['status'].startswith('INVALID') else '❌')} {c['status']} |")
+        lines += ["", "<details><summary>Every link, per category</summary>", ""]
+        for key, c in cats.items():
+            lines += [f"**{c['label']}** — {c['status']}", ""]
             for st in c["steps"]:
                 mark = "n/a" if st["na"] else ("✅" if st["ok"] else "❌")
                 lines.append(f"- {mark} {st['name'].replace('|', '/')}")
             lines.append("")
+        lines += ["</details>"]
     return "\n".join(lines) + "\n"
 
 
 # ------------------------------------------------------------------ workflow generation
 def emit_yaml(path):
-    q = lambda s: json.dumps(s, ensure_ascii=False)
-    out = ["name: pipeline", "",
-           "# AUTO-GENERATED by `scripts/ci_pipeline.py --emit-yaml` from its STAGES registry; do not hand-edit.",
-           "# One job per box of the TRAIN + TEST diagram (PIPELINE_REVIEW_2026-11-14.md). Colours are computed from the real",
-           "# artifacts by the `plan` job: green = VERIFIED, red = FAILED or INVALID, grey = PENDING / BLOCKED (reason in the name).",
-           "# Stage jobs are continue-on-error, so the RUN is green when the board computed and a red run means the board itself",
-           "# broke; the red boxes inside are the pipeline's real failures. Refreshes after GPU workflows, every 3 h, or by hand.", "",
-           "on:", "  workflow_dispatch:", "  schedule:", '    - cron: "40 */3 * * *"', "  workflow_run:",
-           '    workflows: ["trace-bank", "train", "eval", "witness-train-test"]', "    types: [completed]", "",
-           "permissions:", "  contents: read", "", "concurrency:", "  group: cyberdef-pipeline-board", "  cancel-in-progress: true", "",
-           "jobs:", "  plan:", '    name: "STATUS · read every stage (box + Spark), recompute AUROCs"',
-           "    runs-on: [self-hosted, cyberdef, cpu-box]", "    outputs:", "      board: ${{ steps.b.outputs.board }}", "    steps:",
-           "      - id: b", "        name: Compute the board", "        run: |",
+    """The status page: ONE job that reads every stage's evidence and writes one table into the run summary.
+    (It replaced a 68-job graph whose boxes were hard to read; the table is the same diagram, in pipeline order.)"""
+    py = '"${CYBERDEF_PY:-$CYBERDEF_REPO/.venv/bin/python}"'
+    out = ['name: "5 · status"', "",
+           "# AUTO-GENERATED by `scripts/ci_pipeline.py --emit-yaml`; edit the STAGES registry there, not this file.",
+           "# Reads the real artifacts of every stage of the TRAIN + TEST diagram (box + Spark), recomputes the AUROCs, and",
+           "# writes ONE table into this run's summary: step | stage | status | why. The run is green when the table was",
+           "# computed; the pipeline's own failures are the red/blocked rows inside it, not the colour of the run.", "",
+           "on:", "  workflow_dispatch:", "  schedule:", '    - cron: "40 */3 * * *"   # every 3 h (UTC)', "  workflow_run:",
+           '    workflows: ["2 · trace bank", "3 · train", "4 · test"]', "    types: [completed]", "",
+           "permissions:", "  contents: read", "", "concurrency:", "  group: cyberdef-status", "  cancel-in-progress: true", "",
+           "jobs:", "  status:", '    name: "Pipeline status (every stage, from its evidence)"',
+           "    runs-on: [self-hosted, cyberdef, cpu-box]", "    steps:",
+           "      - name: 1. Read every stage's evidence (box + Spark) and recompute the AUROCs", "        run: |",
            '          cd "${CYBERDEF_REPO:=$HOME/missions/cyberdef-llm}"',
-           '          "${CYBERDEF_PY:-$CYBERDEF_REPO/.venv/bin/python}" scripts/ci_pipeline.py --status --json /tmp/board_$GITHUB_RUN_ID.json --md /tmp/board_$GITHUB_RUN_ID.md',
-           '          echo "board=$(cat /tmp/board_$GITHUB_RUN_ID.json)" >> "$GITHUB_OUTPUT"',
-           '          cat /tmp/board_$GITHUB_RUN_ID.md >> "$GITHUB_STEP_SUMMARY"', ""]
-    for s in STAGES:
-        sid = s["id"]
-        ref = f"fromJSON(needs.plan.outputs.board).{sid}"
-        needs = ["plan"] + s["after"]
-        static = s["kind"] == "artifact" and not s["art"] and s["state"] in ("pending", "blocked")
-        if static:
-            # pending/blocked by design: GitHub does not evaluate the name of a skipped job, so the reason goes in a static name
-            tag = "⏳ PENDING" if s["state"] == "pending" else "⏸ BLOCKED"
-            out += [f"  {sid}:", f"    name: {q((s['label'] + ' · ' + tag + ' — ' + s['reason'])[:220])}",
-                    f"    needs: [{', '.join(needs)}]", "    if: ${{ false }}", "    runs-on: ubuntu-latest", "    steps:",
-                    "      - run: |", f"          echo {q(s['reason'])}", ""]
-            continue
-        # evidence-backed or derived: always runs; red only when FAILED; RUNNING/PENDING/BLOCKED are annotated, not hidden
-        out += [f"  {sid}:",
-                f"    name: {q(s['label'] + ' · ')[:-1]}${{{{ {ref}.status }}}}\"",
-                f"    needs: [{', '.join(needs)}]",
-                "    if: ${{ always() && needs.plan.result == 'success' }}",
-                "    continue-on-error: true",
-                "    runs-on: ubuntu-latest", "    steps:", f"      - name: {q(s['sec'] + ' · ' + s['label'])}", "        env:",
-                f"          STATUS: ${{{{ {ref}.status }}}}", f"          DETAIL: ${{{{ {ref}.detail }}}}", "        run: |",
-                '          echo "status: $STATUS"', "          printf '%s\\n' \"$DETAIL\" | tr '|' '\\n'",
-                '          if [ "$STATUS" = "FAILED" ] || [ "$STATUS" = "INVALID" ]; then exit 1; fi',
-                '          if [ "$STATUS" != "VERIFIED" ]; then echo "::warning title=$STATUS::$DETAIL"; fi', ""]
-    # section 1b: one job per monitor category; each link of the CoT chain is a visible step
-    for key, m, label, _ in CATEGORIES:
-        ref = f"fromJSON(needs.plan.outputs.board).cats.{key}"
-        out += [f"  cat_{key}:", f"    name: {q('1b · ' + label + ' · ')[:-1]}${{{{ {ref}.status }}}}\"",
-                "    needs: [plan, t_bank_quick, t_category]",
-                "    if: ${{ always() && needs.plan.result == 'success' }}", "    continue-on-error: true",
-                "    runs-on: ubuntu-latest", "    steps:"]
-        for i in range(N_CAT_STEPS):
-            out += [f"      - name: ${{{{ {ref}.steps[{i}].name }}}}",
-                    f"        if: ${{{{ always() && !{ref}.steps[{i}].na }}}}",
-                    "        env:", f"          OK: ${{{{ {ref}.steps[{i}].ok }}}}",
-                    "        run: '[ \"$OK\" = \"true\" ]'"]
-        out.append("")
+           f"          {py} scripts/ci_pipeline.py --status --json /tmp/status_$GITHUB_RUN_ID.json --md /tmp/status_$GITHUB_RUN_ID.md > /dev/null",
+           "      - name: 2. Publish the status table to this run's summary", "        run: |",
+           '          cat /tmp/status_$GITHUB_RUN_ID.md >> "$GITHUB_STEP_SUMMARY"',
+           '          head -3 /tmp/status_$GITHUB_RUN_ID.md | tail -1 | sed "s/^/::notice title=pipeline status::/"', ""]
     open(path, "w", encoding="utf-8").write("\n".join(out))
-    print(f"wrote {path}: {len(STAGES) + 1 + len(CATEGORIES)} jobs")
+    print(f"wrote {path}: 1 job")
 
 
 def main():

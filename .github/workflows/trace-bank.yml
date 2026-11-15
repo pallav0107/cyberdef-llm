@@ -1,5 +1,7 @@
-name: trace-bank
+name: "2 · trace bank"
+run-name: "trace bank ${{ inputs.tag }} (${{ inputs.model }})"
 
+# Step 2 of 5 (1 checks -> 2 trace bank -> 3 train -> 4 test -> 5 status). Manual: Run workflow.
 # ① TRACE BANK regeneration on Spark under schema v2.3 (empty-witness grammar bug fixed), then the per-category
 # CoT funnel (CWE class -> OWASP -> monitor -> validator -> concrete witness -> kept). Manual dispatch only.
 # Runs inside cyberdef-train:aarch64 via gdock, admitted like the Spark queue runner (MemAvailable >= job + reserve).
@@ -52,9 +54,10 @@ concurrency:
 
 jobs:
   schema_control:
+    name: "1. CoT grammar allows concrete witnesses (schema v2.3)"
     runs-on: [self-hosted, cyberdef, spark]
     steps:
-      - name: Grammar admits concrete witnesses (live) and the stripped-fix mutant is caught
+      - name: 1. Live grammar admits concrete witnesses; the stripped-fix mutant is caught
         run: |
           cd "${CYBERDEF_REPO:=$HOME/cyberdef-lm}"
           docker run --rm --user "$(id -u):$(id -g)" -e HOME=/tmp -e HF_HOME=/hf -e HF_HUB_OFFLINE=1 -e PYTHONPATH=/work/src \
@@ -62,10 +65,11 @@ jobs:
             scripts/ci_schema_control.py
 
   generate:
+    name: "2. Generate CoT traces on Spark"
     needs: schema_control
     runs-on: [self-hosted, cyberdef, spark]
     steps:
-      - name: Generate traces (schema v2.3, guided JSON, few-shot)
+      - name: 1. Wait for memory and the Spark lock, then generate (guided JSON, few-shot)
         run: |
           cd "${CYBERDEF_REPO:=$HOME/cyberdef-lm}"
           source scripts/gpu_job_lib.sh; source scripts/imp_job_lib.sh 2>/dev/null || true; export IMP_PYLIB=/work/imp_pylib
@@ -81,17 +85,18 @@ jobs:
           echo "traces: $(wc -l < "$OUT")"
 
   funnel:
+    name: "3. Per-category funnel: CWE -> OWASP -> monitor -> witness -> kept"
     needs: generate
     runs-on: [self-hosted, cyberdef, spark]
     steps:
-      - name: Per-category CoT funnel (CWE -> OWASP -> monitor -> validator -> concrete witness -> kept)
+      - name: 1. Count what survives each link, per category (written to this run's summary)
         run: |
           cd "${CYBERDEF_REPO:=$HOME/cyberdef-lm}"
           python3 scripts/ci_bank_funnel.py "results/imp_bank_${{ inputs.tag }}.jsonl" \
             --json "results/imp_bank_${{ inputs.tag }}_funnel.json" --md "/tmp/funnel_$GITHUB_RUN_ID.md"
           cat "/tmp/funnel_$GITHUB_RUN_ID.md" >> "$GITHUB_STEP_SUMMARY"
           mkdir -p "$GITHUB_WORKSPACE/artifacts"; cp "results/imp_bank_${{ inputs.tag }}_funnel.json" "$GITHUB_WORKSPACE/artifacts/"
-      - name: Upload funnel
+      - name: 2. Upload the funnel
         uses: actions/upload-artifact@v4
         with:
           name: trace-bank-${{ inputs.tag }}-${{ github.run_id }}
