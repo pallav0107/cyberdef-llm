@@ -70,6 +70,7 @@ jobs:
   pipeline:
     name: "Spark · ${{ inputs.train && 'train + test' || 'test only' }} · ${{ inputs.model }}"
     runs-on: [self-hosted, cyberdef, spark]
+    timeout-minutes: 1200   # GitHub default is 360; a Qwen3.8-27B adapter trains ~3 h on Spark before it is scored
     env:
       MACHINE: spark
       MODEL: ${{ inputs.model }}
