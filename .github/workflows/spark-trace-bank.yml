@@ -1,0 +1,58 @@
+name: "Spark · trace bank"
+run-name: "Spark · trace bank · ${{ inputs.model }} · ${{ inputs.tag }}"
+
+# CoT trace generation (schema v2.3, guided JSON, few-shot) on Spark, then the per-category funnel. Separate from
+# "Spark · train + test" because it needs vLLM guided decoding (Spark only) and is data generation, not train/test.
+#   1 plan · 2 checks · 3 generate traces · 4 funnel · 5 upload
+# Public repo + self-hosted runner: manual dispatch only.
+
+on:
+  workflow_dispatch:
+    inputs:
+      model:
+        description: "Generator (Hugging Face id cached on Spark)"
+        default: "Qwen/Qwen2.5-14B-Instruct"
+      tag:
+        description: "Output name -> results/imp_bank_<tag>.jsonl"
+        required: true
+      bank_flags:
+        description: "Generator flags, space-separated"
+        default: "--gen g14 --pools J,J2 --subset quick --k 2"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cyberdef-trace-bank
+  cancel-in-progress: false
+
+jobs:
+  pipeline:
+    name: "Spark · trace bank · ${{ inputs.model }}"
+    runs-on: [self-hosted, cyberdef, spark]
+    env:
+      MACHINE: spark
+      MODEL: ${{ inputs.model }}
+      STEPS: trace bank
+      TAG: ${{ inputs.tag }}
+      BANK_FLAGS: ${{ inputs.bank_flags }}
+      PYTHONPATH: src
+      HF_HUB_DISABLE_XET: "1"
+    steps:
+      - name: 1. Plan (generator, output; this machine's scripts match the commit)
+        id: plan
+        run: bash "$CYBERDEF_REPO/scripts/ci_step.sh" plan
+      - name: 2. Checks (CoT grammar admits concrete witnesses; the stripped-fix mutant is caught)
+        run: bash "$CYBERDEF_REPO/scripts/ci_step.sh" checks
+      - name: 3. Generate traces (waits for memory and the Spark GPU lock)
+        run: bash "$CYBERDEF_REPO/scripts/ci_step.sh" bank
+      - name: 4. Funnel per category (CWE -> OWASP -> monitor -> witness -> kept)
+        run: bash "$CYBERDEF_REPO/scripts/ci_step.sh" funnel
+      - name: 5. Upload the funnel
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: trace-bank-${{ inputs.tag }}-${{ github.run_id }}
+          path: artifacts/
+          if-no-files-found: warn
+          retention-days: 90

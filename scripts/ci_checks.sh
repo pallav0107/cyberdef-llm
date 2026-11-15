@@ -32,10 +32,12 @@ router_planner() {
   chk "Qwen/Qwen2.5-7B-Instruct" gpu-box train && chk "Qwen/Qwen2.5-14B-Instruct" gpu-box train && chk "fdtn-ai/Foundation-Sec-8B" gpu-box train \
     && chk "deepseek-r1:32b" spark eval && chk "qwen3.8:27b" spark eval || return 1
   # planner: adapter naming, per-machine steps, and the refusals it must make
-  MACHINE=spark MODEL="Qwen/Qwen2.5-14B-Instruct" OTHER="Qwen/Qwen2.5-7B-Instruct" STEPS="train + test" TAG=t \
+  MACHINE=spark MODEL="Qwen/Qwen2.5-14B-Instruct" STEPS="train + test" TAG=t \
     TEST_SET="PrimeVul length-matched (1,074)" python3 scripts/ci_plan.py > "$TMP/plan.txt" 2>/dev/null || { echo "planner rejected a valid plan"; return 1; }
-  grep -qx "adapter_tag=t_qwen2.5-14b-instruct" "$TMP/plan.txt" && grep -qx "train=true" "$TMP/plan.txt" && grep -qx "set_key=pv" "$TMP/plan.txt" \
+  grep -qx "adapter_tag=t" "$TMP/plan.txt" && grep -qx "train=true" "$TMP/plan.txt" && grep -qx "set_key=pv" "$TMP/plan.txt" \
     || { echo "planner output wrong:"; cat "$TMP/plan.txt"; return 1; }
+  MACHINE=gpu-box MODEL="Qwen/Qwen2.5-32B-Instruct" STEPS="train + test" TAG=t TEST_SET="PrimeVul length-matched (1,074)" \
+    python3 scripts/ci_plan.py 2>/dev/null | grep -q "^train_warn=..*" || { echo "planner did not flag a 32B model on the 24 GB box"; return 1; }
   MACHINE=gpu-box MODEL="Qwen/Qwen2.5-7B-Instruct" STEPS="trace bank" TAG=t python3 scripts/ci_plan.py 2>/dev/null | grep -qx "bank=false" \
     || { echo "planner put the trace bank on the box"; return 1; }
   if MACHINE=gpu-box MODEL="Qwen/Qwen2.5-7B-Instruct" STEPS="train only" TAG="" python3 scripts/ci_plan.py >/dev/null 2>&1; then

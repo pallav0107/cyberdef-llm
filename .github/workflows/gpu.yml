@@ -1,0 +1,95 @@
+name: "GPU · train + test"
+run-name: "GPU · ${{ inputs.train && 'train + test' || 'test only' }} · ${{ inputs.model }}${{ inputs.tag != '' && format(' · {0}', inputs.tag) || '' }}"
+
+# Box GPU (24 GB CUDA; <=14B, 4-bit QLoRA). The same eight steps as "Spark · train + test", in the same order:
+#   1 plan · 2 checks · 3 train · 4 test · 5 grade · 6 provenance · 7 upload · 8 status
+# The work is in scripts/ci_step.sh, shared with the Spark workflow. Untick "train" to test an existing adapter
+# (out/imp_<tag>) or, with a blank tag, the base model. Public repo + self-hosted runner: manual dispatch only.
+
+on:
+  workflow_dispatch:
+    inputs:
+      model:
+        description: "Model (Hugging Face id, <=14B for the box GPU; or an Ollama tag for zero-shot)"
+        default: "Qwen/Qwen2.5-7B-Instruct"
+      tag:
+        description: "Adapter name: train writes out/imp_<tag> (must not exist yet); test reads it. Blank = base model (test only)"
+        default: ""
+      train:
+        description: "Train first (untick to only test)"
+        type: boolean
+        default: true
+      train_data:
+        description: "Training dataset (benchdata key)"
+        default: "primevul"
+      train_flags:
+        description: "Extra trainer flags, space-separated (e.g. --items-file results/x.json --epochs 3). Defaults: --n-per-class 1000 --epochs 2 --lr 1e-4 --seed 0"
+        default: ""
+      test_set:
+        description: "Test set"
+        type: choice
+        options:
+          - "PrimeVul length-matched (1,074)"
+          - "PrimeVul length-matched sample (300)"
+          - "VulSpot holdout, length-matched"
+          - "VulSpot no-linux, length-matched"
+        default: "PrimeVul length-matched (1,074)"
+      scorer:
+        description: "How the test scores each case"
+        type: choice
+        options:
+          - "selective (HF model or adapter)"
+          - "zero-shot (Ollama model, test only)"
+        default: "selective (HF model or adapter)"
+      ack_oom:
+        description: "Train a model flagged as too big for this machine anyway"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  pipeline:
+    name: "Box GPU · ${{ inputs.train && 'train + test' || 'test only' }} · ${{ inputs.model }}"
+    runs-on: [self-hosted, cyberdef, gpu-box]
+    env:
+      MACHINE: gpu-box
+      MODEL: ${{ inputs.model }}
+      STEPS: ${{ inputs.train && 'train + test' || 'test only' }}
+      TAG: ${{ inputs.tag }}
+      TEST_SET: ${{ inputs.test_set }}
+      SCORER: ${{ inputs.scorer }}
+      ACK_OOM: ${{ inputs.ack_oom }}
+      TRAIN_DATA: ${{ inputs.train_data }}
+      TRAIN_FLAGS: ${{ inputs.train_flags }}
+      PYTHONPATH: src
+      HF_HUB_DISABLE_XET: "1"
+      PYTORCH_CUDA_ALLOC_CONF: expandable_segments:True
+    steps:
+      - name: 1. Plan (model, adapter, test set; this machine's scripts match the commit)
+        id: plan
+        run: bash "$CYBERDEF_REPO/scripts/ci_step.sh" plan
+      - name: 2. Checks (every control on this machine passes and catches its broken mutant)
+        run: bash "$CYBERDEF_REPO/scripts/ci_step.sh" checks
+      - name: 3. Train (waits for this machine's GPU lock)
+        if: steps.plan.outputs.train == 'true'
+        run: bash "$CYBERDEF_REPO/scripts/ci_step.sh" train
+      - name: 4. Test (waits for this machine's GPU lock)
+        run: bash "$CYBERDEF_REPO/scripts/ci_step.sh" test
+      - name: 5. Grade (recompute AUROC from per_case, compare to the 0.60 bar; an integrity mismatch fails)
+        run: bash "$CYBERDEF_REPO/scripts/ci_step.sh" grade
+      - name: 6. Stamp provenance
+        if: ${{ !cancelled() }}
+        run: bash "$CYBERDEF_REPO/scripts/ci_step.sh" provenance
+      - name: 7. Upload adapter, result, per_case and provenance
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.MACHINE }}-${{ github.run_id }}
+          path: artifacts/
+          if-no-files-found: warn
+          retention-days: 90
+      - name: 8. Status of every stage, from its evidence
+        if: ${{ !cancelled() }}
+        run: bash "$CYBERDEF_REPO/scripts/ci_step.sh" status

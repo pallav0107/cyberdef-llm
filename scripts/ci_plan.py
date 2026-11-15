@@ -1,14 +1,15 @@
 #!/usr/bin/env python3
-"""Plan what one machine does in a run of the `cyberdef pipeline` workflow (two jobs: Box GPU and Spark).
+"""Plan what one run of a cyberdef workflow does on its machine (GPU · train + test, Spark · train + test,
+Spark · trace bank).
 
 Reads the dispatch inputs from the environment and prints GitHub-Actions `name=value` lines for $GITHUB_OUTPUT:
-  MACHINE   gpu-box | spark            MODEL   this machine's model ('' = none this run)
-  OTHER     the other machine's model  STEPS   checks + status | trace bank | train + test | train only | test only
-  TAG       experiment name            TEST_SET, SCORER as in the workflow inputs
+  MACHINE   gpu-box | spark            MODEL   the model ('' = none)
+  STEPS     train + test | train only | test only | trace bank | checks + status
+  TAG       adapter / output name      TEST_SET, SCORER as in the workflow inputs
 Outputs: model, slug, adapter_tag, train, test, bank (true|false), cases_file, set_key, scorer, train_warn.
 
-Adapter name: out/imp_<TAG> when only this machine has a model, out/imp_<TAG>_<model-slug> when both machines do
-(train and test use the same rule, so "test only" with the same TAG finds what "train only" wrote).
+Adapter name: training writes out/imp_<TAG> (ci_step.sh refuses a TAG whose adapter already exists, so nothing is
+overwritten); "test only" reads out/imp_<TAG>, or the base model when TAG is blank.
 """
 from __future__ import annotations
 import os, re, sys
@@ -37,7 +38,7 @@ def plan(env) -> dict:
     steps = env.get("STEPS", "").strip() or "checks + status"      # push / schedule runs have no inputs
     if steps not in ALL_STEPS:
         raise SystemExit(f"plan: unknown steps '{steps}'")
-    model, other = env.get("MODEL", "").strip(), env.get("OTHER", "").strip()
+    model = env.get("MODEL", "").strip()
     tag = env.get("TAG", "").strip()
     if tag and not re.fullmatch(r"[A-Za-z0-9._-]+", tag):
         raise SystemExit(f"plan: tag '{tag}' may only contain letters, digits, '.', '_' and '-'")
@@ -60,7 +61,7 @@ def plan(env) -> dict:
         elif machine == "spark":
             warn = decide(model, "spark")[2] or spark_warn
     s = slug(model) if model else ""
-    adapter = ((tag if not other else f"{tag}_{s}") if tag else "") if model else ""
+    adapter = tag if (model and (train or test)) else ""
     cases_file, set_key = TEST_SETS.get(test_set, ("", "")) if test else ("", "")
     return {"model": model, "slug": s, "adapter_tag": adapter, "train": train, "test": test, "bank": bank,
             "cases_file": cases_file, "set_key": set_key, "scorer": scorer, "train_warn": warn}
