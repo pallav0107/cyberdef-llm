@@ -60,10 +60,11 @@ def main():
             if structure and str(v["id"]).startswith(("juliet:", "juliet2:", "juliet3:")):
                 key = v["id"].split(":")[1]
                 good = None if re.search(r"_2[12][a-z]?\.(?:c|cpp)$", key) else SM.one_good(s["code"], key)
-                if good is None:
+                bad = SM.one_bad(v["code"])   # addendum 3m: the vulnerable text is rebuilt from its functions too
+                if good is None or bad is None:
                     st_dropped += 1
                     continue
-                v = dict(v, code=SM.normalise(v["code"]), structure_3j=True); s = dict(s, code=SM.normalise(good), structure_3j=True)
+                v = dict(v, code=SM.normalise(bad), structure_3j=True, vulnerable_rebuilt_3m=True); s = dict(s, code=SM.normalise(good), structure_3j=True)
                 for x in (v, s):
                     x["code_chars"] = len(x["code"]); x["toks"] = max(1, len(x["code"]) // 3)
                 if h(v["code"]) in held or h(s["code"]) in held:   # 3l: a normalised near-duplicate of a held-out case leaves training

@@ -3,7 +3,7 @@
   s_sc    = sc_cot validator score (VULNERABLE valid -> 0.5+0.5c, SAFE valid -> 0.5-0.5c, else 0.5)
 Output has the selective_eval schema (auroc from p_vuln) + per-case raw trace (for CASTLE witness execution) + auroc_s_sc.
   python3 scripts/imp_eval_cot.py --model M [--adapter A] --cases-file F --out results/X.json [--max-tokens 1200] [--gpu-util 0.45]"""
-import argparse, json, math, os, re, sys, time
+import argparse, random, json, math, os, re, sys, time
 sys.path.insert(0, "src"); sys.path.insert(0, "scripts")
 from cyberdef import sc_cot as S
 from cyberdef import imp_sc_schema as SS
@@ -62,6 +62,8 @@ def main():
     ap.add_argument("--gpu-util", type=float, default=0.45)
     ap.add_argument("--meta", default="")
     ap.add_argument("--max-cases", type=int, default=0)
+    ap.add_argument("--shuffle-seed", type=int, default=0,
+                    help="0 = cases in file order; N > 0 = generate in random.Random(N) order (addendum 3k: K decodes with shuffled order); per_case stays in file order")
     a = ap.parse_args()
     import vllm
     from vllm import LLM, SamplingParams
@@ -75,8 +77,14 @@ def main():
     llm = LLM(a.model, dtype="bfloat16", enable_lora=a.adapter is not None, max_lora_rank=16, max_model_len=8192,
               gpu_memory_utilization=a.gpu_util, enforce_eager=True, seed=0, **text_only_kwargs(a.model))
     lr = LoRARequest("a", 1, a.adapter) if a.adapter else None
+    order = list(range(len(prompts)))
+    if a.shuffle_seed:
+        random.Random(a.shuffle_seed).shuffle(order)
     t0 = time.time()
-    outs = llm.generate(prompts, SS.sampling_params(vllm, True, temperature=0, max_tokens=a.max_tokens, logprobs=10), lora_request=lr)
+    gen = llm.generate([prompts[i] for i in order], SS.sampling_params(vllm, True, temperature=0, max_tokens=a.max_tokens, logprobs=10), lora_request=lr)
+    outs = [None] * len(order)
+    for i, o in zip(order, gen):
+        outs[i] = o
     per, sc, y, ssc, confs, corr = [], [], [], [], [], []
     for c, o in zip(cases, outs):
         g = o.outputs[0]
@@ -95,7 +103,7 @@ def main():
         sc.append(p); y.append(1 if c["label"] == "VULNERABLE" else 0); ssc.append(v["score"]); confs.append(max(p, 1 - p)); corr.append(ok)
     n = len(per)
     res = {"benchmark": a.cases_file, "dataset": "cases_file", "eval_split": cf.get("split"), "method": "sc-cot greedy, verdict-token logprob", "pool": cf.get("pool", {}),
-           "model": a.model, "adapter": a.adapter, "meta": a.meta, "seed": 0, "n": n, "n_per_class": n // 2, "max_chars": 6000, "max_new_tokens": a.max_tokens,
+           "model": a.model, "adapter": a.adapter, "meta": a.meta, "seed": 0, "shuffle_seed": a.shuffle_seed, "n": n, "n_per_class": n // 2, "max_chars": 6000, "max_new_tokens": a.max_tokens,
            "accuracy": round(sum(corr) / n, 4), "auroc": se.auroc(sc, y), "auroc_s_sc": se.auroc(ssc, y), "ece": se.ece(confs, corr),
            "p_fallback_rate": round(sum(p["p_source"] != "verdict_token" for p in per) / n, 4), "parse_rate": round(sum(p["parsed"] for p in per) / n, 4), "valid_rate": round(sum(p["valid"] for p in per) / n, 4), "truncation_rate": round(sum(p["finish"] == "length" for p in per) / n, 4),
            "risk_coverage": se.risk_coverage(confs, corr, [0.1, 0.2, 0.25, 0.3, 0.4, 0.5, 0.75, 1.0]), "engine": f"vllm {vllm.__version__} bf16 temp=0", "decoding": SS.config_row(True, a.max_tokens, 0.0, 1.0, f"vllm {vllm.__version__}", a.model),

@@ -1,5 +1,5 @@
 {
-  "written": "2026-11-16T06:53:26+1100",
+  "written": "2026-11-16T16:28:45+1100",
   "files": {
     "results/lenmatched_eval_cases.json": {
       "sha256": "dca5c04f041806e6e3444712876117048abe3ff98c690a09bea8bc451baf7dcf",
@@ -56,9 +56,9 @@
       "what": "J3 matched (2c), cleaned 3g+3i; DESCRIPTIVE: function count alone scores 0.975 (3i)"
     },
     "results/j3s_heldout_matched_cases.json": {
-      "sha256": "2ed904c0fdb30dd3c78d1d072e66096720e984c31499833a4103acab9c00ba33",
-      "bytes": 131237,
-      "n": 112,
+      "sha256": "d0eefc70b52bad84c3a21e51a462cc2f87d2f5eeb6d895d86e441e1a165198ce",
+      "bytes": 140588,
+      "n": 122,
       "what": "J3s (3i): structure- and length-matched; primary test for format string (CWE-134)"
     },
     "results/j4_heldout_matched_cases.json": {
@@ -68,9 +68,9 @@
       "what": "J4b matched (3e), cleaned 3g+3i; DESCRIPTIVE: function count alone scores 0.956 (3i)"
     },
     "results/j4s_heldout_matched_cases.json": {
-      "sha256": "99e5b03294cf16ff014cda810eb24583585ab2aaf584b8bf3c735c2bab28e3fc",
-      "bytes": 1580344,
-      "n": 2122,
+      "sha256": "81669e115854d7fd0a7d32fbf0db123c0cc0b38c6535dd9472568cd06f67fbb2",
+      "bytes": 1602799,
+      "n": 2166,
       "what": "J4s (3i): structure- and length-matched, execution-verified; primary test for memory, integer, leak"
     },
     "results/q_heldout_cases.json": {

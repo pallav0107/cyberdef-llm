@@ -42,6 +42,10 @@ code_manifest() { { printf '%s\n' $CODE_FILES; ls src/cyberdef/*.py | grep -v -E
                   | sort | while read -r f; do [ -f "$f" ] && sha256sum "$f" || echo "MISSING  $f"; done; }
 # Pre-registered CoT evaluation (as in the queue jobs P60/P61/P86): SC-CoT greedy generation with vLLM, 4096 tokens,
 # verdict-token probability. gpu-util 0.45 as pre-registered, raised only when a larger model needs more to load.
+# addendum 3k: on the fair tests (J3s, J4s) every CoT-scored model is decoded K=3 times in shuffled case order (seeds 1-3).
+# <out> holds seed 1; <out>_k2.json and <out>_k3.json hold seeds 2 and 3. The verdict averages p_vuln per case (scripts/imp_verdict.py).
+cot_k() { case "$(basename "$1")" in j3s_*|j4s_*) echo 3 ;; *) echo 1 ;; esac; }   # cases-file -> K
+cot_out() { if [ "$2" -le 1 ]; then echo "$1"; else echo "${1%.json}_k$2.json"; fi; }   # out k -> file of decode k
 cot_eval_here() {   # model  adapter-tag-or-''  cases-file  out
   claim_spark; spark_env
   # vLLM reserves gpu-util x 121 GB of Spark's UNIFIED memory: bf16 weights ~1.92 GB/B + 14 GB for KV and activations, and
@@ -50,8 +54,12 @@ cot_eval_here() {   # model  adapter-tag-or-''  cases-file  out
   export MEM_GB=$(python3 -c "print(int($U*121))"); echo "CoT eval: gpu-util $U (~${MEM_GB} GB) for ${P_params_b:-?}B"
   wait_mem $((MEM_GB + 25)); take_gpu
   [ -n "$2" ] && AD=(--adapter "out/imp_$2")
-  gdock '' scripts/imp_eval_cot.py --model "$1" "${AD[@]}" --cases-file "$3" --out "$4" --max-tokens 4096 --gpu-util "$U" \
-    --meta "ci test run=${GITHUB_RUN_ID:-} sha=${GITHUB_SHA:-} trained_on=${TRAINED_ON:-$MACHINE}"
+  local K k SHF; K=$(cot_k "$3")
+  for k in $(seq 1 "$K"); do
+    SHF=(); [ "$K" -gt 1 ] && SHF=(--shuffle-seed "$k")
+    gdock '' scripts/imp_eval_cot.py --model "$1" "${AD[@]}" --cases-file "$3" --out "$(cot_out "$4" "$k")" --max-tokens 4096 \
+      --gpu-util "$U" "${SHF[@]}" --meta "ci test run=${GITHUB_RUN_ID:-} sha=${GITHUB_SHA:-} trained_on=${TRAINED_ON:-$MACHINE} decode=$k/$K"
+  done
   flock -u 9
 }
 claim_spark() { [ "$MACHINE" = spark ] || return 0; echo "$$ $STEP ${GITHUB_RUN_ID:-local}" > "$CYBERDEF_REPO/.ci_priority"
@@ -290,6 +298,7 @@ test)
         fi
         ssh -o BatchMode=yes "$SH" "cd $SR && MACHINE=spark P_params_b='$P_params_b' GITHUB_RUN_ID='$GITHUB_RUN_ID' GITHUB_SHA='$GITHUB_SHA' TRAINED_ON=gpu-box bash scripts/ci_step.sh cot_eval '$P_model' '$P_adapter_tag' '$cases' '$OUT'"
         scp -q -p -o BatchMode=yes "$SH:$SR/$OUT" "$OUT"
+        for k in $(seq 2 "$(cot_k "$cases")"); do scp -q -p -o BatchMode=yes "$SH:$SR/$(cot_out "$OUT" "$k")" "$(cot_out "$OUT" "$k")"; done
       fi
     else
       [ "$local_lock" = 1 ] || { take_gpu; gpu_free_check; local_lock=1; }
@@ -308,7 +317,13 @@ test)
     fi
     echo "::endgroup::"
     test -s "$OUT" || { echo "::error::no result written for $key"; exit 1; }
-    RESULTS="$RESULTS $OUT"; printf 'RESULTS=%q\n' "$RESULTS" > "$RES"
+    RESULTS="$RESULTS $OUT"
+    if [ "$P_scorer" = cot ]; then
+      for k in $(seq 2 "$(cot_k "$cases")"); do
+        x=$(cot_out "$OUT" "$k"); test -s "$x" || { echo "::error::no result written for $key decode $k"; exit 1; }; RESULTS="$RESULTS $x"
+      done
+    fi
+    printf 'RESULTS=%q\n' "$RESULTS" > "$RES"
   done
   ;;
 grade)

@@ -51,3 +51,17 @@ J3 matched and J4b matched carry a structural shortcut: function count alone sco
 The confirmatory family is now {J4s (2,122 functions), J3s (112 functions)}, with the same bar and Holm over the two. Disclosed:
 the J3-matched AUROC of seed 0 (0.949, against 0.672 for the untrained base) was seen before this note; that jump is how the
 shortcut was found. No model has been scored on J4s or J3s.
+
+## Note, 2026-11-16 15:34 AEDT: confirmatory sets rebuilt under addendum 3m, before any model was scored on the rebuilt sets
+The 3i versions of J4s and J3s carried a perfect label leak: the last line of every VULNERABLE text was leftover main()
+code (AUROC 1.000). They cannot test H1. The confirmatory family is now {J4s, J3s} as rebuilt under addendum 3m:
+- J4s: 2,166 functions, sha256 81669e11…;
+- J3s: 122 functions, sha256 d0eefc70….
+The arms, scorer, bar and Holm correction are unchanged. The verdict is computed by scripts/imp_verdict.py twinrep,
+whose acceptance check proved it fails first. The seed bar needs all of seeds 0-3.
+
+Disclosed: on the leaky 3i versions the following were seen before this note: base 0.705 (J4s) / 0.6553 (J3s), and
+seed-0 twin 0.6914 / 0.8645. Seed 1 also ran on them; it is void and is not used. Seeds 2 and 3 were cancelled before
+they ran. Every arm (base, seeds 0-3) is re-scored on the rebuilt sets from one commit.
+Caveat: the twin's training rows (CoT arm 2, J2 build) may carry a weaker form of the same cue. The rebuilt tests no
+longer reward it.

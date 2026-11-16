@@ -70,6 +70,33 @@ def structure(cases):
     return max(f, 1 - f), max(st, 1 - st)
 
 
+ARTEFACT = re.compile(r"^(#\s*\w+.*|return 0;)$")
+
+
+def lab(x):
+    if x.get("label") in ("VULNERABLE", "SAFE"):
+        return x["label"] == "VULNERABLE"
+    i = str(x.get("id", ""))
+    return True if i.endswith(":V") else False if i.endswith(":S") else None
+
+
+def artefact(xs):
+    """addendum 3m: (last-line, artefact-line) best AUROC; a binary cue's AUROC is 0.5 + (TPR - FPR) / 2"""
+    xs = [x for x in xs if lab(x) is not None]
+    y = [lab(x) for x in xs]
+    n1, n0 = sum(y), len(y) - sum(y)
+    if n1 < 20 or n0 < 20:
+        return 0.5, 0.5
+    ls = [[l.strip() for l in text(x).split("\n") if l.strip()] for x in xs]
+    best = [0.5, 0.5]
+    for k, cand in ((0, {l[-1] for l in ls if l}), (1, {t for l in ls for t in l if ARTEFACT.match(t)})):
+        for t in cand:
+            hit = [(l[-1] == t) if (k == 0 and l) else (t in l) for l in ls]
+            a = 0.5 + (sum(h for h, v in zip(hit, y) if v) / n1 - sum(h for h, v in zip(hit, y) if not v) / n0) / 2
+            best[k] = max(best[k], a, 1 - a)
+    return best[0], best[1]
+
+
 def check():
     from ci_plan import SET_FILES
     bad, seen = [], 0
@@ -90,8 +117,14 @@ def check():
             else:
                 bad.append(f"{k}: structural shortcut (function count {fb:.3f}, static count {sb:.3f})")
         if ov: bad.append(f"{k}: in a training pool {ov[:3]}")
+        la, aa = artefact(cs)
+        if la > 0.60 or aa > 0.60:
+            bad.append(f"{k}: artefact line predicts the label (last line {la:.3f}, preprocessor/return-0 line {aa:.3f}; addendum 3m)")
     for f in pools():
         lk = leaky(rows(f))
+        la, aa = artefact(rows(f))
+        if la > 0.60 or aa > 0.60:
+            bad.append(f"{f}: artefact line predicts the label (last line {la:.3f}, preprocessor/return-0 line {aa:.3f}; addendum 3m)")
         if lk:
             print(f"  {f}: label text in {len(lk)} items"); bad.append(f"{f}: label text in {lk[:3]}")
     print(f"  checked {len(pools())} training pools for label text")
@@ -114,7 +147,11 @@ def selftest():
     lop = [{"id": "j4s:a:V", "label": "VULNERABLE", "code": "void fn_0(){}"}, {"id": "j4s:a:S", "label": "SAFE", "code": "void fn_0(){}\nstatic void fn_1(){}\nvoid fn_2(){ fn_0(); fn_1(); }"}] * 10
     even = [{"id": "j4s:b:V", "label": "VULNERABLE", "code": "void fn_0(){}"}, {"id": "j4s:b:S", "label": "SAFE", "code": "void fn_0(){}"}] * 10
     assert structure(lop)[0] > 0.9 and structure(even)[0] <= 0.6, "blind to a function-count shortcut"
-    print("data hygiene control: clean passes; FIX comment, bad identifier, held-out pair in pool, duplicate code and a function-count shortcut are caught")
+    tail = [{"id": f"j4s:t{i}:V", "label": "VULNERABLE", "code": "void fn_0(){}\nreturn 0;\n}\n#endif"} for i in range(25)] + \
+           [{"id": f"j4s:t{i}:S", "label": "SAFE", "code": "void fn_0(){}"} for i in range(25)]
+    flat = [{"id": f"j4s:u{i}:{v}", "label": lb, "code": "void fn_0(){}"} for i in range(25) for v, lb in (("V", "VULNERABLE"), ("S", "SAFE"))]
+    assert min(artefact(tail)) > 0.9 and max(artefact(flat)) <= 0.6, "blind to a leftover-main() tail in one label (3m)"
+    print("data hygiene control: clean passes; FIX comment, bad identifier, held-out pair in pool, duplicate code a function-count shortcut and a one-label artefact tail (3m) are caught")
 
 
 def check_items(path):

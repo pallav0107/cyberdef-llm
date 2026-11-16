@@ -64,3 +64,6 @@ acceptance checks and the 14:28 hash manifest are committed in the commit that a
 the 14:28 manifest, both recorded: this addendum (the correction above and this paragraph) and scripts/imp_st_pool.py
 (the normalised held-out collision rule of addendum 3l). The memory round was not trained (3l), so no memory J4s score
 exists. The format-string round is still generating traces; no format-string adapter or twin exists at commit time.
+
+Correction (2026-11-16 15:27 AEDT): the resolution paragraph above says 15:05; it was written and committed at 15:02:36
+(commit b143795). The stated time was a guess, not a clock reading.
