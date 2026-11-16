@@ -17,10 +17,15 @@ cluster-level paired bootstrap (10,000 resamples, seed 0) is computed: cluster
 V/S pair is one cluster. Round then requires every comparison to pass under
 both schemes; twinrep reports it as a per-set sensitivity check only.
 
+With --cluster-by FIELD (part (B) of the VSP-T brief, /tmp/brief_vsp.txt) the
+cluster of a case is that case's FIELD value from the cases file (e.g.
+--cluster-by project for real-world sets); a case missing the field is
+refused. Without the flag clustering is exactly as described above.
+
   python3 scripts/imp_verdict.py round --cases C.json --adapter F F F --base F F F \
-      --twin F [--cross NAME=F,F,F ...] [--cluster-bootstrap] --out O.json
+      --twin F [--cross NAME=F,F,F ...] [--cluster-bootstrap] [--cluster-by FIELD] --out O.json
   python3 scripts/imp_verdict.py twinrep --set NAME CASES BASE TWIN0 [S1 S2 S3] \
-      [--set ...] [--cluster-bootstrap] --out O.json
+      [--set ...] [--cluster-bootstrap] [--cluster-by FIELD] --out O.json
   python3 scripts/imp_verdict.py --selftest
 """
 from __future__ import annotations
@@ -198,11 +203,22 @@ def cluster_key(cid):
     return re.sub(r":[VS]$", "", cid)
 
 
-def cluster_setup(keys):
-    """Group case indices by cluster; per cluster the (pos, neg) index arrays."""
+def cluster_by_ids(cases, field):
+    """Per-case cluster ids from a case field (--cluster-by FIELD); the whole
+    run is refused if any case lacks the field."""
+    if any(field not in c for c in cases):
+        raise Refused("--cluster-by %s: a case lacks the %r field" % (field, field))
+    return [str(c[field]) for c in cases]
+
+
+def cluster_setup(keys, cid=None):
+    """Group case indices by cluster; per cluster the (pos, neg) index arrays.
+    cid: optional per-case cluster ids (--cluster-by FIELD), else the id-based
+    cluster_key."""
     groups = {}
     for i, k in enumerate(keys):
-        groups.setdefault(cluster_key(k[0]), []).append(i)
+        ck = cid[i] if cid is not None else cluster_key(k[0])
+        groups.setdefault(ck, []).append(i)
     idx, lab = [], []
     for v in groups.values():
         yy = np.array([1 if keys[i][1] == "VULNERABLE" else 0 for i in v])
@@ -341,7 +357,8 @@ def run_round(argv):
     d1, d0 = boot_draws(n1, n0)
     cb = None
     if clus:
-        _idx, lab = cluster_setup(keys)
+        cid = cluster_by_ids(cases, o["cluster-by"]) if o.get("cluster-by") else None
+        _idx, lab = cluster_setup(keys, cid)
         draws, valid = cluster_plan(_idx, lab)
         cb = (lab, draws, valid)
     models, means, sds, hms = {}, {}, {}, {}
@@ -401,7 +418,7 @@ def zscore(delta, se):
     return math.inf if delta > 0 else (-math.inf if delta < 0 else 0.0)
 
 
-def twin_set(vals, clus=False):
+def twin_set(vals, clus=False, by=None):
     if len(vals) < 4:
         raise Refused("--set needs NAME CASES BASE TWIN0 [SEED1 SEED2 SEED3]")
     name, cpath, bpath, t0path, seed_paths = vals[0], vals[1], vals[2], vals[3], vals[4:]
@@ -442,7 +459,8 @@ def twin_set(vals, clus=False):
              "pass_twin_vs_base": bool(cmp_tb["delta"] > 2 * cmp_tb["se_boot"]),
              "pass_length": bool(cmp_len["delta"] > 2 * cmp_len["se_boot"])}
     if clus:
-        idx, lab = cluster_setup(keys)
+        cid = cluster_by_ids(cases, by) if by else None
+        idx, lab = cluster_setup(keys, cid)
         draws, valid = cluster_plan(idx, lab)
         se_c = cluster_se(t0sc, bsc, lab, draws, valid)
         sdict.update(n_clusters=len(idx), se_boot_cluster=se_c,
@@ -474,7 +492,7 @@ def run_twinrep(argv):
         raise Refused("twinrep: no --set given")
     sets, inputs = {}, []
     for vals in specs:
-        nm, sdict, files = twin_set(vals, clus)
+        nm, sdict, files = twin_set(vals, clus, o.get("cluster-by"))
         sets[nm], inputs = sdict, inputs + files
     m = len(sets)
     p_sorted = sorted(s["p_one_sided"] for s in sets.values())
@@ -616,6 +634,36 @@ def selftest():
         assert dc["verdict_cluster"] == "FAIL" and dc["verdict"] == "FAIL", dc["comparisons"]["base"]
         assert dc["n_clusters"] == 12 and 0 < dc["cluster_resamples_used"] <= B
         assert all("pass_cluster" in v for v in dc["comparisons"].values())
+
+        # project clustering (--cluster-by project, VSP-T brief part B): one
+        # project carries the whole advantage -> case bootstrap passes, the
+        # cluster bootstrap fails
+        pc, pad, pbs = [], [], []
+        for c in range(12):
+            for k in range(30 if c == 0 else 5):
+                pair = "p%d_%d" % (c, k)
+                for lab in ("VULNERABLE", "SAFE"):
+                    b = min(1.0, max(0.0, 0.5 + rng.uniform(-0.25, 0.25)))
+                    pc.append({"id": "vsp:%s:%s" % (pair, lab[0]),
+                               "code": "y;" * (100 + (k * 3 + c) % 150),
+                               "label": lab, "cwe": "CWE000", "pair": pair,
+                               "project": "proj%d" % c})
+                    pbs.append(b)
+                    pad.append((0.95 if lab == "VULNERABLE" else 0.05) if c == 0 else b)
+        pcp = os.path.join(t, "pcases.json")
+        json.dump({"cases": pc}, open(pcp, "w"))
+        pkeys = [(c["id"], c["label"]) for c in pc]
+        pres = lambda tag, sc, method=SEL: _st_result(os.path.join(t, tag + ".json"), pkeys, sc, method)
+        outp = os.path.join(t, "op.json")
+        run_round(["--cases", pcp, "--cluster-bootstrap", "--cluster-by", "project", "--adapter"]
+                  + [pres("pc%d" % i, pad, COT) for i in range(3)]
+                  + ["--base"] + [pres("pb%d" % i, pbs, COT) for i in range(3)]
+                  + ["--twin", pres("pt", pbs), "--out", outp])
+        dp = json.load(open(outp))
+        assert dp["verdict_case"] == "PASS", dp["comparisons"]["base"]
+        assert dp["verdict_cluster"] == "FAIL" and dp["verdict"] == "FAIL", dp["comparisons"]["base"]
+        assert dp["n_clusters"] == 12
+        print("project-cluster: OK")
     except (AssertionError, Refused) as exc:
         print("SELFTEST FAIL: %r" % (exc,))
         return 1

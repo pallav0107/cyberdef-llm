@@ -231,6 +231,39 @@ _, d1 = run(args15, f"{T}/t15b.json")
 ok("T15 twinrep --cluster-bootstrap adds per-set sensitivity, verdict unchanged",
    d0 is not None and d1 is not None and d1["verdict"] == d0["verdict"] and all("se_boot_cluster" in v and "n_clusters" in v for v in d1["sets"].values()))
 
+# T16 project clustering for real-world sets (--cluster-by project uses each case's "project" field)
+def pcases(name, rng):
+    cs, ad, bs = [], [], []
+    for c in range(12):
+        n = 30 if c == 0 else 5
+        for k in range(n):
+            pair = f"p{c}_{k}"
+            for y, lab in ((1, "VULNERABLE"), (0, "SAFE")):
+                b = min(1.0, max(0.0, 0.5 + rng.uniform(-0.25, 0.25)))
+                a = (0.95 if y else 0.05) if c == 0 else b
+                cs.append({"id": f"vsp:{pair}:{lab[0]}", "code": "z;" * rng.randint(100, 400), "label": lab, "pair": pair, "project": f"proj{c}"})
+                ad.append(a); bs.append(b)
+    p_ = f"{T}/{name}_cases.json"
+    json.dump({"cases": cs, "split": "test", "seed": 0}, open(p_, "w"))
+    return p_, cs, ad, bs
+
+
+cp16, cs16, ad16, bs16 = pcases("t16", random.Random(13))
+base16 = ["round", "--cases", cp16, "--adapter"] + files("t16a", cs16, [ad16] * 3, COT) + ["--base"] + files("t16b", cs16, [bs16] * 3, COT) \
+    + ["--twin"] + files("t16t", cs16, [bs16], SEL) + ["--cluster-bootstrap"]
+_, d = run(base16 + ["--cluster-by", "project"], f"{T}/t16.json")
+ok("T16 --cluster-by project: 12 clusters; single-project advantage passes the case bootstrap and fails the cluster one",
+   d is not None and d.get("n_clusters") == 12 and d.get("verdict_case") == "PASS" and d.get("verdict_cluster") == "FAIL" and d["verdict"] == "FAIL")
+_, d = run(base16, f"{T}/t16b.json")
+ok("T16 default clustering unchanged (real-world pair = own cluster: 85 clusters)", d is not None and d.get("n_clusters") == 85)
+cs_np = [dict(c) for c in cs16]
+for c in cs_np:
+    c.pop("project")
+json.dump({"cases": cs_np}, open(f"{T}/t16_noproj.json", "w"))
+r, d = run(["round", "--cases", f"{T}/t16_noproj.json", "--adapter"] + files("t16na", cs16, [ad16] * 3, COT) + ["--base"] + files("t16nb", cs16, [bs16] * 3, COT)
+           + ["--twin"] + files("t16nt", cs16, [bs16], SEL) + ["--cluster-bootstrap", "--cluster-by", "project"], f"{T}/t16n.json")
+ok("T16 --cluster-by project refuses cases without a project field", r.returncode != 0 and not os.path.exists(f"{T}/t16n.json"))
+
 r = subprocess.run([sys.executable, S, "--selftest"], capture_output=True, text=True, timeout=900)
 ok("T10 --selftest exits 0", r.returncode == 0)
 print(f"{len(FAILS)} failed" if FAILS else "ALL PASS")
