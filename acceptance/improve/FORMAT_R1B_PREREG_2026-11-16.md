@@ -131,3 +131,24 @@ descriptively and the primary is J3s alone.
 - The 14B base and twin seeds are being scored on the rebuilt J3s for the twin replication. Their J3s scores have not
   been read; only key coverage was checked.
 - J5f does not exist yet. Its builder (Kimi) started at 19:05.
+
+## Note, 2026-11-16 19:22 AEDT: J5f is NOT admitted; the primary is J3s alone (with the cluster bootstrap). Written before any round 1b score
+Under section 2 of the note above, J5f is invalid. check_j5f.py prints one failure: ">= 300 verified pairs (got 240)".
+- Builder: scripts/imp_build_juliet5f.py, sha256 3d76ab11…. Its verification is the J3 rule unchanged.
+- Items: results/imp_juliet5f_items_all.json, sha256 533c6f7f….
+- Candidates: 600 multi-file case groups.
+  - 120 are flows 81-84, whose other parts carry no part letter. They were not candidates under the builder's file
+    rule.
+  - Of the 480 compiled: every char case verifies (240/240). No wchar_t case can fire: Juliet's main() prints with
+    narrow printLine first, so glibc fixes stdout to byte orientation and every later fwprintf prints nothing. The J3
+    single-file build has the same limit (0 wchar_t CWE-134 items). This is a coverage limit of the oracle, not a
+    builder defect.
+- Widening the builder now (e.g., to flows 81-84) to reach 300 would change the data definition after seeing it fall
+  short. It is not done.
+Consequences, fixed now:
+- The primary test for round 1b is J3s alone, judged under the bar of section 5 with BOTH the case and the cluster
+  bootstrap. The original case-bootstrap verdict is also reported.
+- J5f is NOT scored for round 1b in any form. It is kept, unscored, as a held-out set that a future round may
+  pre-register from the start.
+- Learning for a later round: the format-string oracle cannot verify wide-char variants. A harness that keeps stdout
+  wide-capable would add them.

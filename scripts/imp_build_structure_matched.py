@@ -115,7 +115,7 @@ def auroc(s, y):
     return sum((p > n) + 0.5 * (p == n) for p in pos for n in neg) / (len(pos) * len(neg))
 
 
-def build(pairs, tag, out_path, note):
+def build(pairs, tag, out_path, note, post=None):
     cases, skipped = [], 0
     for pair, v, s, cwe, cat in pairs:
         if re.search(r"_2[12][a-z]?\.(?:c|cpp)$", pair):   # static-flag flow variants: a variant's safety depends on flags set by good()
@@ -123,6 +123,8 @@ def build(pairs, tag, out_path, note):
         st, bt = one_good(s, pair), one_bad(v)
         if st is None or bt is None:
             skipped += 1; continue
+        if post is not None:   # FORMAT_R1B_PREREG note (bce5d86): applied to BOTH labels before normalise(); default None
+            bt, st = post(bt), post(st)
         for lab, txt in (("VULNERABLE", normalise(bt)), ("SAFE", normalise(st))):
             cases.append({"id": f"{tag}:{pair}:{lab[0]}", "code": txt, "code_chars": len(txt), "toks": max(1, len(txt) // 3),
                           "label": lab, "cwe": cwe, "category": cat, "pair": pair})
