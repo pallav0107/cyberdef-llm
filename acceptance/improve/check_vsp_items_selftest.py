@@ -45,11 +45,12 @@ def eligible_pairs(ctx, strip):
     v = df[df.is_vulnerable & df.fixed_func_idx.notna() & df.idx.isin(train)]
     out = []
     for i, fx in zip(v.idx.tolist(), v.fixed_func_idx.astype(int).tolist()):
-        if fx not in train or proj[i] in tprojects:
+        if fx not in train or proj[i] in tprojects or proj[i] in ci.FORK_PROJECTS:
             continue
         a, b = strip(bodies[i]), strip(bodies[fx])
         short = len(a) < cv.TRUNC_LEN and len(b) < cv.TRUNC_LEN
-        if short and ci.squash(a) != ci.squash(b) and not {cv.norm_hash(a), cv.norm_hash(b)} & thashes:
+        if short and ci.squash(a) != ci.squash(b) and not {cv.norm_hash(a), cv.norm_hash(b)} & thashes \
+                and max(ci.max_jaccard(ci.token_set(a), ctx.test_tokens), ci.max_jaccard(ci.token_set(b), ctx.test_tokens)) < ci.JACCARD_MAX:
             out.append((i, fx, proj[i], a, b))
     return out
 
@@ -183,6 +184,17 @@ def p_overlap_hash(items):
     items[0]["code"] = case["code"]
 
 
+
+def p_near_dup(items):
+    """an edited copy of a VSP-T function: hash differs, token-set Jaccard stays high"""
+    case = json.load(open(ci.TEST_CASES, encoding="utf-8"))["cases"][0]
+    items[0]["code"] = case["code"] + "\nint _edited_copy_marker;"
+
+
+def p_fork(items):
+    items[0]["project"] = "rizin"
+
+
 def p_cap(items):
     for x in items[:2 * (ci.MAX_PAIRS_PER_PROJECT + 1)]:
         x["project"] = "one_big_project"
@@ -280,7 +292,8 @@ def main():
                             ("S src not fixed twin", p_label_s, ["LABEL_SOURCE"]),
                             ("text edited", p_text, ["TEXT_SOURCE"]), ("test hash", p_overlap_hash, ["TEST_OVERLAP"]),
                             ("project cap", p_cap, ["PROJECT_CAP"]), ("few pairs", p_floor_pairs, ["FLOOR"]),
-                            ("few projects", p_floor_projects, ["FLOOR"])]:
+                            ("few projects", p_floor_projects, ["FLOOR"]),
+                            ("near-dup of a VSP-T function", p_near_dup, ["NEAR_DUP"]), ("fork project", p_fork, ["FORK_PROJECT"])]:
         expect(name, mutate(clean, fn), ctx, codes)
     expect("test project", mutate(clean, lambda i: p_overlap_project(i, ctx)), ctx, ["TEST_OVERLAP"])
     test_bands(clean, ctx)

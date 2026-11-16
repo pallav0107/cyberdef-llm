@@ -19,6 +19,14 @@ AUROC veto: verdict = PASS only if everything required today passes AND the
 within-cluster delta (adapter - base) is positive. With --cluster-bootstrap the
 within delta also gets a descriptive cluster-resample SE ("se_cluster").
 
+Round extensions of /tmp/brief_pairveto_bowlr.txt: --pair-veto adds the
+length-balanced within-pair veto (per pair: win = 1/0.5/0 on p(V) vs p(S) with
+the K-averaged scores, mean win averaged equally over the S-longer and V-longer
+strata, equal-length pairs excluded; pass iff adapter - base > 0), and --z Z
+(float, default 2.0) makes every comparison's pass delta > Z * se_comb and
+every cluster pass delta > Z * se_comb_cluster, recording "z" at the top level.
+Without --z the output is byte-identical to before.
+
 With --cluster-bootstrap (pre-registration FORMAT_R1B, section 5) an additional
 cluster-level paired bootstrap (10,000 resamples, seed 0) is computed: cluster
 = Juliet source file without its flow suffix _NN[a-z].c/.cpp, so a real-world
@@ -32,7 +40,8 @@ refused. Without the flag clustering is exactly as described above.
 
   python3 scripts/imp_verdict.py round --cases C.json --adapter F F F --base F F F \
       [--twin F] [--baselines NAME,NAME,...] [--cross NAME=F,F,F ...] \
-      [--cluster-bootstrap] [--cluster-by FIELD] [--within-cluster] --out O.json
+      [--cluster-bootstrap] [--cluster-by FIELD] [--within-cluster] \
+      [--pair-veto] [--z Z] --out O.json
   python3 scripts/imp_verdict.py twinrep --set NAME CASES BASE TWIN0 [S1 S2 S3] \
       [--set ...] [--cluster-bootstrap] [--cluster-by FIELD] --out O.json
   python3 scripts/imp_verdict.py --selftest
@@ -265,6 +274,125 @@ def cluster_se(arm, oth, lab, draws, valid):
     return float(np.std(d, ddof=1))
 
 
+# ---------------------------------------------------------------- pair veto
+
+def pair_groups(cases, keys):
+    """The cases file's "pair" field -> member case indices; the run is refused
+    if any case lacks the field (--pair-veto)."""
+    if any("pair" not in c for c in cases):
+        raise Refused("--pair-veto: a case lacks the 'pair' field")
+    g = {}
+    for i, c in enumerate(cases):
+        g.setdefault(c["pair"], []).append(i)
+    return g
+
+
+def pair_win(a, b):
+    """1.0 / 0.5 / 0.0 for a > b / a == b / a < b (exact float compare)."""
+    return 1.0 if a > b else (0.5 if a == b else 0.0)
+
+
+def pair_wins(cases, keys, groups, scores):
+    """Per valid pair the win of p(V) vs p(S) and its length stratum: "A" =
+    S code longer, "B" = V code longer. Pairs without exactly one VULNERABLE
+    and one SAFE case are skipped; equal-length pairs are excluded and counted.
+    Returns (wins by stratum, n_equal_excluded, n_skipped_pairs)."""
+    out = {"A": [], "B": []}
+    n_eq = n_skip = 0
+    for ix in groups.values():
+        labs = [keys[i][1] for i in ix]
+        if len(ix) != 2 or labs[0] == labs[1]:
+            n_skip += 1
+            continue
+        iv, isf = (ix[0], ix[1]) if labs[0] == "VULNERABLE" else (ix[1], ix[0])
+        lv, ls = len(cases[iv]["code"]), len(cases[isf]["code"])
+        if lv == ls:
+            n_eq += 1
+            continue
+        out["A" if ls > lv else "B"].append(pair_win(scores[iv], scores[isf]))
+    return out, n_eq, n_skip
+
+
+def pair_balanced(w):
+    """Length-balanced win share: mean win of each stratum, averaged; None if
+    a stratum is empty (undefined by /tmp/brief_pairveto_bowlr.txt)."""
+    if not w["A"] or not w["B"]:
+        return None
+    return (sum(w["A"]) / len(w["A"]) + sum(w["B"]) / len(w["B"])) / 2.0
+
+
+def pair_delta_counts(cnt, iv, isf, strat, skip, sa, sb):
+    """Pair-veto delta (adapter - base) on one cluster resample. A pair lies in
+    one cluster, so both its cases share that cluster's multiplicity c; the
+    pair counts c times (a cluster drawn twice counts twice, as a cluster
+    bootstrap requires). None if a stratum ends up empty."""
+    wa, wb = {"A": [], "B": []}, {"A": [], "B": []}
+    for j in range(len(iv)):
+        c = cnt[iv[j]]
+        if skip[j] or c == 0 or cnt[isf[j]] != c:
+            continue
+        wa[strat[j]].extend([pair_win(sa[iv[j]], sa[isf[j]])] * c)
+        wb[strat[j]].extend([pair_win(sb[iv[j]], sb[isf[j]])] * c)
+    ba, bb = pair_balanced(wa), pair_balanced(wb)
+    return None if (ba is None or bb is None) else ba - bb
+
+
+def pair_veto_ci(cases, keys, groups, means, idx, draws, valid):
+    """2.5/97.5 percentiles of the pair-veto delta over the existing cluster
+    resample plan, the delta recomputed on each resample's pairs; resamples
+    with an empty stratum or no valid pair are skipped."""
+    pids = list(groups)
+    iv, isf, strat, skip = [], [], [], []
+    for p in pids:
+        ix = groups[p]
+        labs = [keys[i][1] for i in ix]
+        if len(ix) != 2 or labs[0] == labs[1]:
+            iv.append(0); isf.append(0); strat.append("A"); skip.append(True)
+            continue
+        v, s = (ix[0], ix[1]) if labs[0] == "VULNERABLE" else (ix[1], ix[0])
+        lv, ls = len(cases[v]["code"]), len(cases[s]["code"])
+        if lv == ls:
+            iv.append(0); isf.append(0); strat.append("A"); skip.append(True)
+            continue
+        iv.append(v); isf.append(s); strat.append("A" if ls > lv else "B"); skip.append(False)
+    iv, isf = np.array(iv), np.array(isf)
+    sa, sb = np.asarray(means["adapter"], float), np.asarray(means["base"], float)
+    n = len(keys)
+    ds = []
+    for dr, ok in zip(draws, valid):
+        if not ok:
+            continue
+        cnt = np.bincount(np.concatenate([idx[d] for d in dr]), minlength=n)
+        d = pair_delta_counts(cnt, iv, isf, strat, skip, sa, sb)
+        if d is not None:
+            ds.append(d)
+    if not ds:
+        return None
+    return [float(x) for x in np.percentile(np.asarray(ds), [2.5, 97.5])]
+
+
+def pair_veto_block(cases, keys, means, idx, cb=None):
+    """The --pair-veto block: length-balanced within-pair win share of the
+    adapter and the base over the cases' "pair" field, the delta, its pass
+    (delta > 0) and, with --cluster-bootstrap, the descriptive cluster
+    percentile interval of the delta. A pure length scorer gives exactly 0.5.
+    Refused (exit 2, nothing written) if a length stratum is empty."""
+    groups = pair_groups(cases, keys)
+    wa, ea, sa = pair_wins(cases, keys, groups, means["adapter"])
+    wb, eb, sb = pair_wins(cases, keys, groups, means["base"])
+    ba, bb = pair_balanced(wa), pair_balanced(wb)
+    if ba is None or bb is None:
+        raise Refused("--pair-veto: a length stratum is empty; balanced win share undefined")
+    out = {"adapter": ba, "base": bb, "delta": ba - bb,
+           "pass": bool(ba - bb > 0), "n_s_longer": len(wa["A"]),
+           "n_v_longer": len(wa["B"]), "n_equal_excluded": ea,
+           "n_skipped_pairs": sa}
+    if cb is not None:
+        _, draws, valid = cb
+        out["ci95_cluster"] = pair_veto_ci(cases, keys, groups, means, idx, draws, valid)
+    return out
+
+
 # ---------------------------------------------------------------- within-cluster
 
 def within_auroc(scores, lab):
@@ -302,12 +430,14 @@ def within_se_cluster(arm, oth, lab, draws, valid):
 
 
 def comparison(arm, oth, y, pos, neg, d1, d0, hm_arm, hm_oth, sd_arm, sd_oth,
-               negate=False, cb=None):
+               negate=False, cb=None, z=2.0):
     """Paired comparison of arm vs other; delta = auroc(arm) - auroc(other).
 
     negate: score `oth` is negated (baseline whose direction is fixed by its
     full-sample auroc). The bootstrap reuses the same index draws for both arms.
-    cb: (lab, draws, valid) cluster resample plan; adds the cluster keys."""
+    cb: (lab, draws, valid) cluster resample plan; adds the cluster keys.
+    z: the SE multiple of the pass rules (brief /tmp/brief_pairveto_bowlr.txt:
+    delta > z * se_comb and delta > z * se_comb_cluster; default 2.0)."""
     oth = [-v for v in oth] if negate else [float(v) for v in oth]
     arm = [float(v) for v in arm]
     check_vec(arm, y, pos, neg)
@@ -321,13 +451,13 @@ def comparison(arm, oth, y, pos, neg, d1, d0, hm_arm, hm_oth, sd_arm, sd_oth,
         den = math.sqrt(hm_arm * hm_arm + hm_oth * hm_oth)
     hm_ds = delta / den if den else None
     out = {"delta": delta, "se_boot": se_boot, "sd_decode": sd, "se_comb": se_comb,
-           "pass": bool(delta > 2 * se_comb), "hm_delta_over_se": hm_ds}
+           "pass": bool(delta > z * se_comb), "hm_delta_over_se": hm_ds}
     if cb is not None:
         lab, draws, valid = cb
         se_c = cluster_se(arm, oth, lab, draws, valid)
         se_cc = math.sqrt(se_c * se_c + sd * sd)
         out.update(se_boot_cluster=se_c, se_comb_cluster=se_cc,
-                   pass_cluster=bool(delta > 2 * se_cc))
+                   pass_cluster=bool(delta > z * se_cc))
     return out
 
 
@@ -411,6 +541,7 @@ def take_flag(argv, flag):
 def run_round(argv):
     argv, clus = take_flag(argv, "--cluster-bootstrap")
     argv, within = take_flag(argv, "--within-cluster")
+    argv, pairveto = take_flag(argv, "--pair-veto")
     o = parse_opts(argv, {"adapter", "base", "twin", "cross"})
     for req in ("cases", "out"):
         if req not in o:
@@ -418,6 +549,12 @@ def run_round(argv):
     for req in ("adapter", "base"):
         if not flat(o, req):
             raise Refused("round: missing --" + req)
+    z = 2.0
+    if "z" in o:
+        try:
+            z = float(o["z"])
+        except ValueError:
+            raise Refused("--z needs a float, got %r" % o["z"])
     cases, keys = load_cases(o["cases"])
     y = labels(keys)
     pos, neg = split_idx(y)
@@ -443,7 +580,7 @@ def run_round(argv):
             continue
         comparisons[name] = comparison(means["adapter"], means[name], y, pos, neg,
                                        d1, d0, hms["adapter"], hms[name],
-                                       sds["adapter"], sds[name], cb=cb)
+                                       sds["adapter"], sds[name], cb=cb, z=z)
         cmp_keys.append(name)
     codes = [c["code"] for c in cases]
     baselines = {}
@@ -455,7 +592,7 @@ def run_round(argv):
         hm_o = hm_se(1 - a if neg_k else a, n1, n0)
         comparisons[kind] = comparison(means["adapter"], bs, y, pos, neg, d1, d0,
                                        hms["adapter"], hm_o, sds["adapter"], 0.0,
-                                       negate=neg_k, cb=cb)
+                                       negate=neg_k, cb=cb, z=z)
         cmp_keys.append(kind)
     cues = {"pct_s_count": {"auroc": auroc([float(c.count("%s")) for c in codes], y)}}
     cross = {}
@@ -468,11 +605,13 @@ def run_round(argv):
                        "comparison": comparison(means["adapter"], mean, y, pos, neg,
                                                 d1, d0, hms["adapter"], st["hm_se"],
                                                 sds["adapter"], st["sd_decode"],
-                                                cb=cb)}
+                                                cb=cb, z=z)}
         inputs += fs
     payload = {"mode": "round", "n": len(keys), "n_vuln": n1,
                "models": models, "comparisons": comparisons,
                "baselines": baselines, "cues": cues, "cross": cross}
+    if "z" in o:
+        payload["z"] = z
     verdict = "PASS" if all(comparisons[k]["pass"] for k in cmp_keys) else "FAIL"
     payload["verdict"] = verdict
     if clus:
@@ -486,6 +625,12 @@ def run_round(argv):
         payload["within"] = wd
         payload["verdict_within"] = "PASS" if wd["pass"] else "FAIL"
         if not wd["pass"]:
+            payload["verdict"] = "FAIL"
+    if pairveto:
+        pv = pair_veto_block(cases, keys, means, idx, cb)
+        payload["pair_veto"] = pv
+        payload["verdict_pair_veto"] = "PASS" if pv["pass"] else "FAIL"
+        if not pv["pass"]:
             payload["verdict"] = "FAIL"
     write_out(o["out"], payload, inputs)
 
@@ -789,6 +934,35 @@ def selftest():
         assert dw["within"]["clusters_used"] == 2, dw["within"]
         assert dw["verdict_within"] == "FAIL" and dw["verdict"] == "FAIL", dw["verdict"]
         print("within-veto: OK")
+
+        # pair veto (--pair-veto, brief /tmp/brief_pairveto_bowlr.txt part A3):
+        # a pure length learner scores exactly 0.5 and fails against a base
+        # with real within-pair signal -> verdict FAIL
+        qc, qad, qbs = [], [], []
+        for k in range(40):
+            lv, ls = (20 + (k % 5), 10 + (k % 7)) if k % 2 == 0 else (10 + (k % 7), 20 + (k % 5))
+            up = k % 3 != 0
+            for lab, L in (("VULNERABLE", lv), ("SAFE", ls)):
+                qc.append({"id": "vsp:q%d:%s" % (k, lab[0]), "code": "x;\n" * L,
+                           "label": lab, "cwe": "CWE000", "pair": "q%d" % k,
+                           "project": "pr%d" % (k % 5)})
+                qad.append(float(L))
+                qbs.append(0.9 if (up == (lab == "VULNERABLE")) else 0.1)
+        qcp = os.path.join(t, "qcases.json")
+        json.dump({"cases": qc}, open(qcp, "w"))
+        qkeys = [(c["id"], c["label"]) for c in qc]
+        qres = lambda tag, sc: _st_result(os.path.join(t, tag + ".json"), qkeys, sc)
+        outq = os.path.join(t, "oq.json")
+        run_round(["--cases", qcp, "--adapter", qres("qa", qad), "--base", qres("qb", qbs),
+                   "--pair-veto", "--out", outq])
+        dq = json.load(open(outq))
+        assert dq["pair_veto"]["adapter"] == 0.5, dq["pair_veto"]
+        assert dq["pair_veto"]["base"] == 0.65, dq["pair_veto"]
+        assert dq["pair_veto"]["delta"] < 0 and dq["pair_veto"]["pass"] is False
+        assert dq["pair_veto"]["n_s_longer"] == 20 and dq["pair_veto"]["n_v_longer"] == 20
+        assert dq["pair_veto"]["n_equal_excluded"] == 0 and dq["pair_veto"]["n_skipped_pairs"] == 0
+        assert dq["verdict_pair_veto"] == "FAIL" and dq["verdict"] == "FAIL", dq["verdict"]
+        print("pair-veto: OK")
     except (AssertionError, Refused) as exc:
         print("SELFTEST FAIL: %r" % (exc,))
         return 1

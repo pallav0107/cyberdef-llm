@@ -324,6 +324,56 @@ if d:
 _, d = run(two + ["--within-cluster", "--cluster-by", "project"], f"{T}/t19u.json")
 ok("T19 uniform gain: within-project delta positive, verdict PASS", d is not None and d["within"]["pass"] is True and d["verdict"] == "PASS")
 
+# T20 length-balanced within-pair veto (--pair-veto): share of pairs where V scores above its own S (ties 0.5), averaged
+# equally over S-longer and V-longer pairs (equal-length pairs excluded); length alone scores exactly 0.5
+def vpairs(name, rng, n=300):
+    cs = []
+    for k in range(n):
+        lv, ls = rng.randint(5, 40), rng.randint(5, 40)
+        if rng.random() < 0.8:
+            lv, ls = min(lv, ls), max(lv, ls) + 1          # S longer in ~80% of pairs, as in VSP-T
+        for lab, L in (("VULNERABLE", lv), ("SAFE", ls)):
+            cs.append({"id": f"vsp:q{k}:{lab[0]}", "code": "x;\n" * L, "label": lab, "pair": f"q{k}", "project": f"p{k % 60}"})
+    p_ = f"{T}/{name}_cases.json"
+    json.dump({"cases": cs, "split": "test", "seed": 0}, open(p_, "w"))
+    return p_, cs
+
+
+def pair_signal(cs, rng, prob):
+    sc = {}
+    for k in sorted({c["pair"] for c in cs}):
+        up = rng.random() < prob
+        a, b = rng.uniform(0.3, 0.7), rng.uniform(0.3, 0.7)
+        hi, lo = max(a, b) + 0.01, min(a, b)
+        sc[(k, "VULNERABLE")], sc[(k, "SAFE")] = (hi, lo) if up else (lo, hi)
+    return [sc[(c["pair"], c["label"])] for c in cs]
+
+
+cp20, cs20 = vpairs("t20", random.Random(31))
+lens = [len(c["code"]) for c in cs20]
+lenlearn = [1.0 - (x - min(lens)) / (max(lens) - min(lens)) for x in lens]   # "longer = safe"
+base20 = pair_signal(cs20, random.Random(32), 0.7)
+good20 = pair_signal(cs20, random.Random(33), 0.85)
+pv = ["--pair-veto", "--cluster-by", "project"]
+_, d = run(["round", "--cases", cp20, "--adapter"] + files("t20l", cs20, [lenlearn], SEL) + ["--base"] + files("t20b", cs20, [base20], SEL) + pv, f"{T}/t20l.json")
+ok("T20 a pure length learner scores exactly 0.5 on the length-balanced within-pair measure",
+   d is not None and abs(d["pair_veto"]["adapter"] - 0.5) < 1e-12)
+ok("T20 the length learner fails the veto against a base with real within-pair signal -> verdict FAIL",
+   d is not None and d["pair_veto"]["delta"] < 0 and d["pair_veto"]["pass"] is False and d["verdict"] == "FAIL")
+ok("T20 strata counts reported (S-longer, V-longer, equal excluded)",
+   d is not None and d["pair_veto"]["n_s_longer"] + d["pair_veto"]["n_v_longer"] + d["pair_veto"]["n_equal_excluded"] == 300)
+_, d = run(["round", "--cases", cp20, "--adapter"] + files("t20g", cs20, [good20], SEL) + ["--base"] + files("t20b2", cs20, [base20], SEL) + pv, f"{T}/t20g.json")
+ok("T20 a model better within pairs in both strata passes the veto", d is not None and d["pair_veto"]["pass"] is True and d["pair_veto"]["delta"] > 0)
+
+# T21 --z sets the SE multiple of every comparison's pass rule and is recorded
+cpz, csz, adz, bsz = wcases("t21", "uniform", random.Random(41))
+twoz = ["round", "--cases", cpz, "--adapter"] + files("t21a", csz, [adz], SEL) + ["--base"] + files("t21b", csz, [bsz], SEL)
+_, d1 = run(twoz + ["--z", "2.394"], f"{T}/t21a.json")
+_, d2 = run(twoz + ["--z", "1000"], f"{T}/t21b.json")
+ok("T21 --z: pass == delta > z x se_comb for every comparison; z recorded; an absurd z fails",
+   d1 is not None and d2 is not None and d1.get("z") == 2.394 and d2["verdict"] == "FAIL"
+   and all(c["pass"] == (c["delta"] > 2.394 * c["se_comb"]) for c in d1["comparisons"].values()))
+
 r = subprocess.run([sys.executable, S, "--selftest"], capture_output=True, text=True, timeout=900)
 ok("T10 --selftest exits 0", r.returncode == 0)
 print(f"{len(FAILS)} failed" if FAILS else "ALL PASS")

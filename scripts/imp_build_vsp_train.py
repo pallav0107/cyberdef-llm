@@ -28,6 +28,9 @@ from imp_build_vsp import strip_comments  # noqa: E402  the VSP-T stripper
 PARQUET = ROOT / "data/vulspot/cpp/full/data.parquet"
 SPLITS = ROOT / "data/vulspot/cpp/full/splits/project_holdout.json"
 TEST_CASES = ROOT / "results/vsp_t_cases.json"
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "acceptance" / "improve"))
+from check_vsp_items import FORK_PROJECTS, JACCARD_MAX, max_jaccard, token_set  # noqa: E402  (rule 5b: one shared definition)
 OUT = ROOT / "results/vsp_sft_items.json"
 MAX_CHARS = 4000        # check_vsp.py TRUNC_LEN: drop, never truncate
 MAX_PER_PROJECT = 40    # check_vsp_items.py MAX_PAIRS_PER_PROJECT
@@ -125,6 +128,7 @@ def main():
     out_path = Path(sys.argv[1]) if len(sys.argv) > 1 else OUT
     df, train_idx = load_pool()
     t_projects, t_hashes = test_projects_hashes()
+    t_tokens = [token_set(c["code"]) for c in json.load(open(TEST_CASES, encoding="utf-8"))["cases"]]
     stats = Counter()
     pairs = []
     for v, s in iter_pairs(df, train_idx):
@@ -136,6 +140,12 @@ def main():
         if not keep_pair(v_code, s_code, stats):
             continue
         if in_test_hash(v_code, s_code, t_hashes, stats):
+            continue
+        if v["project"] in FORK_PROJECTS:   # rule 5b: forks / vendored copies of VSP-T projects
+            stats["drop_fork_project"] += 1
+            continue
+        if max(max_jaccard(token_set(v_code), t_tokens), max_jaccard(token_set(s_code), t_tokens)) >= JACCARD_MAX:   # rule 5b
+            stats["drop_near_dup"] += 1
             continue
         pairs.append({"project": v["project"], "pair": pair, "v": v, "s": s,
                       "v_code": v_code, "s_code": s_code})

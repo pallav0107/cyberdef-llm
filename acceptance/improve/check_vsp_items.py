@@ -20,6 +20,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import sys
 from pathlib import Path
 
@@ -33,7 +34,7 @@ MAX_PAIRS_PER_PROJECT = 40
 MATCH_FRAC = 0.99
 MIN_PAIRS, MIN_PROJECTS = 600, 150
 CODES = ["PAIRS", "LENGTH", "TRAIN_SPLIT", "LABEL_SOURCE", "TEXT_SOURCE",
-         "TEST_OVERLAP", "PROJECT_CAP", "BANDS", "FLOOR"]
+         "TEST_OVERLAP", "PROJECT_CAP", "BANDS", "FLOOR", "NEAR_DUP", "FORK_PROJECT"]
 REQUIRED = ("code", "label", "pair", "project", "src_idx")
 SQ, DQ = chr(39), chr(34)
 
@@ -115,6 +116,13 @@ class Ctx:
             self._test = ({c["project"] for c in cases}, {cv.norm_hash(c["code"]) for c in cases})
         return self._test
 
+    @property
+    def test_tokens(self):
+        if getattr(self, "_test_tokens", None) is None:
+            cases = json.load(open(TEST_CASES, encoding="utf-8"))["cases"]
+            self._test_tokens = [token_set(c["code"]) for c in cases]
+        return self._test_tokens
+
     def row(self, idx):
         """(is_vulnerable, fixed_func_idx, func_body) for a parquet idx, or None if not a valid row."""
         if not isinstance(idx, int) or isinstance(idx, bool) or not 0 <= idx < len(self.rows):
@@ -183,6 +191,37 @@ def check_test_overlap(items, ctx):
     return bool(p) or h > 0, f"{len(p)} item projects in VSP-T {sorted(p)[:5]}; {h} items with VSP-T code hash"
 
 
+FORK_PROJECTS = {"rizin", "rz-libdemangle", "radare2-mcp", "libgd", "openbsd", "mysql-server", "civetweb", "turbovnc"}  # forks / vendored copies of VSP-T projects (audit, 17 Nov)
+JACCARD_MAX = 0.5
+TOKEN = re.compile(r"[A-Za-z_][A-Za-z0-9_]*|\d+|[^\sA-Za-z0-9_]")
+
+
+def token_set(code):
+    return frozenset(TOKEN.findall(code))
+
+
+def max_jaccard(t, test_sets):
+    best = 0.0
+    for u in test_sets:
+        lo, hi = (len(t), len(u)) if len(t) < len(u) else (len(u), len(t))
+        if not hi or lo / hi <= best:   # Jaccard <= lo/hi: cannot beat the current best
+            continue
+        j = len(t & u) / len(t | u)
+        best = max(best, j)
+    return best
+
+
+def check_near_dup(items, ctx):
+    test_sets = ctx.test_tokens
+    hits = [c["id"] for c in items if max_jaccard(token_set(c["code"]), test_sets) >= JACCARD_MAX]
+    return bool(hits), f"{len(hits)} items with token-set Jaccard >= {JACCARD_MAX} to a VSP-T function {hits[:3]}"
+
+
+def check_fork(items, ctx):
+    p = sorted({c["project"] for c in items} & FORK_PROJECTS)
+    return bool(p), f"{len(p)} items projects are forks/vendored copies of VSP-T projects {p}"
+
+
 def check_cap(items, ctx):
     pp = cv.project_pairs(items)
     over = {p: len(s) for p, s in pp.items() if len(s) > MAX_PAIRS_PER_PROJECT}
@@ -212,7 +251,7 @@ def check_floor(items, ctx):
 CHECKS = {"PAIRS": check_pairs, "LENGTH": check_length, "TRAIN_SPLIT": check_train_split,
           "LABEL_SOURCE": check_label_source, "TEXT_SOURCE": check_text_source,
           "TEST_OVERLAP": check_test_overlap, "PROJECT_CAP": check_cap,
-          "BANDS": check_bands, "FLOOR": check_floor}
+          "BANDS": check_bands, "FLOOR": check_floor, "NEAR_DUP": check_near_dup, "FORK_PROJECT": check_fork}
 
 
 def run_all(items, ctx=None):
