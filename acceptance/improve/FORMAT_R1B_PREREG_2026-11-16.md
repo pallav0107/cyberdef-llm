@@ -152,3 +152,35 @@ Consequences, fixed now:
   pre-register from the start.
 - Learning for a later round: the format-string oracle cannot verify wide-char variants. A harness that keeps stdout
   wide-capable would add them.
+
+## Note, 2026-11-16 21:40 AEDT: diagnostics and next-step rules, fixed before any round 1b score is read
+State: the adapter's three J3s decode files exist on Spark and have NOT been opened. The twin and base results do not
+exist yet. Everything below is descriptive. It never changes the verdict of section 5.
+
+### Diagnostics reported with the verdict (whatever it is)
+1. Headroom: the CoT base's J3s AUROC. Above 0.90, J3s cannot show a gain of the size the bar needs; the report says so.
+2. Power: the 95% intervals of every delta under the case and the cluster bootstrap, and the minimum detectable effect
+   (2 x cluster SE).
+3. Did training change the model:
+   - training and validation loss (out/imp_st_format_string_r1b_imp_train_log.json);
+   - the adapter's parse, valid-trace and truncation rates against the base's.
+4. Where it fails:
+   - a per-cluster (family) table of AUROC and accuracy for adapter, base and twin;
+   - adapter-vs-base error overlap;
+   - adapter vs twin (what the reasoning target adds over verdict-only);
+   - the run-to-run SD of the 3 decodes;
+   - the correlation of the adapter's p_vuln with text length on J3s (training items had a length cue of 0.718).
+5. Transfer: CASTLE and PrimeVul-300, descriptive.
+
+### Next-step rules if the verdict is FAIL (one variable per new round; each pre-registered before generation)
+- Base at ceiling (diagnostic 1): the next primary target moves to code with headroom (real-world programs), registered
+  as a new experiment.
+- Underpowered (wide intervals): add independent families before adding cases. Fix the oracle so it covers wide-char
+  and socket-input cases, then pre-register J5f plus the new families as a held-out test.
+- Training too weak (diagnostic 3): more and better items. Safe-side exemplars fix the two top format rejections
+  (guard line; CANARY in a SAFE witness), and the validator is never relaxed. Or a second self-training round seeded by
+  this adapter.
+- Adapter = twin: reported as the finding (the reasoning target adds nothing measurable here).
+- Holm correction across every self-training attempt (categories and rounds). Stop rule: after 4 more pre-registered
+  attempts without a pass, the campaign reports the audited nulls and the method (leak detection, cluster bootstrap,
+  verified fair tests) as its result.
