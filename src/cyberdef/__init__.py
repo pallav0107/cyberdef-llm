@@ -7,3 +7,5 @@ Capabilities (modular; vuln_detect implemented end-to-end first):
   - robustness    : prompt-injection / jailbreak resistance          [module stub]
 """
 __version__ = "0.1.0"
+
+from cyberdef import chat_defaults as _chat_defaults  # noqa: E402,F401  (prompts never open a <think> block)
