@@ -283,7 +283,9 @@ test)
   for kv in $P_test_sets; do
     key=${kv%%=*}; cases=${kv#*=}
     test -s "$cases" || { echo "::error::test set $cases is missing on $MACHINE"; exit 1; }
-    OUT="results/ci_ev_${P_adapter_tag:-$P_slug}_${key}.json"
+    SFX=""   # an untrained base under the CoT scorer gets its own file name (17 Nov: the selective base overwrote it)
+    if [ -z "$P_adapter_tag" ] && [ "$P_scorer" = cot ]; then SFX="-cot"; fi
+    OUT="results/ci_ev_${P_adapter_tag:-$P_slug}${SFX}_${key}.json"
     echo "::group::test $key ($P_scorer) -> $OUT"
     if [ "$P_scorer" = cot ]; then
       if [ "$MACHINE" = spark ]; then

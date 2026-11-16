@@ -97,7 +97,7 @@ def main():
             p = 0.5 + (0.5 * v["confidence"] if v["verdict_raw"] == "VULNERABLE" else -0.5 * v["confidence"] if v["verdict_raw"] == "SAFE" else 0.0)
         pred = "VULNERABLE" if p >= 0.5 else "SAFE"
         ok = int(pred == c["label"])
-        per.append({"id": c["id"], "label": c["label"], "pred": pred, "p_vuln": round(p, 6), "conf": round(max(p, 1 - p), 6), "correct": ok,
+        per.append({"id": c["id"], "label": c["label"], "pred": pred, "p_vuln": p, "conf": round(max(p, 1 - p), 6), "correct": ok,
                     "s_sc": v["score"], "verdict_raw": v["verdict_raw"], "verdict_final": v["verdict_final"], "valid": bool(v["valid"]), "parsed": d is not None,
                     "has_witness": bool(v["has_witness"]), "p_source": p_source, "ntok": len(g.token_ids), "finish": g.finish_reason, "raw": g.text[:6000]})
         sc.append(p); y.append(1 if c["label"] == "VULNERABLE" else 0); ssc.append(v["score"]); confs.append(max(p, 1 - p)); corr.append(ok)
