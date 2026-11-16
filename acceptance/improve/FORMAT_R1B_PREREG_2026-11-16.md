@@ -49,3 +49,85 @@ All four runs were cancelled at 19:00, during the adapter's training. No test st
   adapter retrains from scratch.
 - The runs are re-dispatched with the new bundle "format string round sets (J3s, CASTLE, PrimeVul 300)".
 - Nothing else changes: same items (sha 0f2b80b2… / 31499936…), same tags, same recipe, same scorer, same bar.
+
+## Note, 2026-11-16 19:17 AEDT: a conditional larger primary test (J3s ∪ J5f) and a cluster bootstrap. Written before any round 1b score
+Revised after an independent experiment-auditor review (verdict: commit with changes, all applied here).
+
+Why: J3s has 122 functions, so only a gain of roughly 0.10-0.14 AUROC can pass. The owner asked for larger fair test
+sets (16 Nov). Every verified single-file, input-driven Juliet CWE-134 case is already used. J5f therefore comes from
+the MULTI-FILE CWE-134 cases.
+
+### 1. Freeze deadline (what makes the timing verifiable)
+J5f enters the primary test only if BOTH of these are pushed to origin/main before the first round-1b per_case file
+exists for any set: the commit with scripts/imp_build_juliet5f.py and its output, AND the commit recording the J5f
+matched set's sha256. The evidence is GitHub's push time against the round-1b test step's start time (run logs) and the
+result files' mtimes. If the deadline is missed, the primary is J3s alone. No model, the 14B models included, is scored
+on any J5f pair before the deadline.
+
+### 2. J5f validity (one reading only)
+J5f is valid iff ALL of these hold:
+- acceptance/improve/check_j5f.py, as committed with this note (sha256 562e4f8b8377b494…), prints ALL PASS. This includes >= 300 verified pairs.
+- imp_build_structure_matched.build() builds it without refusing.
+- The checks in section 4 pass.
+- At least 100 functions remain.
+Any rebuild, bug fix or rule change after the deadline means the primary is J3s alone.
+
+### 3. J5f construction (fixed now)
+- Pairs: scripts/imp_build_juliet5f.py.
+  - Input: multi-file Juliet CWE-134 cases with console / environment / file input (no socket, no w32), .c and .cpp.
+  - Verification: the J3 rule. The payload fires the bad program; benign input, empty input and the good program with
+    the payload do not.
+  - Text: the parts joined in letter order, then imp_clean.clean_code (3g).
+  - Exclusions: texts over 4,000 chars are dropped (never truncated); texts with label text are dropped; stems used
+    anywhere else are dropped.
+- Additional exclusion: stems matching `_2[12]$`, the static-flag flow variants that build() drops for J3s/J4s by file
+  name.
+- Prototype pruning, applied to BOTH labels before normalise(): a prototype line in the text that declares an fn_N
+  never defined in that text is removed. one_good() keeps only the chosen variant, so without this, SAFE texts alone
+  would carry declared-but-undefined prototypes.
+- Set: imp_build_structure_matched.build(pairs, "j5f", "results/j5f_heldout_matched_cases.json", note), with:
+  - one_good() / one_bad() (3m);
+  - per-CWE length-decile matching with random.Random(0);
+  - the [0.45, 0.55] bands on length, function count and static count;
+  - the 3m artefact refusal.
+  The prototype pruning is an optional post-processing hook in build(); the default is None, so J3s/J4s are unchanged.
+
+### 4. Cue checks, run on J5f AND on U = J3s ∪ J5f without re-matching (any failure means J3s alone)
+- Length, function count and static count: AUROC (either direction) in [0.45, 0.55].
+- Every one of these at or below 0.60: the last line; any preprocessor or `return 0;` line; the number of
+  declared-but-undefined prototypes; the number of calls to an fn_N that is neither declared nor defined before the
+  call; and the number of parts.
+
+### 5. Primary test and bar (U if J5f is valid and frozen in time; else J3s alone)
+- AUROC on U counts only vulnerable-safe pairs from the SAME set:
+  sum over sets of n1*n0*AUROC_set, divided by the sum of n1*n0.
+  The paired bootstrap is stratified by set x label, and the baselines are computed the same way. A model that only
+  scores the two sets on different scales gains nothing.
+- The bar (unchanged) must pass under BOTH resampling schemes:
+  - the case-level paired bootstrap;
+  - a CLUSTER bootstrap, cluster = Juliet source x sink x char type, shared across J3s and J5f (10,000 resamples,
+    seed 0).
+  Each uses the 3k decode-noise term with K=3 shuffled decodes. There are only ~15-36 clusters: the cluster SE is the
+  honest one for templated Juliet code. The cluster requirement also applies to the J3s-alone fallback. That is
+  stricter than the original registration and never looser.
+- The adapter must beat the CoT base AND the twin by more than 2 x the combined SE, and beat the length, function-count
+  and static-count baselines by more than 2 SE, all on the primary set.
+- J3s is ALSO judged under its original bar (case bootstrap), and that verdict is reported. A win is claimed only if
+  the primary passes under both schemes.
+- Components are reported, never as separate passes: J3s alone and J5f alone.
+
+### 6. Scoring parity
+J5f is scored in later test-only runs after a CI change. That change touches only the set key, the bundle and K=3 for
+j5f; its diff is recorded. The runs use the SAME adapter and twin checkpoints (sha256 from the round-1b provenance), the
+same base model revision and the same scorer files (sha256 equal to the J3s runs). Any mismatch means J5f is reported
+descriptively and the primary is J3s alone.
+
+### 7. Disclosed state at the time of this note
+- No round 1b model exists. The adapter is retraining; its first dispatch was cancelled during training, before any
+  test.
+- Neither Qwen3.8 base nor any format-string adapter has been scored on J3s, old or rebuilt.
+- One Qwen3.8 adapter WAS scored on a set that shares source pairs with J3s: command injection round 1 on J3m (the old
+  J3 matched set, which includes CWE-134 pairs). That score was reported with the command-injection null.
+- The 14B base and twin seeds are being scored on the rebuilt J3s for the twin replication. Their J3s scores have not
+  been read; only key coverage was checked.
+- J5f does not exist yet. Its builder (Kimi) started at 19:05.

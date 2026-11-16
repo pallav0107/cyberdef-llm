@@ -65,3 +65,12 @@ seed-0 twin 0.6914 / 0.8645. Seed 1 also ran on them; it is void and is not used
 they ran. Every arm (base, seeds 0-3) is re-scored on the rebuilt sets from one commit.
 Caveat: the twin's training rows (CoT arm 2, J2 build) may carry a weaker form of the same cue. The rebuilt tests no
 longer reward it.
+
+## Note, 2026-11-16 19:17 AEDT: commits of the re-scoring runs
+The base (43810905567, finished) and seed 0 (43810916321, running) are scored at commit 1db629c. Seeds 1-3 were
+re-dispatched at 2688caf (43829786873 / 43829800224 / 43829813996). Their first dispatch at 1db629c was cancelled
+before it ran, because a cross-machine code check required box and Spark to match after the format-string bundle was
+added. The diff 1db629c..2688caf is 14 added lines: a test-set bundle option in ci_plan.py and the two workflows, plus
+a note in FORMAT_R1B_PREREG. No scoring code changed (imp_selective.py, ci_step.sh, data files: identical sha256), and
+the selective scorer is deterministic (198/198 identical on re-run). A cluster bootstrap (Juliet source x sink x char
+type) is reported for this test as a sensitivity check. The bar itself is unchanged.
