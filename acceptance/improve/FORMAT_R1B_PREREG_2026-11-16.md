@@ -184,3 +184,19 @@ exist yet. Everything below is descriptive. It never changes the verdict of sect
 - Holm correction across every self-training attempt (categories and rounds). Stop rule: after 4 more pre-registered
   attempts without a pass, the campaign reports the audited nulls and the method (leak detection, cluster bootstrap,
   verified fair tests) as its result.
+
+## Note, 2026-11-17 00:19 AEDT: the adapter run's grade failure (integrity mismatch), root cause, and the rule used. Written before the base and twin J3s results are read
+- Run 43829715037 (adapter): train, test, provenance and upload succeeded. The grade step failed: on the three J3s files,
+  the stored headline AUROC (0.9852 / 0.9812 / 0.9820) does not match the recompute from per_case
+  (0.9782 / 0.9745 / 0.9750). CASTLE (0.7619 vs 0.7609) and PrimeVul-300 (0.5599 vs 0.5596) are within tolerance.
+- Root cause:
+  - imp_eval_cot.py computes the headline from unrounded probabilities but writes per_case p_vuln rounded to 6 decimals.
+  - On J3s, 57 of 61 vulnerable cases and ONE safe case round to exactly 1.0. Unrounded, that safe case ranked below
+    most of them; rounded, it ties with all 57.
+  - 57 x 0.5 / (61 x 61) = 0.0077, the size of the gap.
+  It is not the shuffle: alignment was proven by check_shuffle.py, and the headline and per_case come from the same loop.
+  Re-running the same code would reproduce it, so the run is not re-dispatched.
+- Rule (3k m4, restated): every verdict and diagnostic uses per_case p_vuln as stored (6 decimals, ties averaged by
+  imp_common.auroc), for EVERY arm. Stored headline AUROCs are never used. This is the conservative reading here.
+- Fix for later rounds, NOT applied during round 1b so that every arm runs identical code: store p_vuln at full
+  precision (or as log-odds), with a test that the stored AUROC equals the per_case recompute.
