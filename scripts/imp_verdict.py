@@ -11,6 +11,14 @@ static_count baselines by more than 2 combined SE each. Twinrep: the twin must
 beat its untrained base (and its length baseline) per set, Holm-corrected over
 sets, with seed replications not contradicting the effect.
 
+Round extensions for the supervised real-world round: --twin is optional (two
+arms: adapter vs base), --baselines NAME,NAME,... selects the baseline set
+(length, function_count, static_count, lines, if_count, comments; default: the
+pre-registered three), and --within-cluster adds a pair-weighted within-cluster
+AUROC veto: verdict = PASS only if everything required today passes AND the
+within-cluster delta (adapter - base) is positive. With --cluster-bootstrap the
+within delta also gets a descriptive cluster-resample SE ("se_cluster").
+
 With --cluster-bootstrap (pre-registration FORMAT_R1B, section 5) an additional
 cluster-level paired bootstrap (10,000 resamples, seed 0) is computed: cluster
 = Juliet source file without its flow suffix _NN[a-z].c/.cpp, so a real-world
@@ -23,7 +31,8 @@ cluster of a case is that case's FIELD value from the cases file (e.g.
 refused. Without the flag clustering is exactly as described above.
 
   python3 scripts/imp_verdict.py round --cases C.json --adapter F F F --base F F F \
-      --twin F [--cross NAME=F,F,F ...] [--cluster-bootstrap] [--cluster-by FIELD] --out O.json
+      [--twin F] [--baselines NAME,NAME,...] [--cross NAME=F,F,F ...] \
+      [--cluster-bootstrap] [--cluster-by FIELD] [--within-cluster] --out O.json
   python3 scripts/imp_verdict.py twinrep --set NAME CASES BASE TWIN0 [S1 S2 S3] \
       [--set ...] [--cluster-bootstrap] [--cluster-by FIELD] --out O.json
   python3 scripts/imp_verdict.py --selftest
@@ -46,8 +55,9 @@ from imp_build_structure_matched import nfun  # noqa: E402
 
 B = 10000          # paired bootstrap resamples (fixed by the pre-registrations)
 SEL_PREFIX = "logprob-scored"
-ROUNDCMP = ("base", "twin", "length", "function_count", "static_count")
-USAGE = "usage: imp_verdict.py round|twinrep [--cluster-bootstrap] ... | imp_verdict.py --selftest"
+BASELINES = ("length", "function_count", "static_count", "lines", "if_count", "comments")
+DEFAULT_BASELINES = ("length", "function_count", "static_count")
+USAGE = "usage: imp_verdict.py round|twinrep [--cluster-bootstrap] [--within-cluster] ... | imp_verdict.py --selftest"
 
 
 class Refused(Exception):
@@ -255,6 +265,42 @@ def cluster_se(arm, oth, lab, draws, valid):
     return float(np.std(d, ddof=1))
 
 
+# ---------------------------------------------------------------- within-cluster
+
+def within_auroc(scores, lab):
+    """Pair-weighted within-cluster AUROC: sum_c n1_c * n0_c * AUROC_c over
+    clusters with both labels, divided by the sum of n1_c * n0_c.
+
+    lab: per-cluster (pos, neg) case-index arrays (cluster_setup). Also
+    returns how many clusters had both labels."""
+    num = den = 0.0
+    used = 0
+    for p, n in lab:
+        n1c, n0c = len(p), len(n)
+        if n1c and n0c:
+            s = [float(scores[i]) for i in list(p) + list(n)]
+            w = float(n1c * n0c)
+            num += w * auroc(s, [1] * n1c + [0] * n0c)
+            den += w
+            used += 1
+    return (num / den if den else None), used
+
+
+def within_se_cluster(arm, oth, lab, draws, valid):
+    """Std (ddof=1) of the within-cluster delta (arm - oth) over the existing
+    cluster resample plan; descriptive, does not enter the within pass."""
+    ds = []
+    for dr, ok in zip(draws, valid):
+        if not ok:
+            continue
+        sub = [lab[d] for d in dr]
+        wa, ua = within_auroc(arm, sub)
+        wo, _ = within_auroc(oth, sub)
+        if ua:
+            ds.append(wa - wo)
+    return float(np.std(ds, ddof=1))
+
+
 def comparison(arm, oth, y, pos, neg, d1, d0, hm_arm, hm_oth, sd_arm, sd_oth,
                negate=False, cb=None):
     """Paired comparison of arm vs other; delta = auroc(arm) - auroc(other).
@@ -292,7 +338,28 @@ def baseline_scores(codes, kind):
         return [float(len(c)) for c in codes]
     if kind == "function_count":
         return [float(nfun(c)) for c in codes]
-    return [float(len(re.findall(r"\bstatic\b", c))) for c in codes]
+    if kind == "static_count":
+        return [float(len(re.findall(r"\bstatic\b", c))) for c in codes]
+    if kind == "lines":
+        return [float(c.count("\n") + 1) for c in codes]
+    if kind == "if_count":
+        return [float(len(re.findall(r"\bif\b", c))) for c in codes]
+    if kind == "comments":
+        return [float(len(re.findall(r"/\*|(?<![:\\])//", c))) for c in codes]
+    raise Refused("unknown baseline %r (choose from %s)" % (kind, ",".join(BASELINES)))
+
+
+def baseline_kinds(o):
+    """The --baselines set (default: the pre-registered three)."""
+    raw = o.get("baselines")
+    if raw is None:
+        return list(DEFAULT_BASELINES)
+    kinds = [k for k in raw.split(",") if k]
+    bad = [k for k in kinds if k not in BASELINES]
+    if bad or not kinds:
+        raise Refused("unknown --baselines %s (choose from %s)"
+                      % (",".join(bad) or raw, ",".join(BASELINES)))
+    return kinds
 
 
 def write_out(path, payload, inputs):
@@ -343,11 +410,12 @@ def take_flag(argv, flag):
 
 def run_round(argv):
     argv, clus = take_flag(argv, "--cluster-bootstrap")
+    argv, within = take_flag(argv, "--within-cluster")
     o = parse_opts(argv, {"adapter", "base", "twin", "cross"})
     for req in ("cases", "out"):
         if req not in o:
             raise Refused("round: missing --" + req)
-    for req in ("adapter", "base", "twin"):
+    for req in ("adapter", "base"):
         if not flat(o, req):
             raise Refused("round: missing --" + req)
     cases, keys = load_cases(o["cases"])
@@ -355,26 +423,31 @@ def run_round(argv):
     pos, neg = split_idx(y)
     n1, n0 = len(pos), len(neg)
     d1, d0 = boot_draws(n1, n0)
-    cb = None
-    if clus:
+    cb, idx, lab = None, None, None
+    if clus or within:
         cid = cluster_by_ids(cases, o["cluster-by"]) if o.get("cluster-by") else None
-        _idx, lab = cluster_setup(keys, cid)
-        draws, valid = cluster_plan(_idx, lab)
-        cb = (lab, draws, valid)
+        idx, lab = cluster_setup(keys, cid)
+        if clus:
+            draws, valid = cluster_plan(idx, lab)
+            cb = (lab, draws, valid)
+    arms = ["adapter", "base"] + (["twin"] if flat(o, "twin") else [])
     models, means, sds, hms = {}, {}, {}, {}
-    for name in ("adapter", "base", "twin"):
+    for name in arms:
         st, mean = model_stats(load_model(name, flat(o, name), keys)["runs"], y, n1, n0)
         models[name] = st
         means[name], sds[name], hms[name] = mean, st["sd_decode"], st["hm_se"]
         check_vec(mean, y, pos, neg)
-    comparisons = {}
+    comparisons, cmp_keys = {}, []
     for name in ("base", "twin"):
+        if name not in models:
+            continue
         comparisons[name] = comparison(means["adapter"], means[name], y, pos, neg,
                                        d1, d0, hms["adapter"], hms[name],
                                        sds["adapter"], sds[name], cb=cb)
+        cmp_keys.append(name)
     codes = [c["code"] for c in cases]
     baselines = {}
-    for kind in ("length", "function_count", "static_count"):
+    for kind in baseline_kinds(o):
         bs = baseline_scores(codes, kind)
         a = auroc(bs, y)
         baselines[kind] = {"auroc": a, "auroc_best_direction": max(a, 1 - a)}
@@ -383,6 +456,7 @@ def run_round(argv):
         comparisons[kind] = comparison(means["adapter"], bs, y, pos, neg, d1, d0,
                                        hms["adapter"], hm_o, sds["adapter"], 0.0,
                                        negate=neg_k, cb=cb)
+        cmp_keys.append(kind)
     cues = {"pct_s_count": {"auroc": auroc([float(c.count("%s")) for c in codes], y)}}
     cross = {}
     inputs = [o["cases"]] + flat(o, "adapter") + flat(o, "base") + flat(o, "twin")
@@ -396,18 +470,38 @@ def run_round(argv):
                                                 sds["adapter"], st["sd_decode"],
                                                 cb=cb)}
         inputs += fs
-    verdict = "PASS" if all(comparisons[k]["pass"] for k in ROUNDCMP) else "FAIL"
     payload = {"mode": "round", "n": len(keys), "n_vuln": n1,
                "models": models, "comparisons": comparisons,
-               "baselines": baselines, "cues": cues, "cross": cross,
-               "verdict": verdict}
+               "baselines": baselines, "cues": cues, "cross": cross}
+    verdict = "PASS" if all(comparisons[k]["pass"] for k in cmp_keys) else "FAIL"
+    payload["verdict"] = verdict
     if clus:
-        v_cluster = "PASS" if all(comparisons[k]["pass_cluster"] for k in ROUNDCMP) else "FAIL"
-        payload.update(n_clusters=len(_idx),
+        v_cluster = "PASS" if all(comparisons[k]["pass_cluster"] for k in cmp_keys) else "FAIL"
+        payload.update(n_clusters=len(idx),
                        cluster_resamples_used=int(np.count_nonzero(valid)),
                        verdict_case=verdict, verdict_cluster=v_cluster,
                        verdict="PASS" if (verdict == "PASS" and v_cluster == "PASS") else "FAIL")
+    if within:
+        wd = within_block(means["adapter"], means["base"], lab, cb)
+        payload["within"] = wd
+        payload["verdict_within"] = "PASS" if wd["pass"] else "FAIL"
+        if not wd["pass"]:
+            payload["verdict"] = "FAIL"
     write_out(o["out"], payload, inputs)
+
+
+def within_block(arm, oth, lab, cb):
+    """The --within-cluster block: pair-weighted within-cluster AUROC of each
+    arm, the adapter-minus-base delta, its pass (delta > 0) and, with
+    --cluster-bootstrap, the cluster-resample SE of the delta."""
+    wa, used = within_auroc(arm, lab)
+    wo, _ = within_auroc(oth, lab)
+    out = {"adapter": wa, "base": wo, "delta": wa - wo,
+           "pass": bool(wa - wo > 0), "clusters_used": used}
+    if cb is not None:
+        clab, draws, valid = cb
+        out["se_cluster"] = within_se_cluster(arm, oth, clab, draws, valid)
+    return out
 
 
 # ---------------------------------------------------------------- twinrep mode
@@ -664,6 +758,37 @@ def selftest():
         assert dp["verdict_cluster"] == "FAIL" and dp["verdict"] == "FAIL", dp["comparisons"]["base"]
         assert dp["n_clusters"] == 12
         print("project-cluster: OK")
+
+        # within-cluster veto (--within-cluster): pooled comparison passes but
+        # the pair-weighted within-cluster delta is negative -> FAIL. Two
+        # projects, each wrong within itself (V < S), the label-count
+        # imbalance makes the pooled adapter AUROC beat the constant base.
+        wc, wad, wbs = [], [], []
+        for proj, n1c, n0c, va, vs in (("wA", 40, 4, 0.80, 0.90), ("wB", 4, 40, 0.50, 0.60)):
+            for i in range(n1c):
+                wc.append({"id": "vsp:%s:v%d:V" % (proj, i), "code": "x;", "label": "VULNERABLE",
+                           "cwe": "CWE000", "pair": "%s%d" % (proj, i), "project": proj})
+                wad.append(va)
+                wbs.append(0.5)
+            for i in range(n0c):
+                wc.append({"id": "vsp:%s:s%d:S" % (proj, i), "code": "x;", "label": "SAFE",
+                           "cwe": "CWE000", "pair": "%s%d" % (proj, i), "project": proj})
+                wad.append(vs)
+                wbs.append(0.5)
+        wcp = os.path.join(t, "wcases.json")
+        json.dump({"cases": wc}, open(wcp, "w"))
+        wkeys = [(c["id"], c["label"]) for c in wc]
+        wres = lambda tag, sc: _st_result(os.path.join(t, tag + ".json"), wkeys, sc)
+        outw = os.path.join(t, "ow.json")
+        run_round(["--cases", wcp, "--adapter", wres("wa", wad), "--base", wres("wb", wbs),
+                   "--within-cluster", "--cluster-by", "project", "--out", outw])
+        dw = json.load(open(outw))
+        assert dw["comparisons"]["base"]["pass"] is True, dw["comparisons"]["base"]
+        assert dw["within"]["adapter"] == 0.0 and dw["within"]["base"] == 0.5, dw["within"]
+        assert dw["within"]["delta"] == -0.5 and dw["within"]["pass"] is False, dw["within"]
+        assert dw["within"]["clusters_used"] == 2, dw["within"]
+        assert dw["verdict_within"] == "FAIL" and dw["verdict"] == "FAIL", dw["verdict"]
+        print("within-veto: OK")
     except (AssertionError, Refused) as exc:
         print("SELFTEST FAIL: %r" % (exc,))
         return 1

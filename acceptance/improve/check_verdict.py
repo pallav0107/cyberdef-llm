@@ -2,7 +2,7 @@
 Independent of the script's own --selftest: it builds its own synthetic per_case files, runs the CLI, and checks the
 output against values it computes itself with cyberdef.imp_common.auroc. Exit 0 = every check passed.
   python3 acceptance/improve/check_verdict.py"""
-import hashlib, json, os, random, subprocess, sys, tempfile
+import hashlib, json, os, random, re, subprocess, sys, tempfile
 sys.path.insert(0, "src")
 from cyberdef.imp_common import auroc
 
@@ -263,6 +263,66 @@ json.dump({"cases": cs_np}, open(f"{T}/t16_noproj.json", "w"))
 r, d = run(["round", "--cases", f"{T}/t16_noproj.json", "--adapter"] + files("t16na", cs16, [ad16] * 3, COT) + ["--base"] + files("t16nb", cs16, [bs16] * 3, COT)
            + ["--twin"] + files("t16nt", cs16, [bs16], SEL) + ["--cluster-bootstrap", "--cluster-by", "project"], f"{T}/t16n.json")
 ok("T16 --cluster-by project refuses cases without a project field", r.returncode != 0 and not os.path.exists(f"{T}/t16n.json"))
+
+# T17-T19 supervised real-world round: two arms, extra baselines, within-project veto
+def wcases(name, design, rng):
+    cs, ad, bs = [], [], []
+    groups = range(81) if design == "artefact" else range(30)
+    for g in groups:
+        n = (600 if g == 0 else 5) if design == "artefact" else 5
+        for k in range(n):
+            pair = f"g{g}_{k}"
+            for y, lab in ((1, "VULNERABLE"), (0, "SAFE")):
+                b = min(1.0, max(0.0, (0.6 if y else 0.4) + rng.gauss(0, 0.2)))
+                if design == "artefact":
+                    a = min(1.0, max(0.0, (0.57 if y else 0.43) + rng.gauss(0, 0.2))) if g == 0 else \
+                        ((0.97 if y else 0.03) + rng.uniform(-0.02, 0.02))
+                else:
+                    a = min(1.0, max(0.0, (0.75 if y else 0.25) + rng.gauss(0, 0.2)))
+                code = "int f(){\n" + "x;\n" * rng.randint(3, 30) + ("/* c */\n" if rng.random() < 0.3 else "") + "}\n"
+                cs.append({"id": f"vsp:{pair}:{lab[0]}", "code": code, "label": lab, "pair": pair, "project": f"p{g}"})
+                ad.append(a); bs.append(b)
+    p_ = f"{T}/{name}_cases.json"
+    json.dump({"cases": cs, "split": "test", "seed": 0}, open(p_, "w"))
+    return p_, cs, ad, bs
+
+
+def within_ref(cs, sc):
+    num = den = 0.0
+    for g in sorted({c["project"] for c in cs}):
+        ix = [i for i, c in enumerate(cs) if c["project"] == g]
+        yy = [1 if cs[i]["label"] == "VULNERABLE" else 0 for i in ix]
+        n1, n0 = sum(yy), len(yy) - sum(yy)
+        num += n1 * n0 * auroc([sc[i] for i in ix], yy)
+        den += n1 * n0
+    return num / den
+
+
+cpu, csu, adu, bsu = wcases("t17", "uniform", random.Random(21))
+two = ["round", "--cases", cpu, "--adapter"] + files("t17a", csu, [adu], SEL) + ["--base"] + files("t17b", csu, [bsu], SEL)
+_, d = run(two, f"{T}/t17.json")
+ok("T17 two-arm round (no --twin) runs, has no twin, passes on a uniform gain",
+   d is not None and "twin" not in d["comparisons"] and "twin" not in d["models"] and d["verdict"] == "PASS")
+_, d = run(two + ["--baselines", "length,lines,if_count,static_count,comments"], f"{T}/t18.json")
+want_b = {"length", "lines", "if_count", "static_count", "comments"}
+if d:
+    yy = [1 if c["label"] == "VULNERABLE" else 0 for c in csu]
+    cm = [float(len(re.findall(r"/\*|(?<![:\\])//", c["code"]))) for c in csu]
+    a_cm = auroc(cm, yy)
+ok("T18 --baselines selects lines / if_count / comments and compares the adapter against each",
+   d is not None and set(d["baselines"]) == want_b and want_b <= set(d["comparisons"])
+   and abs(d["baselines"]["comments"]["auroc_best_direction"] - max(a_cm, 1 - a_cm)) < 1e-9)
+cpa, csa, ada, bsa = wcases("t19", "artefact", random.Random(1))
+art = ["round", "--cases", cpa, "--adapter"] + files("t19a", csa, [ada], SEL) + ["--base"] + files("t19b", csa, [bsa], SEL) \
+    + ["--within-cluster", "--cluster-by", "project"]
+_, d = run(art, f"{T}/t19.json")
+ok("T19 artefact: pooled comparison passes but the within-project delta is negative -> verdict FAIL",
+   d is not None and d["comparisons"]["base"]["pass"] is True and d["within"]["delta"] < 0 and d["within"]["pass"] is False and d["verdict"] == "FAIL")
+if d:
+    ok("T19 within-project AUROC equals the pair-weighted reference (adapter and base)",
+       abs(d["within"]["adapter"] - within_ref(csa, ada)) < 1e-9 and abs(d["within"]["base"] - within_ref(csa, bsa)) < 1e-9)
+_, d = run(two + ["--within-cluster", "--cluster-by", "project"], f"{T}/t19u.json")
+ok("T19 uniform gain: within-project delta positive, verdict PASS", d is not None and d["within"]["pass"] is True and d["verdict"] == "PASS")
 
 r = subprocess.run([sys.executable, S, "--selftest"], capture_output=True, text=True, timeout=900)
 ok("T10 --selftest exits 0", r.returncode == 0)
