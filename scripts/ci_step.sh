@@ -129,6 +129,19 @@ dataset)
     echo "Training data: PrimeVul train, answer-only, $npc per class, seed $seed: the same deterministic sampler on both machines."
     echo "**Training data** PrimeVul train, answer-only, $npc per class, seed $seed" >> "$SUMMARY"; exit 0
   fi
+  case "$P_items_file" in results/vsp_*)   # VSP_SFT_R1_PREREG: built and gated on the box (check_vsp_items.py); sha256 pinned in the manifest
+    [ -s "$P_items_file" ] || { echo "::error::$P_items_file is missing on $MACHINE"; exit 1; }
+    read -r N NV NS < <(python3 -c "
+import json, sys; it = json.load(open(sys.argv[1]))['items']
+print(len(it), sum(i.get('label') == 'VULNERABLE' for i in it), sum(i.get('label') == 'SAFE' for i in it))" "$P_items_file")
+    HAVE=$(sha256sum "$P_items_file" | cut -c1-64)
+    WANT=$(python3 -c "import json, sys; print(json.load(open('data/DATA_MANIFEST.json'))['files'].get(sys.argv[1], {}).get('sha256', ''))" "$P_items_file")
+    [ -n "$WANT" ] && [ "$HAVE" = "$WANT" ] || { echo "::error::$P_items_file sha256 ${HAVE:0:16} does not match the manifest (${WANT:0:16})"; exit 1; }
+    printf 'BANK_BUILD=%q\n' "vsp_sft items=${HAVE:0:12}" >> "$PLAN"
+    echo "Training data: $P_items_file  n=$N (VULNERABLE $NV, SAFE $NS)  sha256 ${HAVE:0:16} (manifest-pinned)"
+    echo "**Training data** \`$P_items_file\` · n=$N (VULNERABLE $NV, SAFE $NS) · sha256 \`${HAVE:0:16}\` (manifest-pinned)" >> "$SUMMARY"
+    exit 0 ;;
+  esac
   case "$P_items_file" in results/st_*)   # amendment 3: self-training items from scripts/imp_st_round.sh (Spark only)
     [ -s "$P_items_file" ] || { echo "::error::$P_items_file is missing: run scripts/imp_st_round.sh for this category and round first"; exit 1; }
     read -r N NV NS < <(python3 -c "

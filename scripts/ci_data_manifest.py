@@ -22,6 +22,8 @@ CANONICAL = [
     ("results/j3_heldout_matched_cases.json", "J3 matched (2c), cleaned 3g+3i; DESCRIPTIVE: function count alone scores 0.975 (3i)"),
     ("results/j3s_heldout_matched_cases.json", "J3s (3i): structure- and length-matched; primary test for format string (CWE-134)"),
     ("results/j4_heldout_matched_cases.json", "J4b matched (3e), cleaned 3g+3i; DESCRIPTIVE: function count alone scores 0.956 (3i)"),
+    ("results/vsp_t_cases.json", "VSP-T (3680322): 388 real-world before/after fix pairs, 159 projects; primary test of VSP_SFT_R1_PREREG"),
+    ("results/vsp_sft_items.json", "VSP-SFT training items (VulSpot train-split fix pairs; check_vsp_items.py ALL PASS)"),
     ("results/j4s_heldout_matched_cases.json", "J4s (3i): structure- and length-matched, execution-verified; primary test for memory, integer, leak"),
     ("results/q_heldout_cases.json", "SQLi held-out, 44 oracle-verified pairs never in any pool (3g: cleaned, re-verified): primary test for SQL injection"),
     ("results/imp_fewshot_exemplars.json", "few-shot exemplars templated from Juliet _02 ground truth (quick bank; no model)"),

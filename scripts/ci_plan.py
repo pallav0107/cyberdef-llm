@@ -28,7 +28,7 @@ QUICK_BANK_AMENDMENT = "QUICK_BANK_AMENDMENT_2_2026-11-15"   # batch 2: quick + 
 SET_FILES = {
     "pv": "results/lenmatched_eval_cases.json", "pv300": "results/lenmatched_eval_cases_300.json",
     "vh": "results/vs_holdout_matched_cases.json", "vn": "results/vs_nolinux_matched_cases.json",
-    "castle": "results/xdata_castle_cases.json", "j3m": "results/j3_heldout_matched_cases.json", "qh": "results/q_heldout_cases.json", "j4m": "results/j4_heldout_matched_cases.json", "j3h": "results/j3_heldout_cases.json", "j3s": "results/j3s_heldout_matched_cases.json", "j4s": "results/j4s_heldout_matched_cases.json", "loc": "results/imp_loc_cases.json", "pairs": "results/imp_vs_pairs_eval_cases.json",
+    "castle": "results/xdata_castle_cases.json", "j3m": "results/j3_heldout_matched_cases.json", "qh": "results/q_heldout_cases.json", "j4m": "results/j4_heldout_matched_cases.json", "j3h": "results/j3_heldout_cases.json", "j3s": "results/j3s_heldout_matched_cases.json", "j4s": "results/j4s_heldout_matched_cases.json", "vspt": "results/vsp_t_cases.json", "loc": "results/imp_loc_cases.json", "pairs": "results/imp_vs_pairs_eval_cases.json",
 }
 PREREG = "pre-registered sets (PrimeVul, VulSpot x2, CASTLE, J3 held-out matched + all; CoT arms add localisation)"
 TEST_SETS = {   # choice -> set keys. PREREG is completed per arm in plan() (the queue jobs P60/P61/P86 evaluate exactly these)
@@ -42,6 +42,7 @@ TEST_SETS = {   # choice -> set keys. PREREG is completed per arm in plan() (the
     "amendment 3 category round, J3 (J3 matched, CASTLE, PrimeVul 300)": ["j3m", "castle", "pv300"],
     "amendment 3i round sets (J4s, J3s, CASTLE, PrimeVul 300)": ["j4s", "j3s", "castle", "pv300"],   # addendum 3i: structure-matched primary tests (memory/integer/leak; format string)   # addendum 3a minimum for command injection, path traversal, format string adapters
     "format string round sets (J3s, CASTLE, PrimeVul 300)": ["j3s", "castle", "pv300"],   # FORMAT_R1B_PREREG note: the format-string bar is J3s (CASTLE, PrimeVul-300 secondary); not J4s
+    "VSP-T real-world fix pairs (VSP-T, CASTLE, PrimeVul 300)": ["vspt", "castle", "pv300"],   # VSP_SFT_R1_PREREG: VSP-T primary; CASTLE, PV300 descriptive
 }
 # Training data. CoT arms use the pre-registered recipes of the queue jobs P60 (arm 2) and P61 (arm 6), on the items built
 # from the QUICK v2.3 trace bank (imp_cotq_*). Each arm has a verdict-only twin on identical rows: the arm-vs-twin
@@ -61,6 +62,7 @@ DATA = {
     # amendment 3 / addendum 3a: items written by scripts/imp_st_round.sh; no --pair-batches (filtering does not keep pairs)
     "Qwen3.8 self-training: CoT items (amendment 3; results/<tag>_items.json)": ("@TAG", "--val-per-class 5"),
     "Qwen3.8 self-training: twin (amendment 3; tag ends _twin)": ("@TAG", "--val-per-class 5"),
+    "VSP fix pairs, verdict-only (VSP-SFT, real-world)": ("results/vsp_sft_items.json", "--val-per-class 5"),   # VSP_SFT_R1_PREREG (owner decision 17 Nov)
 }
 ARM7_GATE_MIN = 200    # pre-registered: arm 7 needs >= 200 X_strict traces in the build it trains on
 MODEL_STEPS = {"train + test": (True, True), "train only": (True, False), "test only": (False, True)}

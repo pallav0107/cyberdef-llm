@@ -1,5 +1,5 @@
 {
-  "written": "2026-11-16T16:28:45+1100",
+  "written": "2026-11-17T08:04:00+1100",
   "files": {
     "results/lenmatched_eval_cases.json": {
       "sha256": "dca5c04f041806e6e3444712876117048abe3ff98c690a09bea8bc451baf7dcf",
@@ -66,6 +66,18 @@
       "bytes": 739910,
       "n": 776,
       "what": "J4b matched (3e), cleaned 3g+3i; DESCRIPTIVE: function count alone scores 0.956 (3i)"
+    },
+    "results/vsp_t_cases.json": {
+      "sha256": "543c4346ed41dd8d254f6c82346a4a592cc9e62fa7a26da5dd038bb18f2f5185",
+      "bytes": 1504895,
+      "n": 776,
+      "what": "VSP-T (3680322): 388 real-world before/after fix pairs, 159 projects; primary test of VSP_SFT_R1_PREREG"
+    },
+    "results/vsp_sft_items.json": {
+      "sha256": "1b105c86f688b9ee6033fb3b19d51ab39d4c2cc29709ebdb0863824df07f714e",
+      "bytes": 4432900,
+      "n": 2566,
+      "what": "VSP-SFT training items (VulSpot train-split fix pairs; check_vsp_items.py ALL PASS)"
     },
     "results/j4s_heldout_matched_cases.json": {
       "sha256": "81669e115854d7fd0a7d32fbf0db123c0cc0b38c6535dd9472568cd06f67fbb2",
