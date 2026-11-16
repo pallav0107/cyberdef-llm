@@ -41,6 +41,7 @@ TEST_SETS = {   # choice -> set keys. PREREG is completed per arm in plan() (the
     "amendment 3 round sets (J3 matched, SQLi held-out, J4 matched, CASTLE, PrimeVul 300)": ["j3m", "qh", "j4m", "castle", "pv300"],   # addendum 3a
     "amendment 3 category round, J3 (J3 matched, CASTLE, PrimeVul 300)": ["j3m", "castle", "pv300"],
     "amendment 3i round sets (J4s, J3s, CASTLE, PrimeVul 300)": ["j4s", "j3s", "castle", "pv300"],   # addendum 3i: structure-matched primary tests (memory/integer/leak; format string)   # addendum 3a minimum for command injection, path traversal, format string adapters
+    "format string round sets (J3s, CASTLE, PrimeVul 300)": ["j3s", "castle", "pv300"],   # FORMAT_R1B_PREREG note: the format-string bar is J3s (CASTLE, PrimeVul-300 secondary); not J4s
 }
 # Training data. CoT arms use the pre-registered recipes of the queue jobs P60 (arm 2) and P61 (arm 6), on the items built
 # from the QUICK v2.3 trace bank (imp_cotq_*). Each arm has a verdict-only twin on identical rows: the arm-vs-twin

@@ -38,3 +38,14 @@ No rule below was changed after seeing it.
 - Secondary: CASTLE and PrimeVul-300.
 - No win is claimed without a recompute from per_case and an experiment-auditor pass. J3s has 112-122 functions
   (SE ~0.05): a null is weak evidence, and that will be said.
+
+## Note, 2026-11-16 19:03 AEDT: test-set bundle narrowed to the format-string sets, before any round 1b score
+The first dispatch (16 Nov 18:04, runs 43821211903 / 43821223400 / 43821234530 / 43821246008) used the bundle
+"amendment 3i round sets", which puts J4s first. With 3 CoT decodes, J4s (2,166 memory/integer/leak functions) would
+have cost ~10 h per CoT-scored model before J3s was reached. J4s is not part of this round's bar: the bar is J3s, with
+CASTLE and PrimeVul-300 secondary.
+All four runs were cancelled at 19:00, during the adapter's training. No test step had started and no score exists.
+- The orphaned training container was stopped, and the partial checkpoint was moved to out/before_restart_r1b. The
+  adapter retrains from scratch.
+- The runs are re-dispatched with the new bundle "format string round sets (J3s, CASTLE, PrimeVul 300)".
+- Nothing else changes: same items (sha 0f2b80b2… / 31499936…), same tags, same recipe, same scorer, same bar.
