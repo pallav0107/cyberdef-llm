@@ -173,6 +173,64 @@ json.dump(dup, open(dp, "w"))
 r, d = run(["round", "--cases", cp, "--adapter"] + files("t4ba", cs, runs, COT) + ["--base"] + files("t4bb", cs, base, COT) + ["--twin", dp], f"{T}/t4b.json")
 ok("T4b duplicated row refused", r.returncode != 0 and not os.path.exists(f"{T}/t4b.json"))
 
+# T11-T15 cluster bootstrap (cluster = Juliet file name without its flow suffix _NN[a-z].c/.cpp; real-world: one pair)
+def jcases(name, design, rng):
+    cs, ad, bs = [], [], []
+    clusters = range(12) if design == "concentrated" else range(30)
+    for c in clusters:
+        n = (30 if c == 0 else 5) if design == "concentrated" else 5
+        for k in range(n):
+            f = f"CWE134_Uncontrolled_Format_String__char_src{c}_printf_{k + 1:02d}.c"
+            for y, lab in ((1, "VULNERABLE"), (0, "SAFE")):
+                b = min(1.0, max(0.0, 0.5 + rng.uniform(-0.25, 0.25)))
+                if design == "concentrated":
+                    a = (0.95 if y else 0.05) if c == 0 else b
+                else:
+                    a = min(1.0, max(0.0, 0.5 + (0.12 if y else -0.12) + rng.uniform(-0.25, 0.25)))
+                cs.append({"id": f"j3s:{f}:{lab[0]}", "code": "x;" * rng.randint(100, 400), "label": lab, "cwe": "CWE134", "pair": f})
+                ad.append(a); bs.append(b)
+    p_ = f"{T}/{name}_cases.json"
+    json.dump({"cases": cs, "split": "test", "seed": 0}, open(p_, "w"))
+    return p_, cs, ad, bs
+
+
+def jround(name, design, flag):
+    cp_, cs_, ad, bs = jcases(name, design, random.Random(11))
+    args = ["round", "--cases", cp_, "--adapter"] + files(f"{name}a", cs_, [ad] * 3, COT) + ["--base"] + files(f"{name}b", cs_, [bs] * 3, COT) \
+        + ["--twin"] + files(f"{name}t", cs_, [bs], SEL) + (["--cluster-bootstrap"] if flag else [])
+    return run(args, f"{T}/{name}.json")
+
+
+_, d = jround("t11", "concentrated", True)
+ok("T11 runs with --cluster-bootstrap", d is not None)
+if d:
+    b_ = d["comparisons"]["base"]
+    ok("T11 concentrated advantage: case verdict PASS", d.get("verdict_case") == "PASS")
+    ok("T11 concentrated advantage: cluster verdict FAIL, overall FAIL", d.get("verdict_cluster") == "FAIL" and d["verdict"] == "FAIL")
+    ok("T11 cluster SE > 2 x case SE", b_.get("se_boot_cluster", 0) > 2 * b_["se_boot"])
+    ok("T11 pass_cluster rule", all(c["pass_cluster"] == (c["delta"] > 2 * c["se_comb_cluster"]) for c in d["comparisons"].values()))
+    ok("T11 n_clusters = 12", d.get("n_clusters") == 12)
+_, d = jround("t12", "uniform", True)
+ok("T12 uniform advantage over 30 clusters -> PASS under both", d is not None and d["verdict"] == "PASS" and d.get("verdict_case") == "PASS"
+   and d.get("verdict_cluster") == "PASS" and d.get("n_clusters") == 30)
+_, d = jround("t13", "uniform", False)
+ok("T13 without the flag: no cluster fields, case verdict as before", d is not None and "n_clusters" not in d and "verdict_case" not in d
+   and "se_boot_cluster" not in d["comparisons"]["base"] and d["verdict"] == "PASS")
+cp_, cs_, ad, bs = jcases("t14", "uniform", random.Random(12))
+extra = [{"id": f"rw{i}:{l[0]}", "code": "y;" * 150, "label": l, "cwe": "CWE134", "pair": f"rw{i}"} for i in (1, 2) for l in ("VULNERABLE", "SAFE")]
+cs14 = cs_ + extra
+json.dump({"cases": cs14, "split": "test", "seed": 0}, open(cp_, "w"))
+ad14, bs14 = ad + [0.6, 0.4, 0.6, 0.4], bs + [0.5, 0.5, 0.5, 0.5]
+r, d = run(["round", "--cases", cp_, "--adapter"] + files("t14a", cs14, [ad14] * 3, COT) + ["--base"] + files("t14b", cs14, [bs14] * 3, COT)
+           + ["--twin"] + files("t14t", cs14, [bs14], SEL) + ["--cluster-bootstrap"], f"{T}/t14.json")
+ok("T14 real-world pairs are their own clusters (30 Juliet + 2)", d is not None and d.get("n_clusters") == 32)
+a15 = [tset("a15", 0.3, 0.02, (0.3,) * 3), tset("b15", 0.3, 0.02, (0.3,) * 3)]
+_, d0 = tw_run(a15, "t15a")
+args15 = ["twinrep"] + [x for s_ in a15 for x in ["--set"] + s_] + ["--cluster-bootstrap"]
+_, d1 = run(args15, f"{T}/t15b.json")
+ok("T15 twinrep --cluster-bootstrap adds per-set sensitivity, verdict unchanged",
+   d0 is not None and d1 is not None and d1["verdict"] == d0["verdict"] and all("se_boot_cluster" in v and "n_clusters" in v for v in d1["sets"].values()))
+
 r = subprocess.run([sys.executable, S, "--selftest"], capture_output=True, text=True, timeout=900)
 ok("T10 --selftest exits 0", r.returncode == 0)
 print(f"{len(FAILS)} failed" if FAILS else "ALL PASS")

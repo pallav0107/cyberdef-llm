@@ -11,10 +11,16 @@ static_count baselines by more than 2 combined SE each. Twinrep: the twin must
 beat its untrained base (and its length baseline) per set, Holm-corrected over
 sets, with seed replications not contradicting the effect.
 
+With --cluster-bootstrap (pre-registration FORMAT_R1B, section 5) an additional
+cluster-level paired bootstrap (10,000 resamples, seed 0) is computed: cluster
+= Juliet source file without its flow suffix _NN[a-z].c/.cpp, so a real-world
+V/S pair is one cluster. Round then requires every comparison to pass under
+both schemes; twinrep reports it as a per-set sensitivity check only.
+
   python3 scripts/imp_verdict.py round --cases C.json --adapter F F F --base F F F \
-      --twin F [--cross NAME=F,F,F ...] --out O.json
+      --twin F [--cross NAME=F,F,F ...] [--cluster-bootstrap] --out O.json
   python3 scripts/imp_verdict.py twinrep --set NAME CASES BASE TWIN0 [S1 S2 S3] \
-      [--set ...] --out O.json
+      [--set ...] [--cluster-bootstrap] --out O.json
   python3 scripts/imp_verdict.py --selftest
 """
 from __future__ import annotations
@@ -36,7 +42,7 @@ from imp_build_structure_matched import nfun  # noqa: E402
 B = 10000          # paired bootstrap resamples (fixed by the pre-registrations)
 SEL_PREFIX = "logprob-scored"
 ROUNDCMP = ("base", "twin", "length", "function_count", "static_count")
-USAGE = "usage: imp_verdict.py round|twinrep ... | imp_verdict.py --selftest"
+USAGE = "usage: imp_verdict.py round|twinrep [--cluster-bootstrap] ... | imp_verdict.py --selftest"
 
 
 class Refused(Exception):
@@ -178,12 +184,68 @@ def paired_delta_b(arm, oth, pos, neg, d1, d0):
     return am - om
 
 
+# ---------------------------------------------------------------- cluster bootstrap
+
+CLUS_RE = re.compile(r"_\d+[a-z]?\.(c|cpp)$")
+
+
+def cluster_key(cid):
+    """Cluster of a case id: Juliet file without its flow suffix, else the id
+    with a trailing :V/:S stripped (a real-world pair is one cluster)."""
+    parts = cid.split(":")
+    if len(parts) >= 3 and CLUS_RE.search(parts[1]):
+        return CLUS_RE.sub("", parts[1])
+    return re.sub(r":[VS]$", "", cid)
+
+
+def cluster_setup(keys):
+    """Group case indices by cluster; per cluster the (pos, neg) index arrays."""
+    groups = {}
+    for i, k in enumerate(keys):
+        groups.setdefault(cluster_key(k[0]), []).append(i)
+    idx, lab = [], []
+    for v in groups.values():
+        yy = np.array([1 if keys[i][1] == "VULNERABLE" else 0 for i in v])
+        ii = np.array(v, dtype=int)
+        idx.append(ii)
+        lab.append((ii[yy == 1], ii[yy == 0]))
+    return idx, lab
+
+
+def cluster_plan(idx, lab, b=B, seed=0):
+    """The B cluster resamples (shared by every comparison): n_cl draws with
+    replacement each, keeping every case of a drawn cluster with multiplicity.
+    valid marks resamples that contain both labels."""
+    rng = np.random.default_rng(seed)
+    draws = rng.integers(0, len(idx), (b, len(idx)))
+    n1c = np.array([len(p) for p, _ in lab])
+    nc = n1c + np.array([len(n) for _, n in lab])
+    n1b, nb = n1c[draws].sum(axis=1), nc[draws].sum(axis=1)
+    return draws, (n1b > 0) & (n1b < nb)
+
+
+def cluster_auroc(scores, lab, dr):
+    pos = np.concatenate([lab[d][0] for d in dr])
+    neg = np.concatenate([lab[d][1] for d in dr])
+    row = np.concatenate((scores[pos], scores[neg]))
+    return auroc_rows(row[None, :], len(pos))[0]
+
+
+def cluster_se(arm, oth, lab, draws, valid):
+    """Cluster bootstrap SE of auroc(arm) - auroc(oth); same draws both arms."""
+    arm, oth = np.asarray(arm, float), np.asarray(oth, float)
+    d = [cluster_auroc(arm, lab, dr) - cluster_auroc(oth, lab, dr)
+         for dr, ok in zip(draws, valid) if ok]
+    return float(np.std(d, ddof=1))
+
+
 def comparison(arm, oth, y, pos, neg, d1, d0, hm_arm, hm_oth, sd_arm, sd_oth,
-               negate=False):
+               negate=False, cb=None):
     """Paired comparison of arm vs other; delta = auroc(arm) - auroc(other).
 
     negate: score `oth` is negated (baseline whose direction is fixed by its
-    full-sample auroc). The bootstrap reuses the same index draws for both arms."""
+    full-sample auroc). The bootstrap reuses the same index draws for both arms.
+    cb: (lab, draws, valid) cluster resample plan; adds the cluster keys."""
     oth = [-v for v in oth] if negate else [float(v) for v in oth]
     arm = [float(v) for v in arm]
     check_vec(arm, y, pos, neg)
@@ -196,8 +258,15 @@ def comparison(arm, oth, y, pos, neg, d1, d0, hm_arm, hm_oth, sd_arm, sd_oth,
     if hm_arm is not None and hm_oth is not None:
         den = math.sqrt(hm_arm * hm_arm + hm_oth * hm_oth)
     hm_ds = delta / den if den else None
-    return {"delta": delta, "se_boot": se_boot, "sd_decode": sd, "se_comb": se_comb,
-            "pass": bool(delta > 2 * se_comb), "hm_delta_over_se": hm_ds}
+    out = {"delta": delta, "se_boot": se_boot, "sd_decode": sd, "se_comb": se_comb,
+           "pass": bool(delta > 2 * se_comb), "hm_delta_over_se": hm_ds}
+    if cb is not None:
+        lab, draws, valid = cb
+        se_c = cluster_se(arm, oth, lab, draws, valid)
+        se_cc = math.sqrt(se_c * se_c + sd * sd)
+        out.update(se_boot_cluster=se_c, se_comb_cluster=se_cc,
+                   pass_cluster=bool(delta > 2 * se_cc))
+    return out
 
 
 # ---------------------------------------------------------------- baselines / io
@@ -249,9 +318,15 @@ def flat(opts, key):
     return [v for group in opts.get(key, []) for v in group]
 
 
+def take_flag(argv, flag):
+    """Remove every occurrence of a valueless flag; report whether it was given."""
+    return [a for a in argv if a != flag], flag in argv
+
+
 # ---------------------------------------------------------------- round mode
 
 def run_round(argv):
+    argv, clus = take_flag(argv, "--cluster-bootstrap")
     o = parse_opts(argv, {"adapter", "base", "twin", "cross"})
     for req in ("cases", "out"):
         if req not in o:
@@ -264,6 +339,11 @@ def run_round(argv):
     pos, neg = split_idx(y)
     n1, n0 = len(pos), len(neg)
     d1, d0 = boot_draws(n1, n0)
+    cb = None
+    if clus:
+        _idx, lab = cluster_setup(keys)
+        draws, valid = cluster_plan(_idx, lab)
+        cb = (lab, draws, valid)
     models, means, sds, hms = {}, {}, {}, {}
     for name in ("adapter", "base", "twin"):
         st, mean = model_stats(load_model(name, flat(o, name), keys)["runs"], y, n1, n0)
@@ -274,7 +354,7 @@ def run_round(argv):
     for name in ("base", "twin"):
         comparisons[name] = comparison(means["adapter"], means[name], y, pos, neg,
                                        d1, d0, hms["adapter"], hms[name],
-                                       sds["adapter"], sds[name])
+                                       sds["adapter"], sds[name], cb=cb)
     codes = [c["code"] for c in cases]
     baselines = {}
     for kind in ("length", "function_count", "static_count"):
@@ -285,7 +365,7 @@ def run_round(argv):
         hm_o = hm_se(1 - a if neg_k else a, n1, n0)
         comparisons[kind] = comparison(means["adapter"], bs, y, pos, neg, d1, d0,
                                        hms["adapter"], hm_o, sds["adapter"], 0.0,
-                                       negate=neg_k)
+                                       negate=neg_k, cb=cb)
     cues = {"pct_s_count": {"auroc": auroc([float(c.count("%s")) for c in codes], y)}}
     cross = {}
     inputs = [o["cases"]] + flat(o, "adapter") + flat(o, "base") + flat(o, "twin")
@@ -296,13 +376,21 @@ def run_round(argv):
         cross[name] = {"model": st,
                        "comparison": comparison(means["adapter"], mean, y, pos, neg,
                                                 d1, d0, hms["adapter"], st["hm_se"],
-                                                sds["adapter"], st["sd_decode"])}
+                                                sds["adapter"], st["sd_decode"],
+                                                cb=cb)}
         inputs += fs
     verdict = "PASS" if all(comparisons[k]["pass"] for k in ROUNDCMP) else "FAIL"
-    write_out(o["out"], {"mode": "round", "n": len(keys), "n_vuln": n1,
-                         "models": models, "comparisons": comparisons,
-                         "baselines": baselines, "cues": cues, "cross": cross,
-                         "verdict": verdict}, inputs)
+    payload = {"mode": "round", "n": len(keys), "n_vuln": n1,
+               "models": models, "comparisons": comparisons,
+               "baselines": baselines, "cues": cues, "cross": cross,
+               "verdict": verdict}
+    if clus:
+        v_cluster = "PASS" if all(comparisons[k]["pass_cluster"] for k in ROUNDCMP) else "FAIL"
+        payload.update(n_clusters=len(_idx),
+                       cluster_resamples_used=int(np.count_nonzero(valid)),
+                       verdict_case=verdict, verdict_cluster=v_cluster,
+                       verdict="PASS" if (verdict == "PASS" and v_cluster == "PASS") else "FAIL")
+    write_out(o["out"], payload, inputs)
 
 
 # ---------------------------------------------------------------- twinrep mode
@@ -313,7 +401,7 @@ def zscore(delta, se):
     return math.inf if delta > 0 else (-math.inf if delta < 0 else 0.0)
 
 
-def twin_set(vals):
+def twin_set(vals, clus=False):
     if len(vals) < 4:
         raise Refused("--set needs NAME CASES BASE TWIN0 [SEED1 SEED2 SEED3]")
     name, cpath, bpath, t0path, seed_paths = vals[0], vals[1], vals[2], vals[3], vals[4:]
@@ -353,6 +441,12 @@ def twin_set(vals):
              "twin_minus_length": cmp_len["delta"], "se_length": cmp_len["se_boot"],
              "pass_twin_vs_base": bool(cmp_tb["delta"] > 2 * cmp_tb["se_boot"]),
              "pass_length": bool(cmp_len["delta"] > 2 * cmp_len["se_boot"])}
+    if clus:
+        idx, lab = cluster_setup(keys)
+        draws, valid = cluster_plan(idx, lab)
+        se_c = cluster_se(t0sc, bsc, lab, draws, valid)
+        sdict.update(n_clusters=len(idx), se_boot_cluster=se_c,
+                     pass_twin_vs_base_cluster=bool(cmp_tb["delta"] > 2 * se_c))
     return name, sdict, [cpath, bpath, t0path] + seed_paths
 
 
@@ -371,6 +465,7 @@ def seeds_ok(sets):
 
 
 def run_twinrep(argv):
+    argv, clus = take_flag(argv, "--cluster-bootstrap")
     o = parse_opts(argv, {"set"})
     if "out" not in o:
         raise Refused("twinrep: missing --out")
@@ -379,7 +474,7 @@ def run_twinrep(argv):
         raise Refused("twinrep: no --set given")
     sets, inputs = {}, []
     for vals in specs:
-        nm, sdict, files = twin_set(vals)
+        nm, sdict, files = twin_set(vals, clus)
         sets[nm], inputs = sdict, inputs + files
     m = len(sets)
     p_sorted = sorted(s["p_one_sided"] for s in sets.values())
@@ -494,6 +589,33 @@ def selftest():
         d5 = json.load(open(out5))
         assert d5["verdict"] == "NOT SUPPORTED", d5["verdict"]
         assert d5["sets"]["n1"]["delta"] == 0.0
+
+        # cluster bootstrap: advantage concentrated in one Juliet file -> case
+        # PASS, cluster FAIL (mirrors the validated T11 design)
+        cc, cad, cbs = [], [], []
+        for c in range(12):
+            for k in range(30 if c == 0 else 5):
+                f = "CWE134_Uncontrolled_Format_String__char_src%d_printf_%02d.c" % (c, k + 1)
+                for lab in ("VULNERABLE", "SAFE"):
+                    b = min(1.0, max(0.0, 0.5 + rng.uniform(-0.25, 0.25)))
+                    cc.append({"id": "j3s:%s:%s" % (f, lab[0]), "code": "x;" * (100 + (k * 7 + c) % 200),
+                               "label": lab, "cwe": "CWE134", "pair": f})
+                    cbs.append(b)
+                    cad.append((0.95 if lab == "VULNERABLE" else 0.05) if c == 0 else b)
+        ccp = os.path.join(t, "ccases.json")
+        json.dump({"cases": cc}, open(ccp, "w"))
+        ckeys = [(c["id"], c["label"]) for c in cc]
+        cres = lambda tag, sc, method=SEL: _st_result(os.path.join(t, tag + ".json"), ckeys, sc, method)
+        outc = os.path.join(t, "oc.json")
+        run_round(["--cases", ccp, "--cluster-bootstrap", "--adapter"]
+                  + [cres("cc%d" % i, cad, COT) for i in range(3)]
+                  + ["--base"] + [cres("cb%d" % i, cbs, COT) for i in range(3)]
+                  + ["--twin", cres("ct", cbs), "--out", outc])
+        dc = json.load(open(outc))
+        assert dc["verdict_case"] == "PASS", dc["comparisons"]["base"]
+        assert dc["verdict_cluster"] == "FAIL" and dc["verdict"] == "FAIL", dc["comparisons"]["base"]
+        assert dc["n_clusters"] == 12 and 0 < dc["cluster_resamples_used"] <= B
+        assert all("pass_cluster" in v for v in dc["comparisons"].values())
     except (AssertionError, Refused) as exc:
         print("SELFTEST FAIL: %r" % (exc,))
         return 1
