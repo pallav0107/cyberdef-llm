@@ -96,3 +96,8 @@ gain is about 0.045-0.048 AUROC. A null rules out gains above about 0.05.
 
 ## Code (pinned)
 Tooling 717a236 + 20e9072 (builders, gates, verdict with --pair-veto/--z/--within-cluster/--baselines, bow_lr); CI wiring 9f3e0de (data option, VSP-T bundle, manifest-pinned dataset branch). Every gate named above passes at these commits.
+
+## Note, 2026-11-17 23:00 AEDT: round PAUSED at the owner's request (Spark needed for another job)
+- Base (43956367153) and seed-0 adapter (43956384102) runs completed successfully. Their result files are saved on the box in results/vsp_r1/. The seed-0 VSP-T score has NOT been read.
+- Seed 1 (43956401861) was cancelled during training; its orphaned container was stopped by ID and its partial checkpoint moved to out/before_restart_vsp. Seed 2 (43956419160) was cancelled before starting.
+- Restart: re-dispatch seeds 1 and 2 with the identical recipe and bundle at a commit whose CI scripts equal 9f3e0de. Nothing in this pre-registration changes. The verdict is computed only when seeds 1 and 2 have finished.
