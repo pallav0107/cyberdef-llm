@@ -204,3 +204,15 @@ CHANGES, all changes applied.
   stamped by run 44612165737, result_sha256 15d8696a…, verdict identical on the stamped file; results committed
   c76a8f7).
 - Pass estimate (architect, judgment): ~20% (12-28%).
+
+## Addendum 1 (2026-11-21 02:53 AEDT): line-ending defect, re-dispatch
+The first dispatch at b166e20 (runs 44754966547 base-on-dev, 44754981792 pilot K1, 44754996445 pilot K2) stopped
+before any model ran: Spark's job library (scripts/gpu_job_lib.sh, crlf_check) refuses any src/cyberdef/*.py
+containing CR, and five attempt-4 files had been committed with CRLF line endings. No adapter was trained, no dev or
+VSP-T score was produced (K1 left only a provenance stub; K2 was cancelled while queued).
+Fix: CR removed from src/cyberdef/imp_pairs.py, scripts/imp_build_vsp_dev.py, acceptance/improve/check_pairbal.py,
+check_vsp_dev.py, check_vsp_dev_selftest.py. Nothing else changed: `git diff --ignore-cr-at-eol` against b166e20 is
+empty, and the Python AST of every changed file is identical before and after (CPython normalises source line endings,
+so behaviour is unchanged). Data files, manifest, flags, tags, bars and protocol are unchanged. The pinned code for this
+note is now this commit; the three runs are re-dispatched unchanged per "A failed or cancelled run is re-dispatched
+unchanged". Dev cycles: still one; no score of any kind had been read.
