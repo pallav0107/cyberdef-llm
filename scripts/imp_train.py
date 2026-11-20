@@ -18,7 +18,7 @@ sys.path.insert(0, "src")
 from cyberdef.evaluate import SYSTEM, make_user, parse_pred
 from cyberdef.train import load_model, _ids
 from cyberdef import model_io, benchdata
-from cyberdef import imp_adv
+from cyberdef import imp_adv, imp_pairs
 
 
 def target(label: str) -> str:
@@ -68,6 +68,40 @@ def build_examples(tok, items):
                       "len_feat": math.log(max(1, it.get("code_chars", len(it["code"])))),
                       "vdiv": vd, "tidv": tv_, "tids": ts_, "rank": int(bool(it.get("rank", True)))})
     return Dataset.from_list(feats)
+
+
+class PairSampler(torch.utils.data.Sampler):
+    """Yield 2i, 2i+1 (one adjacent pair = one batch of two) for each pair i of imp_pairs.epoch_order(...).
+    The epoch is taken from set_epoch(e) when the Trainer / accelerate call it (the Trainer calls it once per epoch
+    before iterating); otherwise the n-th iteration is epoch n. `log` gets one entry per iteration, counting the
+    strata of the pairs actually handed out."""
+
+    def __init__(self, strata, mode, seed):
+        self.strata, self.mode, self.seed = strata, mode, seed
+        self.epoch, self.explicit, self.iters, self.log = 0, False, 0, []
+
+    def set_epoch(self, epoch):
+        self.epoch, self.explicit = int(epoch), True
+
+    def __len__(self):
+        return 2 * len(self.strata)
+
+    def __iter__(self):
+        epoch = self.epoch if self.explicit else self.iters
+        self.iters += 1
+        entry = {"epoch": epoch, "A": 0, "B": 0, "E": 0, "n_pairs": 0}
+        self.log.append(entry)
+        for i in imp_pairs.epoch_order(self.strata, self.mode, self.seed, epoch):
+            entry[self.strata[i]] += 1
+            entry["n_pairs"] += 1
+            yield 2 * i
+            yield 2 * i + 1
+
+
+def sampler_summary(strata, mode, seed):
+    """Epoch-0 counts and length-only accuracy of the chosen mode."""
+    c = imp_pairs.counts(strata, imp_pairs.epoch_order(strata, mode, seed, 0))
+    return c, imp_pairs.length_only_acc(c)
 
 
 def print_balance(items):
@@ -144,6 +178,10 @@ def main():
                          "bypasses benchdata and trains on exactly these items")
     ap.add_argument("--pair-loss", type=float, default=0.0, help="weight of -log sigmoid(s_vuln - s_fix); needs --items-file in pair-adjacent order")
     ap.add_argument("--pair-batches", action="store_true", help="batch = one adjacent pair (2 sequences), sequential order, grad-accum 4")
+    ap.add_argument("--pair-sampler", choices=imp_pairs.MODES, default="sequential",
+                    help="order of the pairs each epoch in pair mode: sequential (file order, the default), shuffle "
+                         "(seeded permutation), balanced (every E pair once, the rest half A / half B so a length-only "
+                         "rule scores 0.50 every epoch); shuffle and balanced need --items-file in pair-adjacent order")
     ap.add_argument("--adv-length", type=float, default=0.0, help="gradient-reversal strength for the ln(chars) adversary head (0 = off)")
     ap.add_argument("--meta", default="", help="free text recorded in the train log (e.g. bank=quick)")
     ap.add_argument("--logging-steps", type=int, default=10)
@@ -179,6 +217,23 @@ def main():
     else:
         items, stats = benchdata.train_items_multi(names, a.seed, a.max_chars)
     print(f"[data] dataset={a.dataset} items={len(items)} {stats}", flush=True)
+    pair_mode = a.pair_loss > 0 or a.pair_batches
+    if a.pair_loss > 0 and not a.items_file:
+        raise SystemExit("--pair-loss needs --items-file (pair-adjacent order)")
+    strata = None
+    if a.pair_sampler != "sequential" and not (a.items_file and pair_mode):
+        raise SystemExit(f"--pair-sampler {a.pair_sampler} needs --items-file (pair-adjacent order) and "
+                         "--pair-batches or --pair-loss")
+    if a.items_file and pair_mode:
+        try:
+            strata = imp_pairs.strata_of_items(items)
+        except ValueError as exc:
+            if a.pair_sampler != "sequential":
+                raise SystemExit(f"--pair-sampler {a.pair_sampler}: {exc}")
+    if strata is not None:
+        c0, acc0 = sampler_summary(strata, a.pair_sampler, a.seed)
+        print(f"[pair-sampler] mode={a.pair_sampler} epoch0 A={c0['A']} B={c0['B']} E={c0['E']} "
+              f"length_only_acc={acc0:.2f}", flush=True)
     if a.dry_run:
         return
     ds = build_examples(tok, items)
@@ -195,9 +250,6 @@ def main():
         model.enable_input_require_grads()
     model.print_trainable_parameters()
 
-    pair_mode = a.pair_loss > 0 or a.pair_batches
-    if a.pair_loss > 0 and not a.items_file:
-        raise SystemExit("--pair-loss needs --items-file (pair-adjacent order)")
     adv = None
     if a.adv_length > 0:
         mu = sum(f["len_feat"] for f in ds) / len(ds)
@@ -228,6 +280,9 @@ def main():
         stats = {"ce": [], "pair": [], "adv": []}
 
         def _get_train_sampler(self, *x, **k):
+            if pair_mode and a.pair_sampler != "sequential":
+                self.pair_sampler = PairSampler(strata, a.pair_sampler, a.seed)
+                return self.pair_sampler
             if pair_mode:
                 return torch.utils.data.SequentialSampler(self.train_dataset)
             return super()._get_train_sampler(*x, **k)
@@ -265,7 +320,13 @@ def main():
 
     tr = ImpTrainer(model=model, args=args, train_dataset=ds, data_collator=coll)
     tr.train()
-    json.dump({"flags": {"pair_loss": a.pair_loss, "pair_batches": a.pair_batches, "adv_length": a.adv_length, "items_file": a.items_file, "meta": a.meta,
+    if getattr(tr, "pair_sampler", None) is not None:
+        sampler_log = {"mode": a.pair_sampler, "epochs_iterated": tr.pair_sampler.log}
+    else:   # sequential: file order every epoch, so the epoch-0 counts hold for all of them
+        sampler_log = {"mode": a.pair_sampler, "epochs_iterated": None,
+                       "natural_counts": imp_pairs.counts(strata, range(len(strata))) if strata is not None else None}
+    json.dump({"pair_sampler": sampler_log,
+               "flags": {"pair_sampler": a.pair_sampler, "pair_loss": a.pair_loss, "pair_batches": a.pair_batches, "adv_length": a.adv_length, "items_file": a.items_file, "meta": a.meta,
                          "dataset": a.dataset, "n_per_class": a.n_per_class, "epochs": a.epochs, "lr": a.lr, "seed": a.seed,
                          "warmup_steps": a.warmup_steps, "base": a.base, "mode": mode},
                "n_train": len(items), "stats_means": {k: (sum(v) / len(v) if v else None) for k, v in ImpTrainer.stats.items()},

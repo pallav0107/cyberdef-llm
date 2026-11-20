@@ -35,6 +35,10 @@ on:
           - "Qwen3.8 self-training: CoT items (amendment 3; results/<tag>_items.json)"
           - "Qwen3.8 self-training: twin (amendment 3; tag ends _twin)"
           - "VSP fix pairs, verdict-only (VSP-SFT, real-world)"
+          - "VSP pilot K1: pair-contrastive length-balanced (train minus dev)"
+          - "VSP pilot K2: K1 + linux V-longer pairs (train minus dev)"
+          - "VSP-SFT K1 final: pair-contrastive length-balanced"
+          - "VSP-SFT K2 final: + linux V-longer pairs"
         default: "answer-only, length-matched PrimeVul"
       train_flags:
         description: "Extra trainer flags, space-separated (e.g. --items-file results/x.json --epochs 3). Defaults: --n-per-class 1000 --epochs 2 --lr 1e-4 --seed 0"
@@ -54,6 +58,7 @@ on:
           - "amendment 3i round sets (J4s, J3s, CASTLE, PrimeVul 300)"
           - "format string round sets (J3s, CASTLE, PrimeVul 300)"
           - "VSP-T real-world fix pairs (VSP-T, CASTLE, PrimeVul 300)"
+          - "VSP dev split (pilot only; never VSP-T)"
         default: "pre-registered sets (PrimeVul, VulSpot x2, CASTLE, J3 held-out matched + all; CoT arms add localisation)"
       scorer:
         description: "Selective = verdict probability for HF models and adapters (CoT arms switch to SC-CoT generation automatically)"

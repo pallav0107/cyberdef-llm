@@ -1,5 +1,5 @@
 {
-  "written": "2026-11-17T08:04:00+1100",
+  "written": "2026-11-21T00:43:20+1100",
   "files": {
     "results/lenmatched_eval_cases.json": {
       "sha256": "dca5c04f041806e6e3444712876117048abe3ff98c690a09bea8bc451baf7dcf",
@@ -78,6 +78,30 @@
       "bytes": 4432900,
       "n": 2566,
       "what": "VSP-SFT training items (VulSpot train-split fix pairs; check_vsp_items.py ALL PASS)"
+    },
+    "results/vsp_dev_cases.json": {
+      "sha256": "2a7d7e39b79fde58df835f78cccab47783f35b42da2865a59447d70f7c362279",
+      "bytes": 1091845,
+      "n": 632,
+      "what": "VSP-DEV: 64 held-out round-1 projects, 316 pairs; pilot-only test set (never VSP-T)"
+    },
+    "results/vsp_pilot_k1_items.json": {
+      "sha256": "b8443ee55feb61288c74948ab9091740a496f40a7df0ab68909734bdc89a8189",
+      "bytes": 3327061,
+      "n": 1926,
+      "what": "VSP pilot K1 training items: round 1 minus dev projects and dev near-duplicates"
+    },
+    "results/vsp_pilot_k2_items.json": {
+      "sha256": "4bfb3d09c105c742c96c82ccefd26f7e3e5496709a62439f6c8f180c1aa6bcd2",
+      "bytes": 4168104,
+      "n": 2526,
+      "what": "VSP pilot K2 training items: K1 + 300 linux V-longer pairs"
+    },
+    "results/vsp_sft_k2_items.json": {
+      "sha256": "87b0516dc10ad259be2ed74370f92c5ad9a3ab1d553cecbbdf9f648d1bff23a5",
+      "bytes": 5271932,
+      "n": 3166,
+      "what": "VSP-SFT K2 final training items: round 1 + the same 300 linux V-longer pairs"
     },
     "results/j4s_heldout_matched_cases.json": {
       "sha256": "81669e115854d7fd0a7d32fbf0db123c0cc0b38c6535dd9472568cd06f67fbb2",

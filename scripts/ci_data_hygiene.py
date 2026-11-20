@@ -51,6 +51,10 @@ def overlap(tests, pool_rows):
     return [c.get("id") for c in tests if h(text(c)) in ph or key(str(c.get("id", ""))) in pk]
 
 
+# vspdev is carved from VulSpot train-split projects, so it shares code with the OLD training pools of other arms (the
+# VulSpot pair pools, self-training pools): that overlap is by construction and irrelevant to a pilot, which trains on
+# exactly the pilot item files. The dev set is therefore checked against those, and must share nothing with them.
+SCOPED_POOLS = {"vspdev": ("results/vsp_pilot_k1_items.json", "results/vsp_pilot_k2_items.json")}
 DESCRIPTIVE = {"j3m", "j3h", "j4m"}   # addendum 3i: known structural shortcut; reported, never a primary test
 FNDEF = re.compile(r"(?m)^(?:static\s+)?(?:unsigned\s+|signed\s+|const\s+)*[A-Za-z_][\w\s\*]*?\bfn_\d+\s*\([^;{)]*\)\s*\{")
 
@@ -107,7 +111,10 @@ def check():
         if not os.path.exists(p):
             print(f"  {k}: {p} not on this machine (not checked)"); continue
         cs = rows(p); seen += 1
-        lk, ov = leaky(cs), overlap(cs, pool_rows)
+        scoped = [x for f in SCOPED_POOLS.get(k, ()) for x in rows(f)]
+        if k in SCOPED_POOLS and not scoped:
+            raise SystemExit(f"{k}: its scoped training pools {SCOPED_POOLS[k]} are missing: the control would be blind")
+        lk, ov = leaky(cs), overlap(cs, scoped if k in SCOPED_POOLS else pool_rows)
         print(f"  test {k}: {len(cs)} cases; label text in {len(lk)}; shared with a training pool: {len(ov)}")
         if lk: bad.append(f"{k}: label text in {lk[:3]}")
         fb, sb = structure(cs)
