@@ -1,0 +1,160 @@
+{
+ "baselines": {
+  "if_count": {
+   "auroc": 0.47215432033159743,
+   "auroc_best_direction": 0.5278456796684026
+  },
+  "length": {
+   "auroc": 0.4773122807949835,
+   "auroc_best_direction": 0.5226877192050166
+  },
+  "lines": {
+   "auroc": 0.47900613774046125,
+   "auroc_best_direction": 0.5209938622595387
+  },
+  "static_count": {
+   "auroc": 0.49944202359443085,
+   "auroc_best_direction": 0.5005579764055692
+  }
+ },
+ "cluster_resamples_used": 10000,
+ "comparisons": {
+  "base": {
+   "delta": 0.06884366032522049,
+   "hm_delta_over_se": 2.4194425845103376,
+   "pass": true,
+   "pass_cluster": true,
+   "sd_decode": 0.0,
+   "se_boot": 0.021227872076168757,
+   "se_boot_cluster": 0.010761449456596385,
+   "se_comb": 0.021227872076168757,
+   "se_comb_cluster": 0.010761449456596385
+  },
+  "if_count": {
+   "delta": 0.11134618450419809,
+   "hm_delta_over_se": 3.892207219654748,
+   "pass": true,
+   "pass_cluster": true,
+   "sd_decode": 0.0,
+   "se_boot": 0.02638144626864001,
+   "se_boot_cluster": 0.01532313497726423,
+   "se_comb": 0.02638144626864001,
+   "se_comb_cluster": 0.01532313497726423
+  },
+  "length": {
+   "delta": 0.11650414496758421,
+   "hm_delta_over_se": 4.07114750352576,
+   "pass": true,
+   "pass_cluster": true,
+   "sd_decode": 0.0,
+   "se_boot": 0.02746978473990933,
+   "se_boot_cluster": 0.01487988787044681,
+   "se_comb": 0.02746978473990933,
+   "se_comb_cluster": 0.01487988787044681
+  },
+  "lines": {
+   "delta": 0.11819800191306196,
+   "hm_delta_over_se": 4.129946255950803,
+   "pass": true,
+   "pass_cluster": true,
+   "sd_decode": 0.0,
+   "se_boot": 0.027767807931840204,
+   "se_boot_cluster": 0.015251322464619587,
+   "se_comb": 0.027767807931840204,
+   "se_comb_cluster": 0.015251322464619587
+  },
+  "static_count": {
+   "delta": 0.13863388776703156,
+   "hm_delta_over_se": 4.841261347594934,
+   "pass": true,
+   "pass_cluster": true,
+   "sd_decode": 0.0,
+   "se_boot": 0.027344604017087416,
+   "se_boot_cluster": 0.015568046831515211,
+   "se_comb": 0.027344604017087416,
+   "se_comb_cluster": 0.015568046831515211
+  }
+ },
+ "cross": {
+  "bow_lr": {
+   "comparison": {
+    "delta": 0.08341747263258581,
+    "hm_delta_over_se": 2.9246934903689006,
+    "pass": true,
+    "pass_cluster": true,
+    "sd_decode": 0.0,
+    "se_boot": 0.024917053054104073,
+    "se_boot_cluster": 0.016552604610819744,
+    "se_comb": 0.024917053054104073,
+    "se_comb_cluster": 0.016552604610819744
+   },
+   "model": {
+    "auroc": 0.5557743915400148,
+    "balanced_accuracy": 0.5244845360824743,
+    "hm_se": 0.02058114052271163,
+    "k": 1,
+    "sd_decode": 0.0,
+    "single_run_auroc": [
+     0.5557743915400148
+    ]
+   }
+  }
+ },
+ "cues": {
+  "pct_s_count": {
+   "auroc": 0.5035703847380167
+  }
+ },
+ "inputs": {
+  "/home/pallav-pokhriyal/missions/cyberdef-llm/results/ci_ev_bowlr_vspt.json": "d5a6f09f02b869c17bd9b188e4cafe2e045d87cade72f6e81eb11df335888018",
+  "/home/pallav-pokhriyal/missions/cyberdef-llm/results/vsp_r1/ci_ev_qwen3.8-27b_vspt.json": "96cd996c9a7a0d64772f8c5f40b3677ee2e3797dc3329f254b4f4a9275a27bd6",
+  "/home/pallav-pokhriyal/missions/cyberdef-llm/results/vsp_r1/ci_ev_vsp_sft_r1_s2_vspt.json": "15d8696a0bc965ba9f16321470ac58752685054bdb4b0e5c5ae2fbe18288e1ed",
+  "/home/pallav-pokhriyal/missions/cyberdef-llm/results/vsp_t_cases.json": "543c4346ed41dd8d254f6c82346a4a592cc9e62fa7a26da5dd038bb18f2f5185"
+ },
+ "mode": "round",
+ "models": {
+  "adapter": {
+   "auroc": 0.6391918641726007,
+   "balanced_accuracy": 0.5463917525773196,
+   "hm_se": 0.019746107253778213,
+   "k": 1,
+   "sd_decode": 0.0,
+   "single_run_auroc": [
+    0.6391918641726007
+   ]
+  },
+  "base": {
+   "auroc": 0.5703482038473802,
+   "balanced_accuracy": 0.5463917525773196,
+   "hm_se": 0.02048758517508935,
+   "k": 1,
+   "sd_decode": 0.0,
+   "single_run_auroc": [
+    0.5703482038473802
+   ]
+  }
+ },
+ "n": 776,
+ "n_clusters": 159,
+ "n_vuln": 388,
+ "pair_veto": {
+  "adapter": 0.6108024691358025,
+  "base": 0.6617283950617284,
+  "ci95_cluster": [
+   -0.14715768647414812,
+   0.048704742151236026
+  ],
+  "delta": -0.05092592592592593,
+  "n_equal_excluded": 19,
+  "n_s_longer": 324,
+  "n_skipped_pairs": 0,
+  "n_v_longer": 45,
+  "pass": false
+ },
+ "script_sha256": "fc7bcef8fdbbbaa71897f8be972717c8cd4707d55b8af98ae10bc69890bf3cf5",
+ "verdict": "FAIL",
+ "verdict_case": "PASS",
+ "verdict_cluster": "PASS",
+ "verdict_pair_veto": "FAIL",
+ "z": 2.394
+}

@@ -1,0 +1,45 @@
+{
+  "kind": "eval",
+  "timestamp": "2026-11-17T08:56:32+1100",
+  "git": {
+    "sha": "fa90987e85aedec31b81752b2594d4dbd3441aa3",
+    "ref": "refs/heads/main",
+    "dirty": false
+  },
+  "ci": {
+    "run_id": "43956367153",
+    "run_attempt": "1",
+    "workflow": "Spark \u00b7 train + test",
+    "actor": "pallav0107"
+  },
+  "runner": {
+    "lane": "spark",
+    "name": "cyberdef-spark",
+    "os": "Linux"
+  },
+  "inputs": {
+    "model": "Qwen/Qwen3.8-27B",
+    "machine": "spark",
+    "adapter": "",
+    "data": "answer-only, length-matched PrimeVul",
+    "items": "",
+    "flags": "",
+    "sets": "vspt=results/vsp_t_cases.json castle=results/xdata_castle_cases.json pv300=results/lenmatched_eval_cases_300.json",
+    "scorer": "selective",
+    "build": "none"
+  },
+  "constraints_sha256": null,
+  "env_drift_vs_constraints": "none",
+  "python": "Python 3.12.3",
+  "result_file": "results/ci_ev_qwen3.8-27b_vspt.json",
+  "result_sha256": "96cd996c9a7a0d64772f8c5f40b3677ee2e3797dc3329f254b4f4a9275a27bd6",
+  "result_headline": {
+    "auroc": 0.5703,
+    "accuracy": 0.5464,
+    "n": 776,
+    "model": "Qwen/Qwen3.8-27B",
+    "adapter": null,
+    "cases_file": "results/vsp_t_cases.json"
+  },
+  "cases_file_sha256": "543c4346ed41dd8d254f6c82346a4a592cc9e62fa7a26da5dd038bb18f2f5185"
+}

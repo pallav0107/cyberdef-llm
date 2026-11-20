@@ -1,0 +1,45 @@
+{
+  "kind": "eval",
+  "timestamp": "2026-11-20T23:27:14+1100",
+  "git": {
+    "sha": "e1dca1584be1a84168c23f0dc3752b862dc7eabd",
+    "ref": "refs/heads/main",
+    "dirty": false
+  },
+  "ci": {
+    "run_id": "44612165737",
+    "run_attempt": "1",
+    "workflow": "Spark \u00b7 train + test",
+    "actor": "pallav0107"
+  },
+  "runner": {
+    "lane": "spark",
+    "name": "cyberdef-spark",
+    "os": "Linux"
+  },
+  "inputs": {
+    "model": "Qwen/Qwen3.8-27B",
+    "machine": "spark",
+    "adapter": "vsp_sft_r1_s2",
+    "data": "VSP fix pairs, verdict-only (VSP-SFT, real-world)",
+    "items": "results/vsp_sft_items.json",
+    "flags": "--seed 2",
+    "sets": "vspt=results/vsp_t_cases.json castle=results/xdata_castle_cases.json pv300=results/lenmatched_eval_cases_300.json",
+    "scorer": "selective",
+    "build": "vsp_sft items=1b105c86f688"
+  },
+  "constraints_sha256": null,
+  "env_drift_vs_constraints": "none",
+  "python": "Python 3.12.3",
+  "result_file": "results/ci_ev_vsp_sft_r1_s2_pv300.json",
+  "result_sha256": "224e63f0ef1411c27c538370090ef834aed1dbab54891bee6bd9c54315a53942",
+  "result_headline": {
+    "auroc": 0.5293,
+    "accuracy": 0.4833,
+    "n": 300,
+    "model": "Qwen/Qwen3.8-27B",
+    "adapter": "out/imp_vsp_sft_r1_s2",
+    "cases_file": "results/lenmatched_eval_cases_300.json"
+  },
+  "cases_file_sha256": "f74c0690fb72f8ea50d30d24abc7e779de74c3430c03f48cce59529a86e15acf"
+}
