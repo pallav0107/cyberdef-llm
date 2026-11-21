@@ -31,11 +31,13 @@ VERDICT_RE = re.compile(r'"verdict"\s*:\s*"(VULNERABLE|SAFE|UNCERTAIN)"')
 def verdict_slot(tok, tgt):
     """(vdiv, tid_vuln, tid_safe): index (within the answer tokens) of the token that carries the verdict value, and the vocabulary ids of the
     VULNERABLE / SAFE alternatives at that slot. (-1, 0, 0) if the verdict cannot be located."""
-    m = VERDICT_RE.search(tgt)
+    m = None if tgt.startswith("VERDICT: ") else VERDICT_RE.search(tgt)
     if m:
         vs, cur = m.start(1), m.group(1)
     elif tgt.startswith("VERDICT: "):
-        vs, cur = len("VERDICT: "), tgt[len("VERDICT: "):].strip()
+        # first line only: a K4b target is "VERDICT: <label>\nSITE: <line>"; reading past the newline made cur
+        # "VULNERABLE\nSITE: ..." and silently switched the pair term off ((-1, 0, 0))
+        vs, cur = len("VERDICT: "), tgt.split("\n", 1)[0][len("VERDICT: "):].strip()
     else:
         return -1, 0, 0
     if cur not in ("VULNERABLE", "SAFE"):
@@ -76,32 +78,57 @@ class PairSampler(torch.utils.data.Sampler):
     before iterating); otherwise the n-th iteration is epoch n. `log` gets one entry per iteration, counting the
     strata of the pairs actually handed out."""
 
-    def __init__(self, strata, mode, seed):
-        self.strata, self.mode, self.seed = strata, mode, seed
+    def __init__(self, strata, mode, seed, domains=None):
+        self.strata, self.mode, self.seed, self.domains = strata, mode, seed, domains
         self.epoch, self.explicit, self.iters, self.log = 0, False, 0, []
+        # balanced_by_domain epochs are not permutations: the length is that of the epoch-0 order (constant per epoch)
+        self.n_pairs = len(imp_pairs.epoch_order(strata, mode, seed, 0, domains))
 
     def set_epoch(self, epoch):
         self.epoch, self.explicit = int(epoch), True
 
     def __len__(self):
-        return 2 * len(self.strata)
+        return 2 * self.n_pairs
 
     def __iter__(self):
         epoch = self.epoch if self.explicit else self.iters
         self.iters += 1
         entry = {"epoch": epoch, "A": 0, "B": 0, "E": 0, "n_pairs": 0}
+        if self.domains is not None:   # per-domain sampler block (read by scripts/imp_dev_gate2.py)
+            entry["domains"] = {d: {"A": 0, "B": 0, "E": 0, "n_pairs": 0} for d in imp_pairs.DOMAINS}
+        uses = {}
         self.log.append(entry)
-        for i in imp_pairs.epoch_order(self.strata, self.mode, self.seed, epoch):
+        for i in imp_pairs.epoch_order(self.strata, self.mode, self.seed, epoch, self.domains):
             entry[self.strata[i]] += 1
             entry["n_pairs"] += 1
+            uses[i] = uses.get(i, 0) + 1
+            entry["max_pair_count"] = max(entry.get("max_pair_count", 0), uses[i])
+            if self.domains is not None:
+                entry["domains"][self.domains[i]][self.strata[i]] += 1
+                entry["domains"][self.domains[i]]["n_pairs"] += 1
             yield 2 * i
             yield 2 * i + 1
 
 
-def sampler_summary(strata, mode, seed):
+def domains_of_items(items):
+    """One "linux" / "other" entry per pair of pair-adjacent items (the project of the vulnerable item decides)."""
+    return ["linux" if items[2 * i].get("project") == "linux" else "other" for i in range(len(items) // 2)]
+
+
+def sampler_summary(strata, mode, seed, domains=None):
     """Epoch-0 counts and length-only accuracy of the chosen mode."""
-    c = imp_pairs.counts(strata, imp_pairs.epoch_order(strata, mode, seed, 0))
+    c = imp_pairs.counts(strata, imp_pairs.epoch_order(strata, mode, seed, 0, domains))
     return c, imp_pairs.length_only_acc(c)
+
+
+def domain_summary(strata, mode, seed, domains):
+    """Epoch-0 per-domain counts and length-only accuracy: {"linux": (counts, acc), "other": (counts, acc)}."""
+    order = imp_pairs.epoch_order(strata, mode, seed, 0, domains)
+    out = {}
+    for d in imp_pairs.DOMAINS:
+        c = imp_pairs.counts(strata, [i for i in order if domains[i] == d])
+        out[d] = (c, imp_pairs.length_only_acc(c))
+    return out
 
 
 def print_balance(items):
@@ -181,7 +208,9 @@ def main():
     ap.add_argument("--pair-sampler", choices=imp_pairs.MODES, default="sequential",
                     help="order of the pairs each epoch in pair mode: sequential (file order, the default), shuffle "
                          "(seeded permutation), balanced (every E pair once, the rest half A / half B so a length-only "
-                         "rule scores 0.50 every epoch); shuffle and balanced need --items-file in pair-adjacent order")
+                         "rule scores 0.50 every epoch), balanced_by_domain (K4: the same balance inside linux and "
+                         "inside every other project, minority stratum of other shown twice per epoch); all but "
+                         "sequential need --items-file in pair-adjacent order")
     ap.add_argument("--adv-length", type=float, default=0.0, help="gradient-reversal strength for the ln(chars) adversary head (0 = off)")
     ap.add_argument("--meta", default="", help="free text recorded in the train log (e.g. bank=quick)")
     ap.add_argument("--logging-steps", type=int, default=10)
@@ -220,7 +249,7 @@ def main():
     pair_mode = a.pair_loss > 0 or a.pair_batches
     if a.pair_loss > 0 and not a.items_file:
         raise SystemExit("--pair-loss needs --items-file (pair-adjacent order)")
-    strata = None
+    strata, domains = None, None
     if a.pair_sampler != "sequential" and not (a.items_file and pair_mode):
         raise SystemExit(f"--pair-sampler {a.pair_sampler} needs --items-file (pair-adjacent order) and "
                          "--pair-batches or --pair-loss")
@@ -231,9 +260,13 @@ def main():
             if a.pair_sampler != "sequential":
                 raise SystemExit(f"--pair-sampler {a.pair_sampler}: {exc}")
     if strata is not None:
-        c0, acc0 = sampler_summary(strata, a.pair_sampler, a.seed)
+        domains = domains_of_items(items)
+        c0, acc0 = sampler_summary(strata, a.pair_sampler, a.seed, domains)
         print(f"[pair-sampler] mode={a.pair_sampler} epoch0 A={c0['A']} B={c0['B']} E={c0['E']} "
               f"length_only_acc={acc0:.2f}", flush=True)
+        for d, (cd_, accd) in domain_summary(strata, a.pair_sampler, a.seed, domains).items():
+            print(f"[pair-sampler] domain={d} epoch0 A={cd_['A']} B={cd_['B']} E={cd_['E']} "
+                  f"length_only_acc={accd:.2f}", flush=True)
     if a.dry_run:
         return
     ds = build_examples(tok, items)
@@ -281,7 +314,7 @@ def main():
 
         def _get_train_sampler(self, *x, **k):
             if pair_mode and a.pair_sampler != "sequential":
-                self.pair_sampler = PairSampler(strata, a.pair_sampler, a.seed)
+                self.pair_sampler = PairSampler(strata, a.pair_sampler, a.seed, domains)
                 return self.pair_sampler
             if pair_mode:
                 return torch.utils.data.SequentialSampler(self.train_dataset)
@@ -329,7 +362,9 @@ def main():
                "flags": {"pair_sampler": a.pair_sampler, "pair_loss": a.pair_loss, "pair_batches": a.pair_batches, "adv_length": a.adv_length, "items_file": a.items_file, "meta": a.meta,
                          "dataset": a.dataset, "n_per_class": a.n_per_class, "epochs": a.epochs, "lr": a.lr, "seed": a.seed,
                          "warmup_steps": a.warmup_steps, "base": a.base, "mode": mode},
-               "n_train": len(items), "stats_means": {k: (sum(v) / len(v) if v else None) for k, v in ImpTrainer.stats.items()},
+               "n_train": len(items),
+               "pair_terms": len(ImpTrainer.stats["pair"]), "pair_steps": len(ImpTrainer.stats["ce"]),   # K4b screen: one pair term per pair-step
+               "stats_means": {k: (sum(v) / len(v) if v else None) for k, v in ImpTrainer.stats.items()},
                "log_history": tr.state.log_history, "last200": {k: (sum(v[-200:]) / len(v[-200:]) if v else None) for k, v in ImpTrainer.stats.items()}},
               open(a.out.rstrip("/") + "_imp_train_log.json", "w"))
     if adv is not None:

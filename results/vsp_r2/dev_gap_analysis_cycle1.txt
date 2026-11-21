@@ -1,0 +1,28 @@
+== within-pair accuracy (p(V) > p(S)) by stratum; A = fix longer, B = vuln longer, E = equal
+base  A: 0.604 (n=265)  B: 0.622 (n=45)  E: 0.667 (n=6)  | A/B-balanced 0.613 | exact ties 2
+K1    A: 0.657 (n=265)  B: 0.467 (n=45)  E: 0.167 (n=6)  | A/B-balanced 0.562 | exact ties 6
+K2    A: 0.721 (n=265)  B: 0.489 (n=45)  E: 0.667 (n=6)  | A/B-balanced 0.605 | exact ties 11
+
+== does the model just score longer code as more vulnerable? within-pair: sign(dp) vs sign(dlen)
+base  'longer = more vulnerable' agreement 0.429; Spearman(dp, dlen) -0.024; mean |dp| 0.0253; pooled Spearman(p, len) +0.239
+K1    'longer = more vulnerable' agreement 0.361; Spearman(dp, dlen) -0.333; mean |dp| 0.0780; pooled Spearman(p, len) -0.186
+K2    'longer = more vulnerable' agreement 0.310; Spearman(dp, dlen) -0.315; mean |dp| 0.0597; pooled Spearman(p, len) -0.010
+
+== by size of the fix (changed lines)
+1-2 lines (n=87): base 0.609  K1 0.506  K2 0.586
+3-6 lines (n=110): base 0.645  K1 0.582  K2 0.700
+7-20 lines (n=94): base 0.532  K1 0.755  K2 0.777
+21-+ lines (n=25): base 0.720  K1 0.680  K2 0.640
+
+== K2 vs base, pairs flipped
+fixed by K2 65, broken by K2 40, of 316
+
+== top CWEs: within-pair acc base / K2
+['CWE-190']                    n= 32 base 0.53  K2 0.75
+['CWE-416']                    n= 25 base 0.60  K2 0.48
+['CWE-125']                    n= 24 base 0.67  K2 0.75
+['CWE-772']                    n= 23 base 0.61  K2 0.39
+['CWE-787']                    n= 20 base 0.75  K2 0.85
+['CWE-476']                    n= 14 base 0.64  K2 0.93
+[]                             n= 13 base 0.15  K2 0.54
+['CWE-119']                    n= 11 base 0.73  K2 0.73

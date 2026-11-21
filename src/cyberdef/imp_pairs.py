@@ -6,13 +6,22 @@ Under plain sequential or shuffled order the A/B mix of the data is whatever the
 "the fix is longer". The balanced sampler removes that: each epoch it shows every E pair once and fills the
 remaining slots half from A and half from B, so the length-only accuracy of every epoch is 0.50.
 
-epoch_order(strata, mode, seed, epoch) -> list of pair indices, len == len(strata); deterministic.
+epoch_order(strata, mode, seed, epoch, domains=None) -> list of pair indices; deterministic. For sequential, shuffle
+and balanced, len == len(strata) and `domains` is ignored.
+
+balanced_by_domain (K4) crosses the length stratum with a domain ("linux" / "other"), because a global A/B balance can
+still leave a project-conditional length cue: inside linux "the longer side is the fix" is wrong, inside other code it is
+right. Per epoch every E pair appears once; in each domain the minority stratum's pairs appear REPS[domain] times each
+(linux once, other twice, so no pair is shown more than twice) and the other stratum is drawn from its endless seeded
+stream to the same slot count, so inside each domain the A and B slot counts are equal and the length-only accuracy of each domain is 0.50. An epoch is NOT a permutation.
 """
 from __future__ import annotations
 
 import random
 
-MODES = ("sequential", "shuffle", "balanced")
+MODES = ("sequential", "shuffle", "balanced", "balanced_by_domain")
+DOMAINS = ("linux", "other")
+REPS = {"linux": 1, "other": 2}   # exposures per epoch of each pair of a domain's minority stratum
 SCORE = {"A": 1.0, "B": 0.0, "E": 0.5}   # what a "the longer side is the fix" rule scores on each stratum
 
 
@@ -90,8 +99,37 @@ def _balanced(strata, seed, epoch):
     return order
 
 
-def epoch_order(strata, mode, seed, epoch):
-    """Pair indices visited in `epoch` (0-based) under `mode`; len == len(strata)."""
+def _balanced_by_domain(strata, seed, epoch, domains):
+    if domains is None:
+        raise ValueError("balanced_by_domain needs `domains` (one 'linux' / 'other' entry per pair)")
+    if len(domains) != len(strata):
+        raise ValueError(f"domains has {len(domains)} entries for {len(strata)} pairs")
+    bad = sorted({d for d in domains if d not in DOMAINS})
+    if bad:
+        raise ValueError(f"unknown domain values {bad}; expected {DOMAINS}")
+    order = [i for i, s in enumerate(strata) if s == "E"]
+    for dom in DOMAINS:
+        mem = {st: [i for i, (s, d) in enumerate(zip(strata, domains)) if s == st and d == dom] for st in "AB"}
+        na, nb = len(mem["A"]), len(mem["B"])
+        if not na and not nb:
+            continue
+        if not na or not nb:
+            raise ValueError(f"domain {dom!r} has only one length stratum (A {na}, B {nb}): a per-domain balance "
+                             "is impossible")
+        k = REPS[dom] * min(na, nb)   # slots per stratum in this domain
+        for st in "AB":
+            if len(mem[st]) <= len(mem["B" if st == "A" else "A"]):   # minority (or tied): every member REPS times
+                perm = list(mem[st])
+                random.Random(f"m|{seed}|{dom}|{st}|{epoch}").shuffle(perm)
+                order += perm * REPS[dom]
+            else:   # the larger stratum: k slots from its endless seeded stream, continuing across epochs
+                order += _draw(mem[st], f"{dom}|{st}", k, seed, epoch * k)
+    random.Random(f"od|{seed}|{epoch}").shuffle(order)
+    return order
+
+
+def epoch_order(strata, mode, seed, epoch, domains=None):
+    """Pair indices visited in `epoch` (0-based) under `mode`; len == len(strata) except balanced_by_domain."""
     n = len(strata)
     if mode == "sequential":
         return list(range(n))
@@ -101,4 +139,6 @@ def epoch_order(strata, mode, seed, epoch):
         return order
     if mode == "balanced":
         return _balanced(strata, seed, epoch)
+    if mode == "balanced_by_domain":
+        return _balanced_by_domain(strata, seed, epoch, domains)
     raise ValueError(f"unknown pair-sampler mode {mode!r}; expected one of {MODES}")

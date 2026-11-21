@@ -1,0 +1,45 @@
+{
+  "kind": "eval",
+  "timestamp": "2026-11-21T03:14:34+1100",
+  "git": {
+    "sha": "fec68852c9843f2bf46401b6b02a4a18c6cd7e95",
+    "ref": "refs/heads/main",
+    "dirty": false
+  },
+  "ci": {
+    "run_id": "44767954141",
+    "run_attempt": "1",
+    "workflow": "Spark \u00b7 train + test",
+    "actor": "pallav0107"
+  },
+  "runner": {
+    "lane": "spark",
+    "name": "cyberdef-spark",
+    "os": "Linux"
+  },
+  "inputs": {
+    "model": "Qwen/Qwen3.8-27B",
+    "machine": "spark",
+    "adapter": "",
+    "data": "VSP pilot K1: pair-contrastive length-balanced (train minus dev)",
+    "items": "",
+    "flags": "",
+    "sets": "vspdev=results/vsp_dev_cases.json",
+    "scorer": "selective",
+    "build": "none"
+  },
+  "constraints_sha256": null,
+  "env_drift_vs_constraints": "none",
+  "python": "Python 3.12.3",
+  "result_file": "results/ci_ev_qwen3.8-27b_vspdev.json",
+  "result_sha256": "00876c3aedac65d7b3cd4494775671a5c5b33656112f8f0f2d8abaae56bfc7c3",
+  "result_headline": {
+    "auroc": 0.5297,
+    "accuracy": 0.5079,
+    "n": 632,
+    "model": "Qwen/Qwen3.8-27B",
+    "adapter": null,
+    "cases_file": "results/vsp_dev_cases.json"
+  },
+  "cases_file_sha256": "2a7d7e39b79fde58df835f78cccab47783f35b42da2865a59447d70f7c362279"
+}

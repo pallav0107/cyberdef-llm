@@ -1,0 +1,135 @@
+{
+ "baselines": {
+  "if_count": {
+   "auroc": 0.46399315013619613,
+   "auroc_best_direction": 0.5360068498638039
+  },
+  "length": {
+   "auroc": 0.47236520589649095,
+   "auroc_best_direction": 0.5276347941035091
+  },
+  "lines": {
+   "auroc": 0.4719245713827912,
+   "auroc_best_direction": 0.5280754286172088
+  },
+  "static_count": {
+   "auroc": 0.4984327431501362,
+   "auroc_best_direction": 0.5015672568498638
+  }
+ },
+ "cluster_resamples_used": 10000,
+ "comparisons": {
+  "base": {
+   "delta": 0.06987061368370462,
+   "hm_delta_over_se": 2.1783330204279405,
+   "pass": true,
+   "pass_cluster": true,
+   "sd_decode": 0.0,
+   "se_boot": 0.023668037020936585,
+   "se_boot_cluster": 0.017078682771897422,
+   "se_comb": 0.023668037020936585,
+   "se_comb_cluster": 0.017078682771897422
+  },
+  "if_count": {
+   "delta": 0.06357154302195167,
+   "hm_delta_over_se": 1.982977164122075,
+   "pass": false,
+   "pass_cluster": true,
+   "sd_decode": 0.0,
+   "se_boot": 0.030403404166301454,
+   "se_boot_cluster": 0.013969476901846497,
+   "se_comb": 0.030403404166301454,
+   "se_comb_cluster": 0.013969476901846497
+  },
+  "length": {
+   "delta": 0.07194359878224643,
+   "hm_delta_over_se": 2.2426278649427034,
+   "pass": true,
+   "pass_cluster": true,
+   "sd_decode": 0.0,
+   "se_boot": 0.029039983711849734,
+   "se_boot_cluster": 0.014347767719127125,
+   "se_comb": 0.029039983711849734,
+   "se_comb_cluster": 0.014347767719127125
+  },
+  "lines": {
+   "delta": 0.07150296426854674,
+   "hm_delta_over_se": 2.2289609222737967,
+   "pass": true,
+   "pass_cluster": true,
+   "sd_decode": 0.0,
+   "se_boot": 0.029390026858427912,
+   "se_boot_cluster": 0.014879530353803598,
+   "se_comb": 0.029390026858427912,
+   "se_comb_cluster": 0.014879530353803598
+  },
+  "static_count": {
+   "delta": 0.09801113603589173,
+   "hm_delta_over_se": 3.0522957964995934,
+   "pass": true,
+   "pass_cluster": true,
+   "sd_decode": 0.0,
+   "se_boot": 0.03065761863762071,
+   "se_boot_cluster": 0.017076282949444153,
+   "se_comb": 0.03065761863762071,
+   "se_comb_cluster": 0.017076282949444153
+  }
+ },
+ "cross": {},
+ "cues": {
+  "pct_s_count": {
+   "auroc": 0.5015422207979491
+  }
+ },
+ "inputs": {
+  "/home/pallav-pokhriyal/missions/cyberdef-llm/results/vsp_dev_cases.json": "2a7d7e39b79fde58df835f78cccab47783f35b42da2865a59447d70f7c362279",
+  "/home/pallav-pokhriyal/missions/cyberdef-llm/results/vsp_r2/ci_ev_qwen3.8-27b_vspdev.json": "00876c3aedac65d7b3cd4494775671a5c5b33656112f8f0f2d8abaae56bfc7c3",
+  "/home/pallav-pokhriyal/missions/cyberdef-llm/results/vsp_r2/ci_ev_vsp_pilot_k1_vspdev.json": "9423447c6d5f3db41d79e5ba5555b4215c9f28b5324907770598ffc1364f45d9"
+ },
+ "mode": "round",
+ "models": {
+  "adapter": {
+   "auroc": 0.5995783928857555,
+   "balanced_accuracy": 0.5664556962025316,
+   "hm_se": 0.022424051772753823,
+   "k": 1,
+   "sd_decode": 0.0,
+   "single_run_auroc": [
+    0.5995783928857555
+   ]
+  },
+  "base": {
+   "auroc": 0.5297077792020509,
+   "balanced_accuracy": 0.5079113924050632,
+   "hm_se": 0.022934355629263246,
+   "k": 1,
+   "sd_decode": 0.0,
+   "single_run_auroc": [
+    0.5297077792020509
+   ]
+  }
+ },
+ "n": 632,
+ "n_clusters": 64,
+ "n_vuln": 316,
+ "pair_veto": {
+  "adapter": 0.5663522012578617,
+  "base": 0.6185534591194968,
+  "ci95_cluster": [
+   -0.16046248629394796,
+   0.0241087846821283
+  ],
+  "delta": -0.0522012578616351,
+  "n_equal_excluded": 6,
+  "n_s_longer": 265,
+  "n_skipped_pairs": 0,
+  "n_v_longer": 45,
+  "pass": false
+ },
+ "script_sha256": "fc7bcef8fdbbbaa71897f8be972717c8cd4707d55b8af98ae10bc69890bf3cf5",
+ "verdict": "FAIL",
+ "verdict_case": "FAIL",
+ "verdict_cluster": "PASS",
+ "verdict_pair_veto": "FAIL",
+ "z": 2.394
+}

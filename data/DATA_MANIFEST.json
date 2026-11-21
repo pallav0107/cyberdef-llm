@@ -1,5 +1,5 @@
 {
-  "written": "2026-11-21T00:43:20+1100",
+  "written": "2026-11-21T21:12:08+1100",
   "files": {
     "results/lenmatched_eval_cases.json": {
       "sha256": "dca5c04f041806e6e3444712876117048abe3ff98c690a09bea8bc451baf7dcf",
@@ -102,6 +102,36 @@
       "bytes": 5271932,
       "n": 3166,
       "what": "VSP-SFT K2 final training items: round 1 + the same 300 linux V-longer pairs"
+    },
+    "results/vsp_dev2_cases.json": {
+      "sha256": "9511373d2663d088633fe8918c1f4db9caa36611947920e12d1ee20f592fa1b2",
+      "bytes": 1688884,
+      "n": 1010,
+      "what": "VSP-DEV2 (cycle 2): 64 remaining non-linux round-1 B-holding projects + test-split supplement, 505 pairs; K4 pilots only (never VSP-T)"
+    },
+    "results/vsp_probe_cases.json": {
+      "sha256": "ecda8c3ba3d86abfc736a883fc48c831b637995eb57aeec592a04b4e66036585",
+      "bytes": 906289,
+      "n": 600,
+      "what": "VSP linux held-out probe: 150 A + 150 B val-split linux pairs; NOT project-disjoint; descriptive, outside the gate"
+    },
+    "results/vsp_pilot_k4_items.json": {
+      "sha256": "aa8749eab5595d827a1076b59dfc9198a4755a3585b950ab91cec89457e2d74b",
+      "bytes": 4836582,
+      "n": 2902,
+      "what": "VSP pilot K4a training items: round 1 minus dev2 projects/near-duplicates + 308 linux B and 308 linux A pairs"
+    },
+    "results/vsp_pilot_k4b_items.json": {
+      "sha256": "c814527e2dd0c4207970dd15dd245d8dad3787c7291c8b1f8bae15123648b514",
+      "bytes": 5061012,
+      "n": 2902,
+      "what": "VSP pilot K4b training items: the K4a items with a two-line VERDICT / SITE target"
+    },
+    "results/vsp_sft_k4_items.json": {
+      "sha256": "4632af514f25c181f2dbdaf02b19ab7e0574af8f5b79e94dfca09fc79039396d",
+      "bytes": 6146117,
+      "n": 3714,
+      "what": "VSP-SFT K4 final training items: round 1 (dev2 folded back) minus dev2-supplement near-duplicates + the K4 linux extras"
     },
     "results/j4s_heldout_matched_cases.json": {
       "sha256": "81669e115854d7fd0a7d32fbf0db123c0cc0b38c6535dd9472568cd06f67fbb2",

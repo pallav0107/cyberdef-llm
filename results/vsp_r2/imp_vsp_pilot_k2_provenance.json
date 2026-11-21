@@ -1,0 +1,37 @@
+{
+  "kind": "train",
+  "timestamp": "2026-11-21T15:18:28+1100",
+  "git": {
+    "sha": "fec68852c9843f2bf46401b6b02a4a18c6cd7e95",
+    "ref": "refs/heads/main",
+    "dirty": false
+  },
+  "ci": {
+    "run_id": "44768000611",
+    "run_attempt": "1",
+    "workflow": "Spark \u00b7 train + test",
+    "actor": "pallav0107"
+  },
+  "runner": {
+    "lane": "spark",
+    "name": "cyberdef-spark",
+    "os": "Linux"
+  },
+  "inputs": {
+    "model": "Qwen/Qwen3.8-27B",
+    "machine": "spark",
+    "adapter": "vsp_pilot_k2",
+    "data": "VSP pilot K2: K1 + linux V-longer pairs (train minus dev)",
+    "items": "results/vsp_pilot_k2_items.json",
+    "flags": "",
+    "sets": "vspdev=results/vsp_dev_cases.json",
+    "scorer": "selective",
+    "build": "vsp_sft items=4bfb3d09c105"
+  },
+  "constraints_sha256": null,
+  "env_drift_vs_constraints": "none",
+  "python": "Python 3.12.3",
+  "out_tag": "vsp_pilot_k2",
+  "adapter_present": true,
+  "train_mode": "4bit"
+}

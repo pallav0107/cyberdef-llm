@@ -54,7 +54,10 @@ def overlap(tests, pool_rows):
 # vspdev is carved from VulSpot train-split projects, so it shares code with the OLD training pools of other arms (the
 # VulSpot pair pools, self-training pools): that overlap is by construction and irrelevant to a pilot, which trains on
 # exactly the pilot item files. The dev set is therefore checked against those, and must share nothing with them.
-SCOPED_POOLS = {"vspdev": ("results/vsp_pilot_k1_items.json", "results/vsp_pilot_k2_items.json")}
+SCOPED_POOLS = {"vspdev": ("results/vsp_pilot_k1_items.json", "results/vsp_pilot_k2_items.json"),
+                # dev2 core projects are in the K1/K2 pilots by construction; dev2 and the probe must share nothing with the K4 pilots
+                "vspdev2": ("results/vsp_pilot_k4_items.json", "results/vsp_pilot_k4b_items.json"),
+                "vspprobe": ("results/vsp_pilot_k4_items.json", "results/vsp_pilot_k4b_items.json", "results/vsp_sft_k4_items.json")}
 DESCRIPTIVE = {"j3m", "j3h", "j4m"}   # addendum 3i: known structural shortcut; reported, never a primary test
 FNDEF = re.compile(r"(?m)^(?:static\s+)?(?:unsigned\s+|signed\s+|const\s+)*[A-Za-z_][\w\s\*]*?\bfn_\d+\s*\([^;{)]*\)\s*\{")
 

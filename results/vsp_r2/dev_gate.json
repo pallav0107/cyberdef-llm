@@ -1,0 +1,23 @@
+{
+ "decision": "GO",
+ "winner": "K2",
+ "reason": "highest pair_veto.delta among eligible configs (0.0021)",
+ "tie_k1": 0.02,
+ "n_dev": 632,
+ "configs": [
+  {
+   "name": "K1",
+   "n": 632,
+   "pair_veto_delta": -0.0522012578616351,
+   "base_delta": 0.06987061368370462,
+   "eligible": false
+  },
+  {
+   "name": "K2",
+   "n": 632,
+   "pair_veto_delta": 0.002096436058700246,
+   "base_delta": 0.07283988944079478,
+   "eligible": true
+  }
+ ]
+}
