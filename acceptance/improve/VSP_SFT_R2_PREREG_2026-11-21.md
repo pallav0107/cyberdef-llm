@@ -216,3 +216,19 @@ empty, and the Python AST of every changed file is identical before and after (C
 so behaviour is unchanged). Data files, manifest, flags, tags, bars and protocol are unchanged. The pinned code for this
 note is now this commit; the three runs are re-dispatched unchanged per "A failed or cancelled run is re-dispatched
 unchanged". Dev cycles: still one; no score of any kind had been read.
+
+## Addendum 2 (2026-11-23 00:41 AEDT): finals record (written after the 3-seed verdict; restrictions and disclosures only)
+- Earlier b166e20 triple omitted from Addendum 1: runs 44749589567 (failed at Plan), 44749606041 and 44749621392
+  (cancelled, no steps run). No model ran and no score existed.
+- Seed-2 first dispatch 44865646916 lost its runner ("The self-hosted runner lost communication with the server",
+  GitHub annotation) at training step 327/792; Test, Grade and Stamp were skipped, so no score of any kind existed.
+  The orphaned training container was stopped by exact ID. Re-dispatched unchanged as 44983981559 (fec6885, tag
+  vsp_sft_r2_s2, --seed 2). No other vsp_sft_r2 runs exist.
+- Deviation 9 again: all three finals (s0, s1 44865634963, s2 44983981559) and the base re-score 44865610370 failed
+  only at step 8 (artifact upload). Result files were copied from Spark; their sha256 equal the result_sha256 printed
+  in each run's own Stamp step (VSP-T s0 b313899d…, s1 d5fa0895…, s2 5ac88aaf…). Upload is not re-run.
+- The seed-0 and seed-1 verdicts were first read as prelim before seed 2 finished (as round-1 deviation 5); the prelim
+  files are byte-identical to the registered verdict files.
+- Step 3a passed for all three seeds before their VSP-T scores were read as verdicts (balanced; per epoch |A-B| <= 1;
+  E = 34; train_mode 4bit; items 87b0516d…; git fec6885 clean).
+- Result and wording: see results/vsp_r2/RESULT_R2.md (experiment-auditor: VALID WITH CAVEATS).

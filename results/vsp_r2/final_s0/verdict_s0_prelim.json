@@ -1,0 +1,160 @@
+{
+ "baselines": {
+  "if_count": {
+   "auroc": 0.47215432033159743,
+   "auroc_best_direction": 0.5278456796684026
+  },
+  "length": {
+   "auroc": 0.4773122807949835,
+   "auroc_best_direction": 0.5226877192050166
+  },
+  "lines": {
+   "auroc": 0.47900613774046125,
+   "auroc_best_direction": 0.5209938622595387
+  },
+  "static_count": {
+   "auroc": 0.49944202359443085,
+   "auroc_best_direction": 0.5005579764055692
+  }
+ },
+ "cluster_resamples_used": 10000,
+ "comparisons": {
+  "base": {
+   "delta": 0.057939871399723675,
+   "hm_delta_over_se": 2.0287548402785225,
+   "pass": true,
+   "pass_cluster": true,
+   "sd_decode": 0.0,
+   "se_boot": 0.021729132635967763,
+   "se_boot_cluster": 0.010636795145862004,
+   "se_comb": 0.021729132635967763,
+   "se_comb_cluster": 0.010636795145862004
+  },
+  "if_count": {
+   "delta": 0.10044239557870127,
+   "hm_delta_over_se": 3.4982864165070455,
+   "pass": true,
+   "pass_cluster": true,
+   "sd_decode": 0.0,
+   "se_boot": 0.02518899228223782,
+   "se_boot_cluster": 0.014148907588009022,
+   "se_comb": 0.02518899228223782,
+   "se_comb_cluster": 0.014148907588009022
+  },
+  "length": {
+   "delta": 0.1056003560420874,
+   "hm_delta_over_se": 3.676711759913315,
+   "pass": true,
+   "pass_cluster": true,
+   "sd_decode": 0.0,
+   "se_boot": 0.026596211309595236,
+   "se_boot_cluster": 0.013872046671755728,
+   "se_comb": 0.026596211309595236,
+   "se_comb_cluster": 0.013872046671755728
+  },
+  "lines": {
+   "delta": 0.10729421298756514,
+   "hm_delta_over_se": 3.7353353965746057,
+   "pass": true,
+   "pass_cluster": true,
+   "sd_decode": 0.0,
+   "se_boot": 0.02672367487597743,
+   "se_boot_cluster": 0.014202247897914475,
+   "se_comb": 0.02672367487597743,
+   "se_comb_cluster": 0.014202247897914475
+  },
+  "static_count": {
+   "delta": 0.12773009884153474,
+   "hm_delta_over_se": 4.444298194801512,
+   "pass": true,
+   "pass_cluster": true,
+   "sd_decode": 0.0,
+   "se_boot": 0.027226436210811642,
+   "se_boot_cluster": 0.014040128967618599,
+   "se_comb": 0.027226436210811642,
+   "se_comb_cluster": 0.014040128967618599
+  }
+ },
+ "cross": {
+  "bow_lr": {
+   "comparison": {
+    "delta": 0.072513683707089,
+    "hm_delta_over_se": 2.533095129157929,
+    "pass": true,
+    "pass_cluster": true,
+    "sd_decode": 0.0,
+    "se_boot": 0.024553154849078825,
+    "se_boot_cluster": 0.01539853629928628,
+    "se_comb": 0.024553154849078825,
+    "se_comb_cluster": 0.01539853629928628
+   },
+   "model": {
+    "auroc": 0.5557743915400148,
+    "balanced_accuracy": 0.5244845360824743,
+    "hm_se": 0.02058114052271163,
+    "k": 1,
+    "sd_decode": 0.0,
+    "single_run_auroc": [
+     0.5557743915400148
+    ]
+   }
+  }
+ },
+ "cues": {
+  "pct_s_count": {
+   "auroc": 0.5035703847380167
+  }
+ },
+ "inputs": {
+  "/home/pallav-pokhriyal/missions/cyberdef-llm/results/ci_ev_bowlr_vspt.json": "d5a6f09f02b869c17bd9b188e4cafe2e045d87cade72f6e81eb11df335888018",
+  "/home/pallav-pokhriyal/missions/cyberdef-llm/results/vsp_r1/ci_ev_qwen3.8-27b_vspt.json": "96cd996c9a7a0d64772f8c5f40b3677ee2e3797dc3329f254b4f4a9275a27bd6",
+  "/home/pallav-pokhriyal/missions/cyberdef-llm/results/vsp_r2/final_s0/ci_ev_vsp_sft_r2_vspt.json": "b313899d27d94dfcc0eebb3a266aefec90dbcc103dc6c607d6bfb21a6e3aa928",
+  "/home/pallav-pokhriyal/missions/cyberdef-llm/results/vsp_t_cases.json": "543c4346ed41dd8d254f6c82346a4a592cc9e62fa7a26da5dd038bb18f2f5185"
+ },
+ "mode": "round",
+ "models": {
+  "adapter": {
+   "auroc": 0.6282880752471038,
+   "balanced_accuracy": 0.6030927835051546,
+   "hm_se": 0.01989708447313812,
+   "k": 1,
+   "sd_decode": 0.0,
+   "single_run_auroc": [
+    0.6282880752471038
+   ]
+  },
+  "base": {
+   "auroc": 0.5703482038473802,
+   "balanced_accuracy": 0.5463917525773196,
+   "hm_se": 0.02048758517508935,
+   "k": 1,
+   "sd_decode": 0.0,
+   "single_run_auroc": [
+    0.5703482038473802
+   ]
+  }
+ },
+ "n": 776,
+ "n_clusters": 159,
+ "n_vuln": 388,
+ "pair_veto": {
+  "adapter": 0.6927469135802469,
+  "base": 0.6617283950617284,
+  "ci95_cluster": [
+   -0.07223154171892388,
+   0.13125109912995184
+  ],
+  "delta": 0.031018518518518445,
+  "n_equal_excluded": 19,
+  "n_s_longer": 324,
+  "n_skipped_pairs": 0,
+  "n_v_longer": 45,
+  "pass": true
+ },
+ "script_sha256": "fc7bcef8fdbbbaa71897f8be972717c8cd4707d55b8af98ae10bc69890bf3cf5",
+ "verdict": "PASS",
+ "verdict_case": "PASS",
+ "verdict_cluster": "PASS",
+ "verdict_pair_veto": "PASS",
+ "z": 2.394
+}
