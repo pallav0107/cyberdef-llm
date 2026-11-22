@@ -41,4 +41,6 @@ Never: "detects the fix", "removes the length cue", or any component named as th
 - Leakage: check_vsp_items TEST_OVERLAP 0 projects / 0 code hashes, NEAR_DUP 0, FORK_PROJECT 0 (PROJECT_CAP linux 340
   disclosed); check_vsp_dev PASS 22/22. Residual risk: semantic/vendored clones below lexical Jaccard 0.5. Excluding
   possible Linux-derived projects: +0.057 / +0.059 / +0.055; leave-one-project-out (s0) +0.054..+0.061.
-- Owed (descriptive): bow_lr refit on the K2 final items (deviation 12).
+- bow_lr refit on the K2 final items (deviation 12, descriptive; results/vsp_r2/ci_ev_bowlr_k2refit_vspt.json, train sha 87b0516d,
+  3166 items): AUROC 0.5588; adapter minus refit +0.0695 / +0.0697 / +0.0671 = 2.84 / 2.84 / 2.81 case SE (cluster 4.5-4.6),
+  still > 2 x SE. Both auditor conditions for plain VALID (record committed; refit > 2 x SE) are now met.
