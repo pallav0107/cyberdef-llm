@@ -8,6 +8,7 @@ Writes into --out-dir (default results/):
   vsp_pilot_k4_items.json    K4a pilot training items
   vsp_pilot_k4b_items.json   K4b pilot items: the same items, target = "VERDICT: <label>\\nSITE: <line>"
   vsp_sft_k4_items.json      K4 final training items (dev2 folded back)
+  vsp_sft_k4b_items.json     K4b final items: the K4 final items, target = "VERDICT: <label>\nSITE: <line>" (attempt 5)
   vsp_probe_cases.json       linux held-out set (150 A + 150 B), descriptive / probe P1
 
 Rules (acceptance contract: acceptance/improve/check_vsp_dev2.py, check_vsp_k4_items.py, check_vsp_probe.py,
@@ -52,7 +53,7 @@ PROBE_N = 150
 EXTRA_SEED = bd.EXTRA_SEED
 MAX_CHARS = bt.MAX_CHARS
 FILES = {"dev2": "vsp_dev2_cases.json", "pilot": "vsp_pilot_k4_items.json", "pilot_b": "vsp_pilot_k4b_items.json",
-         "final": "vsp_sft_k4_items.json", "probe": "vsp_probe_cases.json"}
+         "final": "vsp_sft_k4_items.json", "final_b": "vsp_sft_k4b_items.json", "probe": "vsp_probe_cases.json"}
 COLS = ("idx", "project", "is_vulnerable", "fixed_func_idx", "func_body", "cwe_1003_list", "label_confidence",
         "func_name")
 DEV2_NOTE = ("VSP-DEV2 (cycle 2): every remaining non-linux round-1 project holding a stratum-B pair (core) plus "
@@ -338,6 +339,7 @@ def main():
     print("dev2:", json.dumps(b.stats["dev2"]), flush=True)
     pilot, final = b.k4_items()
     pilot_b = b.k4b_items(pilot)
+    final_b = b.k4b_items(final)
     print("k4:", json.dumps({k: v for k, v in b.stats["k4"].items()}), flush=True)
     print("linux before A extras:", b.stats["linux_before_A_extras"], "A pool:", b.stats["a_pool"], flush=True)
     probe = b.probe(pilot, final)
@@ -347,10 +349,10 @@ def main():
                                "stats": b.stats["dev2"], "cases": b.dev2_cases})
     dump(out / FILES["probe"], {"split": "vsp_probe", "note": PROBE_NOTE, "salt": PROBE_SALT,
                                 "stats": b.stats["probe"], "cases": probe})
-    for key, items in (("pilot", pilot), ("pilot_b", pilot_b), ("final", final)):
+    for key, items in (("pilot", pilot), ("pilot_b", pilot_b), ("final", final), ("final_b", final_b)):
         dump(out / FILES[key], {"items": items, "note": ITEMS_NOTE,
                                 "stats": {"n_pairs": len(items) // 2, "counts": count_k4(items),
-                                          "build": b.stats["k4"] if key != "pilot_b" else "same items as K4a + target"}})
+                                          "build": {"pilot_b": "same items as K4a + target", "final_b": "same items as K4 final + target"}.get(key, b.stats["k4"])}})
     print("pilot counts:", count_k4(pilot))
     print("final counts:", count_k4(final))
 

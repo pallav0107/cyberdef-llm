@@ -1,0 +1,33 @@
+{
+ "b_wins_slack": 2,
+ "configs": [
+  {
+   "b_wins_adapter": 70.0,
+   "b_wins_base": 64.0,
+   "base_delta": 0.051524360356827725,
+   "eligible": true,
+   "n": 1010,
+   "name": "K4a",
+   "pair_veto_delta": 0.06127494654312182,
+   "reasons": [],
+   "screens_ok": true
+  },
+  {
+   "b_wins_adapter": 67.5,
+   "b_wins_base": 64.0,
+   "base_delta": 0.07098715812175271,
+   "eligible": true,
+   "n": 1010,
+   "name": "K4b",
+   "pair_veto_delta": 0.08567578403421239,
+   "reasons": [],
+   "screens_ok": true
+  }
+ ],
+ "decision": "GO",
+ "n_dev": 1010,
+ "reason": "highest pair_veto.delta among eligible configs (0.0857)",
+ "tie_k4a": 0.02,
+ "veto_min": 0.035,
+ "winner": "K4b"
+}

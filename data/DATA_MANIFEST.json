@@ -1,5 +1,5 @@
 {
-  "written": "2026-11-21T21:12:08+1100",
+  "written": "2026-11-24T23:46:34+1100",
   "files": {
     "results/lenmatched_eval_cases.json": {
       "sha256": "dca5c04f041806e6e3444712876117048abe3ff98c690a09bea8bc451baf7dcf",
@@ -126,6 +126,12 @@
       "bytes": 5061012,
       "n": 2902,
       "what": "VSP pilot K4b training items: the K4a items with a two-line VERDICT / SITE target"
+    },
+    "results/vsp_sft_k4b_items.json": {
+      "sha256": "d0eb200c4bc3a16809b888f8975b522a95637b0ed86ba9015415c4226b3a650b",
+      "bytes": 6436799,
+      "n": 3714,
+      "what": "VSP-SFT K4b final training items (attempt 5): the K4 final items with a two-line VERDICT / SITE target"
     },
     "results/vsp_sft_k4_items.json": {
       "sha256": "4632af514f25c181f2dbdaf02b19ab7e0574af8f5b79e94dfca09fc79039396d",

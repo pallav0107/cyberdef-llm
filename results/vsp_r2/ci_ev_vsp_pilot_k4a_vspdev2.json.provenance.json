@@ -1,0 +1,45 @@
+{
+  "kind": "eval",
+  "timestamp": "2026-11-24T23:20:22+1100",
+  "git": {
+    "sha": "e80a9a32e5bf9b1ccf662b20ffbfd5b3772481cd",
+    "ref": "refs/heads/main",
+    "dirty": false
+  },
+  "ci": {
+    "run_id": "45382370423",
+    "run_attempt": "1",
+    "workflow": "Spark \u00b7 train + test",
+    "actor": "pallav0107"
+  },
+  "runner": {
+    "lane": "spark",
+    "name": "cyberdef-spark",
+    "os": "Linux"
+  },
+  "inputs": {
+    "model": "Qwen/Qwen3.8-27B",
+    "machine": "spark",
+    "adapter": "vsp_pilot_k4a",
+    "data": "VSP pilot K4a: domain-crossed low-replay sampler (train minus dev2)",
+    "items": "",
+    "flags": "",
+    "sets": "vspdev2=results/vsp_dev2_cases.json",
+    "scorer": "selective",
+    "build": "none"
+  },
+  "constraints_sha256": null,
+  "env_drift_vs_constraints": "none",
+  "python": "Python 3.12.3",
+  "result_file": "results/ci_ev_vsp_pilot_k4a_vspdev2.json",
+  "result_sha256": "0262ac31740652e2991b12d67ac651bda3f3c01264bc790473232096f02d8983",
+  "result_headline": {
+    "auroc": 0.588,
+    "accuracy": 0.5614,
+    "n": 1010,
+    "model": "Qwen/Qwen3.8-27B",
+    "adapter": "out/imp_vsp_pilot_k4a",
+    "cases_file": "results/vsp_dev2_cases.json"
+  },
+  "cases_file_sha256": "9511373d2663d088633fe8918c1f4db9caa36611947920e12d1ee20f592fa1b2"
+}

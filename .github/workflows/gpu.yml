@@ -42,6 +42,7 @@ on:
           - "VSP-SFT K1 final: pair-contrastive length-balanced"
           - "VSP-SFT K2 final: + linux V-longer pairs"
           - "VSP-SFT K4 final: domain-crossed low-replay sampler"
+          - "VSP-SFT K4b final: K4 final + diff-site target"
         default: "answer-only, length-matched PrimeVul"
       train_flags:
         description: "Extra trainer flags, space-separated (e.g. --items-file results/x.json --epochs 3). Defaults: --n-per-class 1000 --epochs 2 --lr 1e-4 --seed 0"

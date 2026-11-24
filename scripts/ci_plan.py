@@ -81,6 +81,7 @@ DATA = {
     "VSP-SFT K1 final: pair-contrastive length-balanced": ("results/vsp_sft_items.json", PAIR_BAL),
     "VSP-SFT K2 final: + linux V-longer pairs": ("results/vsp_sft_k2_items.json", PAIR_BAL),
     "VSP-SFT K4 final: domain-crossed low-replay sampler": ("results/vsp_sft_k4_items.json", PAIR_DOM),
+    "VSP-SFT K4b final: K4 final + diff-site target": ("results/vsp_sft_k4b_items.json", PAIR_DOM),   # attempt 5 (dev2 gate winner K4b)
 }
 ARM7_GATE_MIN = 200    # pre-registered: arm 7 needs >= 200 X_strict traces in the build it trains on
 MODEL_STEPS = {"train + test": (True, True), "train only": (True, False), "test only": (False, True)}

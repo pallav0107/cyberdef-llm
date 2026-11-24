@@ -32,6 +32,7 @@ CANONICAL = [
     ("results/vsp_probe_cases.json", "VSP linux held-out probe: 150 A + 150 B val-split linux pairs; NOT project-disjoint; descriptive, outside the gate"),
     ("results/vsp_pilot_k4_items.json", "VSP pilot K4a training items: round 1 minus dev2 projects/near-duplicates + 308 linux B and 308 linux A pairs"),
     ("results/vsp_pilot_k4b_items.json", "VSP pilot K4b training items: the K4a items with a two-line VERDICT / SITE target"),
+    ("results/vsp_sft_k4b_items.json", "VSP-SFT K4b final training items (attempt 5): the K4 final items with a two-line VERDICT / SITE target"),
     ("results/vsp_sft_k4_items.json", "VSP-SFT K4 final training items: round 1 (dev2 folded back) minus dev2-supplement near-duplicates + the K4 linux extras"),
     ("results/j4s_heldout_matched_cases.json", "J4s (3i): structure- and length-matched, execution-verified; primary test for memory, integer, leak"),
     ("results/q_heldout_cases.json", "SQLi held-out, 44 oracle-verified pairs never in any pool (3g: cleaned, re-verified): primary test for SQL injection"),
