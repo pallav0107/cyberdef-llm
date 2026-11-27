@@ -34,6 +34,8 @@ CANONICAL = [
     ("results/vsp_pilot_k4b_items.json", "VSP pilot K4b training items: the K4a items with a two-line VERDICT / SITE target"),
     ("results/vsp_sft_k4b_items.json", "VSP-SFT K4b final training items (attempt 5): the K4 final items with a two-line VERDICT / SITE target"),
     ("results/vsp_sft_k4_items.json", "VSP-SFT K4 final training items: round 1 (dev2 folded back) minus dev2-supplement near-duplicates + the K4 linux extras"),
+    ("results/vsp_dev3_cases.json", "VSP-DEV3 (attempt 6): confirmation fold, 122 non-linux non-dev2 projects of the K4b final file, 400 pairs; d3 pilots and base models only (never VSP-T)"),
+    ("results/vsp_pilot_k4b_d3_items.json", "VSP pilot D3 training items (attempt 6): K4b final items minus every dev3 project and dev3 near-duplicates, two-line VERDICT / SITE target"),
     ("results/j4s_heldout_matched_cases.json", "J4s (3i): structure- and length-matched, execution-verified; primary test for memory, integer, leak"),
     ("results/q_heldout_cases.json", "SQLi held-out, 44 oracle-verified pairs never in any pool (3g: cleaned, re-verified): primary test for SQL injection"),
     ("results/imp_fewshot_exemplars.json", "few-shot exemplars templated from Juliet _02 ground truth (quick bank; no model)"),

@@ -58,7 +58,11 @@ SCOPED_POOLS = {"vspdev": ("results/vsp_pilot_k1_items.json", "results/vsp_pilot
                 # dev2 core projects are in the K1/K2 pilots by construction; dev2 and the probe must share nothing with the K4 pilots
                 "vspdev2": ("results/vsp_pilot_k4_items.json", "results/vsp_pilot_k4b_items.json"),
                 "vspprobe": ("results/vsp_pilot_k4_items.json", "results/vsp_pilot_k4b_items.json", "results/vsp_sft_k4_items.json",
-                             "results/vsp_sft_k4b_items.json")}
+                             "results/vsp_sft_k4b_items.json"),
+                # dev3 is carved from the K4b final file (attempt 6): only the d3 pilot (final minus dev3) is its training pool
+                "vspdev3": ("results/vsp_pilot_k4b_d3_items.json",)}
+# unscoped sets that must additionally share nothing with these item files (VSP-T vs the attempt-6 d3 pilot)
+EXTRA_POOLS = {"vspt": ("results/vsp_pilot_k4b_d3_items.json",)}
 DESCRIPTIVE = {"j3m", "j3h", "j4m"}   # addendum 3i: known structural shortcut; reported, never a primary test
 FNDEF = re.compile(r"(?m)^(?:static\s+)?(?:unsigned\s+|signed\s+|const\s+)*[A-Za-z_][\w\s\*]*?\bfn_\d+\s*\([^;{)]*\)\s*\{")
 
@@ -118,7 +122,11 @@ def check():
         scoped = [x for f in SCOPED_POOLS.get(k, ()) for x in rows(f)]
         if k in SCOPED_POOLS and not scoped:
             raise SystemExit(f"{k}: its scoped training pools {SCOPED_POOLS[k]} are missing: the control would be blind")
-        lk, ov = leaky(cs), overlap(cs, scoped if k in SCOPED_POOLS else pool_rows)
+        for f in EXTRA_POOLS.get(k, ()):
+            if not os.path.exists(f):
+                raise SystemExit(f"{k}: its extra training pool {f} is missing: the control would be blind")
+        extra = [x for f in EXTRA_POOLS.get(k, ()) for x in rows(f)]
+        lk, ov = leaky(cs), overlap(cs, scoped if k in SCOPED_POOLS else pool_rows + extra)
         print(f"  test {k}: {len(cs)} cases; label text in {len(lk)}; shared with a training pool: {len(ov)}")
         if lk: bad.append(f"{k}: label text in {lk[:3]}")
         fb, sb = structure(cs)

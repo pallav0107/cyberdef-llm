@@ -192,6 +192,18 @@
       "bytes": 15288,
       "n": null,
       "what": "addendum 3e: quick exemplars + templated VULNERABLE and SAFE leak exemplars"
+    },
+    "results/vsp_dev3_cases.json": {
+      "sha256": "31366b4ab3e372612f6b1433daee7e9fa6a1a180cf9b0f0066ea588560974d11",
+      "bytes": 1494784,
+      "n": 800,
+      "what": "VSP-DEV3 (attempt 6): confirmation fold, 122 non-linux non-dev2 projects of the K4b final file, 400 pairs; d3 pilots and base models only (never VSP-T)"
+    },
+    "results/vsp_pilot_k4b_d3_items.json": {
+      "sha256": "82b732339af4edc0062e51339a3d0671f408b550cde65c4450b34947332d7d46",
+      "bytes": 4884088,
+      "n": 2906,
+      "what": "VSP pilot D3 training items (attempt 6): K4b final items minus every dev3 project and dev3 near-duplicates, two-line VERDICT / SITE target"
     }
   },
   "missing_at_write": []

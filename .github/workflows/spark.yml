@@ -39,6 +39,7 @@ on:
           - "VSP pilot K2: K1 + linux V-longer pairs (train minus dev)"
           - "VSP pilot K4a: domain-crossed low-replay sampler (train minus dev2)"
           - "VSP pilot K4b: K4a + diff-site target (train minus dev2)"
+          - "VSP pilot D3: final minus dev3 (attempt-6 confirmation, d3 pilots only)"
           - "VSP-SFT K1 final: pair-contrastive length-balanced"
           - "VSP-SFT K2 final: + linux V-longer pairs"
           - "VSP-SFT K4 final: domain-crossed low-replay sampler"
@@ -64,6 +65,7 @@ on:
           - "VSP-T real-world fix pairs (VSP-T, CASTLE, PrimeVul 300)"
           - "VSP dev split (pilot only; never VSP-T)"
           - "VSP dev2 split (K4 pilots only; never VSP-T)"
+          - "VSP dev3 split (attempt-6 confirmation; d3 pilots only)"
           - "VSP linux held-out probe (base or pilot adapters only; descriptive)"
         default: "pre-registered sets (PrimeVul, VulSpot x2, CASTLE, J3 held-out matched + all; CoT arms add localisation)"
       scorer:

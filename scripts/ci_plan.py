@@ -28,11 +28,14 @@ QUICK_BANK_AMENDMENT = "QUICK_BANK_AMENDMENT_2_2026-11-15"   # batch 2: quick + 
 SET_FILES = {
     "pv": "results/lenmatched_eval_cases.json", "pv300": "results/lenmatched_eval_cases_300.json",
     "vh": "results/vs_holdout_matched_cases.json", "vn": "results/vs_nolinux_matched_cases.json",
-    "castle": "results/xdata_castle_cases.json", "j3m": "results/j3_heldout_matched_cases.json", "qh": "results/q_heldout_cases.json", "j4m": "results/j4_heldout_matched_cases.json", "j3h": "results/j3_heldout_cases.json", "j3s": "results/j3s_heldout_matched_cases.json", "j4s": "results/j4s_heldout_matched_cases.json", "vspt": "results/vsp_t_cases.json", "vspdev": "results/vsp_dev_cases.json", "vspdev2": "results/vsp_dev2_cases.json", "vspprobe": "results/vsp_probe_cases.json", "loc": "results/imp_loc_cases.json", "pairs": "results/imp_vs_pairs_eval_cases.json",
+    "castle": "results/xdata_castle_cases.json", "j3m": "results/j3_heldout_matched_cases.json", "qh": "results/q_heldout_cases.json", "j4m": "results/j4_heldout_matched_cases.json", "j3h": "results/j3_heldout_cases.json", "j3s": "results/j3s_heldout_matched_cases.json", "j4s": "results/j4s_heldout_matched_cases.json", "vspt": "results/vsp_t_cases.json", "vspdev": "results/vsp_dev_cases.json", "vspdev2": "results/vsp_dev2_cases.json", "vspdev3": "results/vsp_dev3_cases.json", "vspprobe": "results/vsp_probe_cases.json", "loc": "results/imp_loc_cases.json", "pairs": "results/imp_vs_pairs_eval_cases.json",
 }
 PREREG = "pre-registered sets (PrimeVul, VulSpot x2, CASTLE, J3 held-out matched + all; CoT arms add localisation)"
 VSP_DEV_SET = "VSP dev split (pilot only; never VSP-T)"
 VSP_DEV2_SET = "VSP dev2 split (K4 pilots only; never VSP-T)"
+VSP_DEV3_SET = "VSP dev3 split (attempt-6 confirmation; d3 pilots only)"
+VSP_D3_DATA = "VSP pilot D3: final minus dev3 (attempt-6 confirmation, d3 pilots only)"
+D3_TAG = "vsp_pilot_k4b_d3"   # attempt 6: the d3 pilot trains on dev2 projects and never on dev3 projects
 VSP_PROBE_SET = "VSP linux held-out probe (base or pilot adapters only; descriptive)"
 TEST_SETS = {   # choice -> set keys. PREREG is completed per arm in plan() (the queue jobs P60/P61/P86 evaluate exactly these)
     PREREG: ["pv", "vh", "vn", "castle", "j3m", "j3h"],   # j3m (2c, length-matched, primary) and j3h (2b): in-distribution per class
@@ -47,6 +50,7 @@ TEST_SETS = {   # choice -> set keys. PREREG is completed per arm in plan() (the
     "format string round sets (J3s, CASTLE, PrimeVul 300)": ["j3s", "castle", "pv300"],   # FORMAT_R1B_PREREG note: the format-string bar is J3s (CASTLE, PrimeVul-300 secondary); not J4s
     "VSP-T real-world fix pairs (VSP-T, CASTLE, PrimeVul 300)": ["vspt", "castle", "pv300"],   # VSP_SFT_R1_PREREG: VSP-T primary; CASTLE, PV300 descriptive
     VSP_DEV_SET: ["vspdev"],
+    VSP_DEV3_SET: ["vspdev3"],   # attempt-6 confirmation fold: only d3 pilots (tag prefix vsp_pilot_k4b_d3) and the base model
     VSP_DEV2_SET: ["vspdev2"],   # cycle-2 dev (K4 pilots); finals fold dev2 back and are never scored on it
     VSP_PROBE_SET: ["vspprobe"],   # linux held-out set (probe P1): not project-disjoint, so base / pilot adapters only   # pilots are judged on the dev split only; VSP-T stays unread until the recipe is fixed
 }
@@ -78,6 +82,7 @@ DATA = {
     # K4 (cycle 2): domain-crossed low-replay sampler (K4a), plus the diff-site target (K4b); judged on dev2 only
     "VSP pilot K4a: domain-crossed low-replay sampler (train minus dev2)": ("results/vsp_pilot_k4_items.json", PAIR_DOM),
     "VSP pilot K4b: K4a + diff-site target (train minus dev2)": ("results/vsp_pilot_k4b_items.json", PAIR_DOM),
+    VSP_D3_DATA: ("results/vsp_pilot_k4b_d3_items.json", PAIR_DOM),   # attempt 6: K4b final minus dev3; name has no K4 on purpose (check_ci_k4 would treat it as a K4 pilot)
     "VSP-SFT K1 final: pair-contrastive length-balanced": ("results/vsp_sft_items.json", PAIR_BAL),
     "VSP-SFT K2 final: + linux V-longer pairs": ("results/vsp_sft_k2_items.json", PAIR_BAL),
     "VSP-SFT K4 final: domain-crossed low-replay sampler": ("results/vsp_sft_k4_items.json", PAIR_DOM),
@@ -145,6 +150,19 @@ def plan(env) -> dict:
     if dev_like and test and tag and not tag.startswith("vsp_pilot"):
         what = "the VSP linux probe set" if dev_like == ["vspprobe"] else "a VSP dev split"
         raise SystemExit(f"plan: tag '{tag}' is not a vsp_pilot adapter; only the base model and pilots may be scored on {what} (dev / probe sets)")
+    # attempt 6 (dev3 confirmation fold): dev3 is scored only by d3 pilots (their training file drops every dev3 project)
+    # and by the untrained base model; a d3 pilot (it trains on dev2 projects) is never scored on dev2 or on VSP-T
+    d3_run = data == VSP_D3_DATA or tag.startswith(D3_TAG)
+    if d3_run and "vspdev2" in keys_of_set:
+        raise SystemExit(f"plan: the d3 pilot ('{data}' / tag '{tag}') trains on the VSP dev2 projects: never tested on dev2")
+    if tag.startswith(D3_TAG) and train and data != VSP_D3_DATA:
+        raise SystemExit(f"plan: tag '{tag}' is a d3 pilot tag: it may only train '{VSP_D3_DATA}', not '{data}' (dev3 guard)")
+    if data == VSP_D3_DATA and not tag.startswith(D3_TAG):
+        raise SystemExit(f"plan: '{data}' needs a tag starting with {D3_TAG}, not '{tag}' (d3 pilot / dev3 guard)")
+    if "vspdev3" in keys_of_set and test and tag and not tag.startswith(D3_TAG):
+        raise SystemExit(f"plan: tag '{tag}' is not a d3 pilot (tag prefix {D3_TAG}); only d3 pilots and the base model may be scored on dev3")
+    if "vspdev3" in keys_of_set and train and data != VSP_D3_DATA:
+        raise SystemExit(f"plan: '{data}' trains on the dev3 projects (or is not the d3 pilot): only '{VSP_D3_DATA}' may be tested on dev3")
     if data.startswith("VSP-SFT K4") and train and not tag.startswith("vsp_final"):
         raise SystemExit(f"plan: '{data}' is a final: its tag must start with 'vsp_final'")
     if tag.startswith("vsp_pilot_k4") and test and "vspdev" in keys_of_set:
